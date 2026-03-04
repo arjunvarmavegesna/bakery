@@ -415,6 +415,7 @@
   .hero-btns { animation-delay: 0.4s; }
   .hero-stats { animation-delay: 0.5s; }
 </style>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
 
@@ -425,7 +426,7 @@
 <nav class="navbar">
   <div class="nav-logo">
     Sree Ramu Sweets
-    <span>EST. 1975 · Bhimavaram</span>
+    <span>EST. 1975 · VIJAYAWADA</span>
   </div>
   <div class="nav-icons">
     <button class="nav-icon-btn" onclick="toggleSearch()">
@@ -615,7 +616,7 @@
     <a href="#">Privacy Policy</a>
     <a href="#">Refund Policy</a>
   </div>
-  <div>📍 Bhimavaram, AP · 📞 xxxxxxxxx</div>
+  <div>📍 MG Road, Vijayawada, AP · 📞 +91 98765 43210</div>
   <div class="footer-bottom" style="margin-top:0.8rem">© 2025 Sree Ramu Sweets. All rights reserved.</div>
 </footer>
 
@@ -740,7 +741,7 @@ function openCart() {
         <div class="total-row"><span>Subtotal</span><span>₹${subtotal}</span></div>
         <div class="total-row"><span>Delivery</span><span>${delivery === 0 ? '<span style="color:green">FREE</span>' : '₹' + delivery}</span></div>
         <div class="total-row grand"><span>Total</span><span>₹${subtotal + delivery}</span></div>
-        <button class="checkout-btn" onclick="showToast('🎉 Order placed! Thank you!')">Proceed to Checkout</button>
+        <button class="checkout-btn" onclick="startPayment()">Proceed to Checkout</button>
       </div>
     `;
   }
@@ -797,6 +798,61 @@ function showToast(msg) {
 }
 
 renderProducts();
+
+// ── PAYMENT FUNCTION (must be global) ──
+function startPayment() {
+  const items = Object.values(cart);
+  if (items.length === 0) return;
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const delivery = subtotal >= 499 ? 0 : 40;
+  const total = subtotal + delivery;
+
+  const options = {
+    key: "rzp_test_SN8B17Y4nm9Htx",
+    amount: total * 100,
+    currency: "INR",
+    name: "Sree Ramu Sweets",
+    description: "Sweet Order",
+    theme: { color: '#9B1C1C' },
+    handler: async function(response) {
+      try {
+        if (window.saveOrderToFirebase) {
+          await window.saveOrderToFirebase(items, total);
+        }
+      } catch(e) { console.log('Firebase save failed:', e); }
+      cart = {};
+      updateCartBadge();
+      closeCart();
+      showToast('🎉 Payment done! Order placed!');
+    }
+  };
+  const rzp = new Razorpay(options);
+  rzp.open();
+}
+</script>
+
+<!-- Firebase (module script) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyChB0J289Ihu8OxE60Vc-CHsWcKT28RtAU",
+    authDomain: "sree-ramu-sweets.firebaseapp.com",
+    projectId: "sree-ramu-sweets",
+    storageBucket: "sree-ramu-sweets.firebasestorage.app",
+    messagingSenderId: "217706015668",
+    appId: "1:217706015668:web:c03e8659136877b9a860e1"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.saveOrderToFirebase = async function(items, total) {
+    await addDoc(collection(db, 'orders'), {
+      items, total, date: new Date(), status: 'paid'
+    });
+  };
 </script>
 </body>
 </html>
