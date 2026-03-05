@@ -353,14 +353,7 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
 
       <!-- DASHBOARD -->
       <div id="section-dashboard">
-        <!-- Firebase Storage Rules Banner (shown when storage fails) -->
-        <div id="storageBanner" style="display:none;background:#fff8e1;border:1.5px solid #FFD54F;border-radius:12px;padding:1rem 1.2rem;margin-bottom:1rem;font-size:0.83rem;color:#4E342E;line-height:1.7;">
-          <strong>&#128248; Enable Firebase Storage photo uploads:</strong><br>
-          Go to <a href="https://console.firebase.google.com/project/sree-ramu-sweets/storage" target="_blank" style="color:var(--brand);font-weight:700;">Firebase Console &#8250; Storage &#8250; Rules</a> and set:<br>
-          <code style="background:#f5f5f5;padding:2px 8px;border-radius:6px;font-size:0.78rem;">allow read, write: if request.auth != null;</code><br>
-          <small style="color:#888;">Until then, photos are compressed and stored as data in Firestore (still works, but larger doc size).</small>
-          <button onclick="document.getElementById('storageBanner').style.display='none'" style="float:right;margin-top:-1.5rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#aaa;">&#10005;</button>
-        </div>
+        <!-- Cloudinary is used for photo storage -->
         <div class="stats-row" id="statsRow">
           <div class="stat-card">
             <div class="stat-icon" style="background:#FFF0E0;">🍬</div>
@@ -685,7 +678,7 @@ import {
   doc, orderBy, query, serverTimestamp, where
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
-  getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject
+  getStorage, ref, refFromURL, deleteObject
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import {
   getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged
@@ -955,7 +948,11 @@ function compressImageToBase64(file, maxW, maxH, quality) {
   });
 }
 
-// Upload photo: tries Firebase Storage, falls back to base64 in Firestore
+// ── CLOUDINARY CONFIG ──
+const CLOUDINARY_CLOUD = 'dbbxybt5j';
+const CLOUDINARY_PRESET = 'sree-ramu-sweets';
+
+// Upload photo to Cloudinary (free, no Firebase Storage needed)
 async function uploadPhoto(file, productName, ctx) {
   const progressBarId  = ctx==='add' ? 'uploadProgressFill'  : 'editUploadProgressFill';
   const progressTextId = ctx==='add' ? 'uploadProgressText'  : 'editUploadProgressText';
@@ -970,53 +967,55 @@ async function uploadPhoto(file, productName, ctx) {
     if (txt)  txt.textContent = msg;
   };
 
-  setProgress(10, 'Compressing image...');
+  const hideProgress = () => {
+    setTimeout(() => {
+      const w = document.getElementById(progressWrapId);
+      if (w) w.style.display = 'none';
+    }, 1500);
+  };
 
-  let base64DataUrl;
-  try {
-    base64DataUrl = await compressImageToBase64(file);
-  } catch(e) {
-    throw new Error('Image read failed: ' + e.message);
+  setProgress(10, 'Preparing image...');
+
+  // Use pre-compressed blob if ready, otherwise compress now
+  let blob = ctx === 'add' ? addPhotoBlob : editPhotoBlob;
+  if (!blob) {
+    setProgress(20, 'Compressing image...');
+    try { blob = await compressImageToBlob(file); }
+    catch(e) { throw new Error('Image read failed: ' + e.message); }
   }
-  setProgress(35, 'Uploading to cloud...');
 
-  // Try Firebase Storage upload
-  try {
-    const sanitized = productName.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase();
-    const storagePath = 'products/' + sanitized + '_' + Date.now() + '.jpg';
-    const storageRef = ref(storage, storagePath);
-    const fetchRes = await fetch(base64DataUrl);
-    const blob = await fetchRes.blob();
-    await new Promise((resolve, reject) => {
-      const task = uploadBytesResumable(storageRef, blob, { contentType: 'image/jpeg' });
-      task.on('state_changed',
-        (snap) => {
-          const pct = 35 + Math.round(snap.bytesTransferred / snap.totalBytes * 55);
-          setProgress(pct, 'Uploading... ' + Math.round(snap.bytesTransferred/snap.totalBytes*100) + '%');
-        },
-        reject,
-        () => resolve()
-      );
-    });
-    const downloadUrl = await getDownloadURL(storageRef);
-    setProgress(100, 'Upload complete!');
-    setTimeout(() => { const w = document.getElementById(progressWrapId); if(w) w.style.display='none'; }, 1500);
-    return downloadUrl;
+  setProgress(35, 'Uploading...');
 
-  } catch(storageErr) {
-    console.warn('Firebase Storage upload failed, using base64 fallback. Error:', storageErr.message || storageErr.code);
-    toast('Photo saved (compressed). See the Storage setup banner in Dashboard.', 'error');
-    const banner = document.getElementById('storageBanner');
-    if (banner) banner.style.display = 'block';
-    // Fallback: store compressed base64 directly in Firestore
-    const approxKB = Math.round(base64DataUrl.length * 0.75 / 1024);
-    if (approxKB > 800) {
-      base64DataUrl = await compressImageToBase64(file, 600, 600, 0.65);
-    }
-    setProgress(100, 'Image saved (compressed)!');
-    setTimeout(() => { const w = document.getElementById(progressWrapId); if(w) w.style.display='none'; }, 1500);
-    return base64DataUrl;
-  }
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append('file', blob, 'photo.jpg');
+    formData.append('upload_preset', CLOUDINARY_PRESET);
+    formData.append('folder', 'sree-ramu-sweets');
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const pct = 35 + Math.round(e.loaded / e.total * 60);
+        setProgress(pct, 'Uploading... ' + Math.round(e.loaded / e.total * 100) + '%');
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const res = JSON.parse(xhr.responseText);
+        setProgress(100, 'Upload complete! ✅');
+        hideProgress();
+        resolve(res.secure_url);
+      } else {
+        reject(new Error('Upload failed: ' + xhr.statusText));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Network error during upload'));
+    xhr.send(formData);
+  });
 }
 
 // ── LIVE PREVIEW ──
