@@ -28,13 +28,27 @@
 html { scroll-behavior:smooth; }
 body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); min-height:100vh; overflow-x:hidden; }
 
+/* ── AUTH LOADING OVERLAY ── */
+#authLoading {
+  position:fixed; inset:0;
+  background:linear-gradient(135deg,#B84D00 0%,#E8650A 50%,#FF8C2A 100%);
+  display:flex; align-items:center; justify-content:center;
+  z-index:1001; flex-direction:column; gap:1rem;
+}
+#authLoading .loading-logo { font-size:3rem; animation:pulse 1.2s ease-in-out infinite; }
+#authLoading .loading-label { color:rgba(255,255,255,0.85); font-size:0.9rem; font-weight:500; }
+@keyframes pulse { 0%,100%{transform:scale(1);opacity:0.8} 50%{transform:scale(1.1);opacity:1} }
+.google-signin-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none !important; }
+.signin-spinner { width:18px; height:18px; border:2.5px solid rgba(0,0,0,0.15); border-top-color:#4285F4; border-radius:50%; animation:spin 0.7s linear infinite; }
+
 /* ── AUTH GATE ── */
 #authGate {
   position:fixed; inset:0;
   background:linear-gradient(135deg,#B84D00 0%,#E8650A 50%,#FF8C2A 100%);
-  display:flex; align-items:center; justify-content:center;
+  display:none; align-items:center; justify-content:center;
   z-index:1000; flex-direction:column;
 }
+#authGate.visible { display:flex; }
 .auth-card {
   background:white; border-radius:24px;
   padding:3rem 2.5rem; max-width:420px; width:90%;
@@ -263,15 +277,21 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
 </head>
 <body>
 
+<!-- AUTH LOADING (shown while Firebase checks session) -->
+<div id="authLoading">
+  <div class="loading-logo">🍬</div>
+  <div class="loading-label">Loading Sree Ramu Sweets Admin…</div>
+</div>
+
 <!-- AUTH GATE -->
 <div id="authGate">
   <div class="auth-card">
     <div class="auth-logo">🔐</div>
     <div class="auth-title">Admin Access</div>
     <div class="auth-sub">Sign in with the owner's Google account to manage Sree Ramu Sweets products and orders.</div>
-    <button class="google-signin-btn" onclick="adminSignIn()">
+    <button class="google-signin-btn" id="googleSignInBtn" onclick="adminSignIn()">
       <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 19 13 24 13c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.4 0 10.2-2 13.8-5.3l-6.4-5.4C29.3 35.3 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-8H6.3C9.6 35.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6.4 5.4C42 35.3 44 30 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
-      Sign in with Google
+      <span id="signInBtnText">Sign in with Google</span>
     </button>
     <div class="auth-error" id="authError"></div>
     <div class="auth-note">⚠️ Only the registered owner account can access this panel.</div>
@@ -665,7 +685,7 @@ import {
   doc, orderBy, query, serverTimestamp, where
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
-  getStorage, ref, refFromURL, uploadBytesResumable, getDownloadURL, deleteObject
+  getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import {
   getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged
@@ -703,29 +723,82 @@ let editCurrentPhotoUrl = ''; // existing photo URL when editing
 const COLORS = ['#FFF3CD','#E8F5E9','#FDE8E8','#FFF0E0','#F3E5F5','#E3F2FD','#FCE4EC','#E0F7FA','#FFF8E1','#F1F8E9'];
 
 // ── AUTH ──
+let accessDeniedEmail = null; // remember denied email so error survives signOut re-trigger
+
+function hideAuthLoading() {
+  const el = document.getElementById('authLoading');
+  if (el) el.style.display = 'none';
+}
+
+function showAuthGate() {
+  hideAuthLoading();
+  document.getElementById('authGate').classList.add('visible');
+  document.getElementById('adminApp').classList.remove('visible');
+}
+
+function hideAuthGate() {
+  document.getElementById('authGate').classList.remove('visible');
+}
+
 onAuthStateChanged(auth, (user) => {
   if (user) {
     if (user.email === ADMIN_EMAIL) {
+      accessDeniedEmail = null;
+      hideAuthLoading();
+      hideAuthGate();
       showAdmin(user);
     } else {
-      signOut(auth);
-      showAuthError(`❌ Access denied. Only ${ADMIN_EMAIL} can access this panel.`);
+      // Wrong account — sign out silently, then show error
+      accessDeniedEmail = user.email;
+      signOut(auth); // this will re-trigger onAuthStateChanged with user=null
     }
   } else {
-    document.getElementById('authGate').style.display = 'flex';
-    document.getElementById('adminApp').classList.remove('visible');
+    // user is null — could be initial load OR after a signOut
+    showAuthGate();
+    if (accessDeniedEmail) {
+      showAuthError(`❌ Access denied. "${accessDeniedEmail}" is not the owner account.`);
+      accessDeniedEmail = null;
+    }
+    setSignInBtnLoading(false);
   }
 });
 
+function setSignInBtnLoading(loading) {
+  const btn = document.getElementById('googleSignInBtn');
+  const txt = document.getElementById('signInBtnText');
+  if (!btn) return;
+  btn.disabled = loading;
+  if (loading) {
+    btn.innerHTML = `<div class="signin-spinner"></div><span>Signing in…</span>`;
+  } else {
+    btn.innerHTML = `<svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 19 13 24 13c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.4 0 10.2-2 13.8-5.3l-6.4-5.4C29.3 35.3 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-8H6.3C9.6 35.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6.4 5.4C42 35.3 44 30 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span id="signInBtnText">Sign in with Google</span>`;
+  }
+}
+
 window.adminSignIn = async function() {
+  setSignInBtnLoading(true);
+  document.getElementById('authError').classList.remove('show');
   try {
     await signInWithPopup(auth, provider);
+    // onAuthStateChanged handles the rest
   } catch(e) {
-    showAuthError('❌ Sign in failed: ' + e.message);
+    setSignInBtnLoading(false);
+    if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+      // User closed popup — silent, no error needed
+    } else if (e.code === 'auth/popup-blocked') {
+      showAuthError('❌ Popup blocked by browser. Please allow popups for this site and try again.');
+    } else if (e.code === 'auth/network-request-failed') {
+      showAuthError('❌ No internet connection. Please check your network and try again.');
+    } else {
+      showAuthError('❌ Sign in failed: ' + (e.message || e.code));
+    }
   }
 };
 
-window.adminSignOut = async function() { await signOut(auth); };
+window.adminSignOut = async function() {
+  await signOut(auth);
+  // onAuthStateChanged will show auth gate
+};
 
 function showAuthError(msg) {
   const el = document.getElementById('authError');
@@ -810,67 +883,46 @@ window.onDrop = function(event, ctx) {
   setPhotoFile(ctx, file);
 };
 
-// Cache for pre-compressed blobs so uploadPhoto doesn't compress twice
-let addPhotoBlob = null;
-let editPhotoBlob = null;
-
 function setPhotoFile(ctx, file) {
-  // Use ObjectURL for instant preview (no FileReader delay)
-  const previewUrl = URL.createObjectURL(file);
-
-  if (ctx === 'add') {
-    // Release any previous ObjectURL
-    if (addPhotoFile && addPhotoFile._previewUrl) URL.revokeObjectURL(addPhotoFile._previewUrl);
-    addPhotoFile = file;
-    addPhotoFile._previewUrl = previewUrl;
-    addPhotoBlob = null; // reset cache
-
-    const img = document.getElementById('uploadPreviewImg');
-    const area = document.getElementById('uploadArea');
-    const placeholder = document.getElementById('uploadPlaceholder');
-    img.src = previewUrl;
-    img.style.display = 'block';
-    placeholder.style.display = 'none';
-    area.classList.add('has-image');
-    document.getElementById('prevImgBox').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
-  } else {
-    if (editPhotoFile && editPhotoFile._previewUrl) URL.revokeObjectURL(editPhotoFile._previewUrl);
-    editPhotoFile = file;
-    editPhotoFile._previewUrl = previewUrl;
-    editPhotoBlob = null; // reset cache
-
-    const img = document.getElementById('editUploadPreviewImg');
-    const area = document.getElementById('editUploadArea');
-    const placeholder = document.getElementById('editUploadPlaceholder');
-    img.src = previewUrl;
-    img.style.display = 'block';
-    placeholder.style.display = 'none';
-    area.classList.add('has-image');
-    document.getElementById('editPrevImgBox').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
-  }
-
-  // Pre-compress in background so upload is instant when form is submitted
-  compressImageToBlob(file).then(blob => {
-    if (ctx === 'add') addPhotoBlob = blob;
-    else editPhotoBlob = blob;
-  }).catch(() => {}); // silent — uploadPhoto will compress on-demand if needed
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if (ctx === 'add') {
+      addPhotoFile = file;
+      const img = document.getElementById('uploadPreviewImg');
+      const area = document.getElementById('uploadArea');
+      const placeholder = document.getElementById('uploadPlaceholder');
+      img.src = e.target.result;
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+      area.classList.add('has-image');
+      // Update live preview
+      document.getElementById('prevImgBox').innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
+    } else {
+      editPhotoFile = file;
+      const img = document.getElementById('editUploadPreviewImg');
+      const area = document.getElementById('editUploadArea');
+      const placeholder = document.getElementById('editUploadPlaceholder');
+      img.src = e.target.result;
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+      area.classList.add('has-image');
+      document.getElementById('editPrevImgBox').innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
+    }
+  };
+  reader.readAsDataURL(file);
 }
 
 window.clearPhoto = function(ctx, event) {
   if (event) event.stopPropagation();
   if (ctx === 'add') {
-    if (addPhotoFile && addPhotoFile._previewUrl) URL.revokeObjectURL(addPhotoFile._previewUrl);
     addPhotoFile = null;
-    addPhotoBlob = null;
     document.getElementById('f_photo').value = '';
     document.getElementById('uploadPreviewImg').style.display = 'none';
     document.getElementById('uploadPlaceholder').style.display = 'block';
     document.getElementById('uploadArea').classList.remove('has-image');
     document.getElementById('prevImgBox').innerHTML = '🍬';
   } else {
-    if (editPhotoFile && editPhotoFile._previewUrl) URL.revokeObjectURL(editPhotoFile._previewUrl);
     editPhotoFile = null;
-    editPhotoBlob = null;
     editCurrentPhotoUrl = '';
     document.getElementById('e_photo').value = '';
     document.getElementById('editUploadPreviewImg').style.display = 'none';
@@ -880,33 +932,7 @@ window.clearPhoto = function(ctx, event) {
   }
 };
 
-// Compress image to a Blob (faster for Firebase Storage upload — avoids base64 overhead)
-function compressImageToBlob(file, maxW, maxH, quality) {
-  maxW = maxW||900; maxH = maxH||900; quality = quality||0.82;
-  return new Promise(function(resolve, reject) {
-    var img = new Image();
-    var objUrl = URL.createObjectURL(file);
-    img.onload = function() {
-      URL.revokeObjectURL(objUrl);
-      var w = img.width, h = img.height;
-      if (w > maxW || h > maxH) {
-        var ratio = Math.min(maxW/w, maxH/h);
-        w = Math.round(w * ratio); h = Math.round(h * ratio);
-      }
-      var canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      canvas.toBlob(function(blob) {
-        if (blob) resolve(blob);
-        else reject(new Error('Canvas toBlob failed'));
-      }, 'image/jpeg', quality);
-    };
-    img.onerror = function() { reject(new Error('Could not load image')); };
-    img.src = objUrl;
-  });
-}
-
-// Compress image to base64 (used only for Firestore fallback)
+// Compress image to base64
 function compressImageToBase64(file, maxW, maxH, quality) {
   maxW = maxW||900; maxH = maxH||900; quality = quality||0.82;
   return new Promise(function(resolve, reject) {
@@ -944,19 +970,14 @@ async function uploadPhoto(file, productName, ctx) {
     if (txt)  txt.textContent = msg;
   };
 
-  setProgress(10, 'Preparing image...');
+  setProgress(10, 'Compressing image...');
 
-  // Use pre-compressed blob if available (background compression already done), else compress now
-  let blob = ctx === 'add' ? addPhotoBlob : editPhotoBlob;
-  if (!blob) {
-    setProgress(20, 'Compressing image...');
-    try {
-      blob = await compressImageToBlob(file);
-    } catch(e) {
-      throw new Error('Image read failed: ' + e.message);
-    }
+  let base64DataUrl;
+  try {
+    base64DataUrl = await compressImageToBase64(file);
+  } catch(e) {
+    throw new Error('Image read failed: ' + e.message);
   }
-
   setProgress(35, 'Uploading to cloud...');
 
   // Try Firebase Storage upload
@@ -964,6 +985,8 @@ async function uploadPhoto(file, productName, ctx) {
     const sanitized = productName.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase();
     const storagePath = 'products/' + sanitized + '_' + Date.now() + '.jpg';
     const storageRef = ref(storage, storagePath);
+    const fetchRes = await fetch(base64DataUrl);
+    const blob = await fetchRes.blob();
     await new Promise((resolve, reject) => {
       const task = uploadBytesResumable(storageRef, blob, { contentType: 'image/jpeg' });
       task.on('state_changed',
@@ -986,19 +1009,10 @@ async function uploadPhoto(file, productName, ctx) {
     const banner = document.getElementById('storageBanner');
     if (banner) banner.style.display = 'block';
     // Fallback: store compressed base64 directly in Firestore
-    // Convert blob to base64
-    const base64DataUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      // Re-compress smaller for Firestore if blob is large
-      const fallbackBlob = blob.size > 800*1024 ? null : blob;
-      if (fallbackBlob) {
-        reader.readAsDataURL(fallbackBlob);
-      } else {
-        compressImageToBase64(file, 600, 600, 0.65).then(resolve).catch(reject);
-      }
-    });
+    const approxKB = Math.round(base64DataUrl.length * 0.75 / 1024);
+    if (approxKB > 800) {
+      base64DataUrl = await compressImageToBase64(file, 600, 600, 0.65);
+    }
     setProgress(100, 'Image saved (compressed)!');
     setTimeout(() => { const w = document.getElementById(progressWrapId); if(w) w.style.display='none'; }, 1500);
     return base64DataUrl;
@@ -1345,25 +1359,19 @@ window.closeDeleteModal = function() {
 window.confirmDelete = async function() {
   if (!deleteTargetId) return;
   try {
-    // Delete image from Storage only if it's a real Firebase Storage URL (not base64)
+    // Also delete the image from Storage
     const p = allProducts.find(x => x.id === deleteTargetId);
-    if (p && p.photoUrl && p.photoUrl.startsWith('https://')) {
+    if (p && p.photoUrl) {
       try {
-        // Use refFromURL for full download URLs; ref() only works with storage paths
-        const imgRef = refFromURL(storage, p.photoUrl);
+        const imgRef = ref(storage, p.photoUrl);
         await deleteObject(imgRef);
-      } catch(e) {
-        console.warn('Storage image delete skipped:', e.code || e.message);
-        // Non-fatal — continue to delete the Firestore doc
-      }
+      } catch(e) { /* ignore if already deleted */ }
     }
-    await deleteDoc(doc(db, 'products', deleteTargetId));
-    toast('🗑️ Product deleted', 'success');
+    await deleteDoc(doc(db,'products',deleteTargetId));
+    toast('🗑️ Product deleted','success');
     closeDeleteModal();
     await loadProducts();
-  } catch(e) {
-    toast('❌ Delete failed: ' + e.message, 'error');
-  }
+  } catch(e) { toast('❌ Delete failed: ' + e.message,'error'); }
 };
 
 // ── ORDERS ──
