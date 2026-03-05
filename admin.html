@@ -665,7 +665,7 @@ import {
   doc, orderBy, query, serverTimestamp, where
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
-  getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject
+  getStorage, ref, refFromURL, uploadBytesResumable, getDownloadURL, deleteObject
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import {
   getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged
@@ -1345,19 +1345,25 @@ window.closeDeleteModal = function() {
 window.confirmDelete = async function() {
   if (!deleteTargetId) return;
   try {
-    // Also delete the image from Storage
+    // Delete image from Storage only if it's a real Firebase Storage URL (not base64)
     const p = allProducts.find(x => x.id === deleteTargetId);
-    if (p && p.photoUrl) {
+    if (p && p.photoUrl && p.photoUrl.startsWith('https://')) {
       try {
-        const imgRef = ref(storage, p.photoUrl);
+        // Use refFromURL for full download URLs; ref() only works with storage paths
+        const imgRef = refFromURL(storage, p.photoUrl);
         await deleteObject(imgRef);
-      } catch(e) { /* ignore if already deleted */ }
+      } catch(e) {
+        console.warn('Storage image delete skipped:', e.code || e.message);
+        // Non-fatal — continue to delete the Firestore doc
+      }
     }
-    await deleteDoc(doc(db,'products',deleteTargetId));
-    toast('🗑️ Product deleted','success');
+    await deleteDoc(doc(db, 'products', deleteTargetId));
+    toast('🗑️ Product deleted', 'success');
     closeDeleteModal();
     await loadProducts();
-  } catch(e) { toast('❌ Delete failed: ' + e.message,'error'); }
+  } catch(e) {
+    toast('❌ Delete failed: ' + e.message, 'error');
+  }
 };
 
 // ── ORDERS ──
