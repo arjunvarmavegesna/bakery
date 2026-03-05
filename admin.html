@@ -353,7 +353,14 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
 
       <!-- DASHBOARD -->
       <div id="section-dashboard">
-        <!-- Cloudinary is used for photo storage -->
+        <!-- Firebase Storage Rules Banner (shown when storage fails) -->
+        <div id="storageBanner" style="display:none;background:#fff8e1;border:1.5px solid #FFD54F;border-radius:12px;padding:1rem 1.2rem;margin-bottom:1rem;font-size:0.83rem;color:#4E342E;line-height:1.7;">
+          <strong>&#128248; Enable Firebase Storage photo uploads:</strong><br>
+          Go to <a href="https://console.firebase.google.com/project/sree-ramu-sweets/storage" target="_blank" style="color:var(--brand);font-weight:700;">Firebase Console &#8250; Storage &#8250; Rules</a> and set:<br>
+          <code style="background:#f5f5f5;padding:2px 8px;border-radius:6px;font-size:0.78rem;">allow read, write: if request.auth != null;</code><br>
+          <small style="color:#888;">Until then, photos are compressed and stored as data in Firestore (still works, but larger doc size).</small>
+          <button onclick="document.getElementById('storageBanner').style.display='none'" style="float:right;margin-top:-1.5rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#aaa;">&#10005;</button>
+        </div>
         <div class="stats-row" id="statsRow">
           <div class="stat-card">
             <div class="stat-icon" style="background:#FFF0E0;">🍬</div>
@@ -678,7 +685,7 @@ import {
   doc, orderBy, query, serverTimestamp, where
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
-  getStorage, ref, refFromURL, deleteObject
+  getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import {
   getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged
@@ -711,8 +718,6 @@ let editSelectedColor = '#FFF0E0';
 let editSelectedBadge = '';
 let addPhotoFile = null;      // File object for new product
 let editPhotoFile = null;     // File object for edit
-let addPhotoBlob = null;      // Pre-compressed blob cache
-let editPhotoBlob = null;     // Pre-compressed blob cache
 let editCurrentPhotoUrl = ''; // existing photo URL when editing
 
 const COLORS = ['#FFF3CD','#E8F5E9','#FDE8E8','#FFF0E0','#F3E5F5','#E3F2FD','#FCE4EC','#E0F7FA','#FFF8E1','#F1F8E9'];
@@ -720,23 +725,9 @@ const COLORS = ['#FFF3CD','#E8F5E9','#FDE8E8','#FFF0E0','#F3E5F5','#E3F2FD','#FC
 // ── AUTH ──
 let accessDeniedEmail = null; // remember denied email so error survives signOut re-trigger
 
-// Safety fallback — if Firebase doesn't respond in 3s, show login screen anyway
-setTimeout(() => {
-  const loader = document.getElementById('authLoading');
-  if (loader && loader.style.display !== 'none') {
-    console.warn('Auth timeout — showing login screen');
-    showAuthGate();
-  }
-}, 3000);
-
 function hideAuthLoading() {
   const el = document.getElementById('authLoading');
-  if (el) {
-    el.style.display = 'none';
-    el.style.visibility = 'hidden';
-    el.style.opacity = '0';
-    el.style.pointerEvents = 'none';
-  }
+  if (el) el.style.display = 'none';
 }
 
 function showAuthGate() {
@@ -893,58 +884,45 @@ window.onDrop = function(event, ctx) {
 };
 
 function setPhotoFile(ctx, file) {
-  const previewUrl = URL.createObjectURL(file);
-
-  if (ctx === 'add') {
-    if (addPhotoFile && addPhotoFile._previewUrl) URL.revokeObjectURL(addPhotoFile._previewUrl);
-    addPhotoFile = file;
-    addPhotoFile._previewUrl = previewUrl;
-    addPhotoBlob = null;
-    const img = document.getElementById('uploadPreviewImg');
-    const area = document.getElementById('uploadArea');
-    const placeholder = document.getElementById('uploadPlaceholder');
-    img.src = previewUrl;
-    img.style.display = 'block';
-    placeholder.style.display = 'none';
-    area.classList.add('has-image');
-    document.getElementById('prevImgBox').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
-  } else {
-    if (editPhotoFile && editPhotoFile._previewUrl) URL.revokeObjectURL(editPhotoFile._previewUrl);
-    editPhotoFile = file;
-    editPhotoFile._previewUrl = previewUrl;
-    editPhotoBlob = null;
-    const img = document.getElementById('editUploadPreviewImg');
-    const area = document.getElementById('editUploadArea');
-    const placeholder = document.getElementById('editUploadPlaceholder');
-    img.src = previewUrl;
-    img.style.display = 'block';
-    placeholder.style.display = 'none';
-    area.classList.add('has-image');
-    document.getElementById('editPrevImgBox').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
-  }
-
-  // Pre-compress in background so upload is instant when form is submitted
-  compressImageToBlob(file).then(blob => {
-    if (ctx === 'add') addPhotoBlob = blob;
-    else editPhotoBlob = blob;
-  }).catch(() => {});
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if (ctx === 'add') {
+      addPhotoFile = file;
+      const img = document.getElementById('uploadPreviewImg');
+      const area = document.getElementById('uploadArea');
+      const placeholder = document.getElementById('uploadPlaceholder');
+      img.src = e.target.result;
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+      area.classList.add('has-image');
+      // Update live preview
+      document.getElementById('prevImgBox').innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
+    } else {
+      editPhotoFile = file;
+      const img = document.getElementById('editUploadPreviewImg');
+      const area = document.getElementById('editUploadArea');
+      const placeholder = document.getElementById('editUploadPlaceholder');
+      img.src = e.target.result;
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+      area.classList.add('has-image');
+      document.getElementById('editPrevImgBox').innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
+    }
+  };
+  reader.readAsDataURL(file);
 }
 
 window.clearPhoto = function(ctx, event) {
   if (event) event.stopPropagation();
   if (ctx === 'add') {
-    if (addPhotoFile && addPhotoFile._previewUrl) URL.revokeObjectURL(addPhotoFile._previewUrl);
     addPhotoFile = null;
-    addPhotoBlob = null;
     document.getElementById('f_photo').value = '';
     document.getElementById('uploadPreviewImg').style.display = 'none';
     document.getElementById('uploadPlaceholder').style.display = 'block';
     document.getElementById('uploadArea').classList.remove('has-image');
     document.getElementById('prevImgBox').innerHTML = '🍬';
   } else {
-    if (editPhotoFile && editPhotoFile._previewUrl) URL.revokeObjectURL(editPhotoFile._previewUrl);
     editPhotoFile = null;
-    editPhotoBlob = null;
     editCurrentPhotoUrl = '';
     document.getElementById('e_photo').value = '';
     document.getElementById('editUploadPreviewImg').style.display = 'none';
@@ -953,32 +931,6 @@ window.clearPhoto = function(ctx, event) {
     document.getElementById('editPrevImgBox').innerHTML = '🍬';
   }
 };
-
-// Compress image to Blob (used for Cloudinary upload)
-function compressImageToBlob(file, maxW, maxH, quality) {
-  maxW = maxW||900; maxH = maxH||900; quality = quality||0.82;
-  return new Promise(function(resolve, reject) {
-    var img = new Image();
-    var objUrl = URL.createObjectURL(file);
-    img.onload = function() {
-      URL.revokeObjectURL(objUrl);
-      var w = img.width, h = img.height;
-      if (w > maxW || h > maxH) {
-        var ratio = Math.min(maxW/w, maxH/h);
-        w = Math.round(w * ratio); h = Math.round(h * ratio);
-      }
-      var canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      canvas.toBlob(function(blob) {
-        if (blob) resolve(blob);
-        else reject(new Error('Canvas toBlob failed'));
-      }, 'image/jpeg', quality);
-    };
-    img.onerror = function() { reject(new Error('Could not load image')); };
-    img.src = objUrl;
-  });
-}
 
 // Compress image to base64
 function compressImageToBase64(file, maxW, maxH, quality) {
@@ -1003,11 +955,7 @@ function compressImageToBase64(file, maxW, maxH, quality) {
   });
 }
 
-// ── CLOUDINARY CONFIG ──
-const CLOUDINARY_CLOUD = 'dbbxybt5j';
-const CLOUDINARY_PRESET = 'sree-ramu-sweets';
-
-// Upload photo to Cloudinary (free, no Firebase Storage needed)
+// Upload photo: tries Firebase Storage, falls back to base64 in Firestore
 async function uploadPhoto(file, productName, ctx) {
   const progressBarId  = ctx==='add' ? 'uploadProgressFill'  : 'editUploadProgressFill';
   const progressTextId = ctx==='add' ? 'uploadProgressText'  : 'editUploadProgressText';
@@ -1022,55 +970,53 @@ async function uploadPhoto(file, productName, ctx) {
     if (txt)  txt.textContent = msg;
   };
 
-  const hideProgress = () => {
-    setTimeout(() => {
-      const w = document.getElementById(progressWrapId);
-      if (w) w.style.display = 'none';
-    }, 1500);
-  };
+  setProgress(10, 'Compressing image...');
 
-  setProgress(10, 'Preparing image...');
-
-  // Use pre-compressed blob if ready, otherwise compress now
-  let blob = ctx === 'add' ? addPhotoBlob : editPhotoBlob;
-  if (!blob) {
-    setProgress(20, 'Compressing image...');
-    try { blob = await compressImageToBlob(file); }
-    catch(e) { throw new Error('Image read failed: ' + e.message); }
+  let base64DataUrl;
+  try {
+    base64DataUrl = await compressImageToBase64(file);
+  } catch(e) {
+    throw new Error('Image read failed: ' + e.message);
   }
+  setProgress(35, 'Uploading to cloud...');
 
-  setProgress(35, 'Uploading...');
+  // Try Firebase Storage upload
+  try {
+    const sanitized = productName.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase();
+    const storagePath = 'products/' + sanitized + '_' + Date.now() + '.jpg';
+    const storageRef = ref(storage, storagePath);
+    const fetchRes = await fetch(base64DataUrl);
+    const blob = await fetchRes.blob();
+    await new Promise((resolve, reject) => {
+      const task = uploadBytesResumable(storageRef, blob, { contentType: 'image/jpeg' });
+      task.on('state_changed',
+        (snap) => {
+          const pct = 35 + Math.round(snap.bytesTransferred / snap.totalBytes * 55);
+          setProgress(pct, 'Uploading... ' + Math.round(snap.bytesTransferred/snap.totalBytes*100) + '%');
+        },
+        reject,
+        () => resolve()
+      );
+    });
+    const downloadUrl = await getDownloadURL(storageRef);
+    setProgress(100, 'Upload complete!');
+    setTimeout(() => { const w = document.getElementById(progressWrapId); if(w) w.style.display='none'; }, 1500);
+    return downloadUrl;
 
-  return new Promise((resolve, reject) => {
-    const formData = new FormData();
-    formData.append('file', blob, 'photo.jpg');
-    formData.append('upload_preset', CLOUDINARY_PRESET);
-    formData.append('folder', 'sree-ramu-sweets');
-
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`);
-
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        const pct = 35 + Math.round(e.loaded / e.total * 60);
-        setProgress(pct, 'Uploading... ' + Math.round(e.loaded / e.total * 100) + '%');
-      }
-    };
-
-    xhr.onload = () => {
-      if (xhr.status === 200) {
-        const res = JSON.parse(xhr.responseText);
-        setProgress(100, 'Upload complete! ✅');
-        hideProgress();
-        resolve(res.secure_url);
-      } else {
-        reject(new Error('Upload failed: ' + xhr.statusText));
-      }
-    };
-
-    xhr.onerror = () => reject(new Error('Network error during upload'));
-    xhr.send(formData);
-  });
+  } catch(storageErr) {
+    console.warn('Firebase Storage upload failed, using base64 fallback. Error:', storageErr.message || storageErr.code);
+    toast('Photo saved (compressed). See the Storage setup banner in Dashboard.', 'error');
+    const banner = document.getElementById('storageBanner');
+    if (banner) banner.style.display = 'block';
+    // Fallback: store compressed base64 directly in Firestore
+    const approxKB = Math.round(base64DataUrl.length * 0.75 / 1024);
+    if (approxKB > 800) {
+      base64DataUrl = await compressImageToBase64(file, 600, 600, 0.65);
+    }
+    setProgress(100, 'Image saved (compressed)!');
+    setTimeout(() => { const w = document.getElementById(progressWrapId); if(w) w.style.display='none'; }, 1500);
+    return base64DataUrl;
+  }
 }
 
 // ── LIVE PREVIEW ──
