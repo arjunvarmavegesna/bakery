@@ -638,6 +638,182 @@
   .wishlist-empty div:first-child { font-size: 3.5rem; margin-bottom: 0.8rem; }
   .wishlist-empty p { font-size: 0.85rem; line-height: 1.6; }
 
+  /* ── REVIEWS PAGE ── */
+  .reviews-page {
+    position: fixed; inset: 0;
+    background: var(--cream); z-index: 225;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    overflow-y: auto; padding-bottom: 90px;
+  }
+  .reviews-page.open { transform: translateX(0); }
+  .reviews-header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--deep-red);
+    display: flex; align-items: center; gap: 0.8rem;
+    padding: 0.9rem 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .reviews-header button {
+    background: rgba(255,255,255,0.2); border: none;
+    width: 36px; height: 36px; border-radius: 50%;
+    color: white; font-size: 1.1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .reviews-header h2 {
+    font-family: 'Playfair Display', serif; color: white;
+    font-size: 1.05rem; flex: 1; line-height: 1.2;
+  }
+  .reviews-header small { color: rgba(255,255,255,0.75); font-size: 0.65rem; display: block; }
+
+  /* Rating Summary */
+  .rating-summary {
+    background: white; margin: 1rem; border-radius: 18px;
+    padding: 1.2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  }
+  .rating-big {
+    display: flex; align-items: center; gap: 1.2rem;
+    margin-bottom: 1rem; padding-bottom: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .rating-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5rem; font-weight: 700; color: var(--deep-red);
+    line-height: 1;
+  }
+  .rating-stars-big { font-size: 1.1rem; color: #FFA000; margin-bottom: 0.2rem; }
+  .rating-total { font-size: 0.7rem; color: #aaa; }
+  .rating-bars { flex: 1; }
+  .rating-bar-row {
+    display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;
+  }
+  .rbar-label { font-size: 0.65rem; color: var(--text-mid); width: 14px; text-align: right; }
+  .rbar-track {
+    flex: 1; height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden;
+  }
+  .rbar-fill { height: 100%; background: #FFA000; border-radius: 3px; transition: width 0.6s ease; }
+  .rbar-count { font-size: 0.6rem; color: #aaa; width: 20px; }
+
+  /* Summary chips */
+  .rating-chips { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .rating-chip {
+    background: var(--cream); border: 1px solid rgba(232,101,10,0.2);
+    border-radius: 20px; padding: 0.3rem 0.8rem;
+    font-size: 0.7rem; color: var(--text-mid); font-weight: 500;
+  }
+
+  /* Review cards */
+  .reviews-list { padding: 0 1rem 1rem; }
+  .review-item {
+    background: white; border-radius: 16px; padding: 1rem;
+    margin-bottom: 0.8rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .review-item-header {
+    display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.6rem;
+  }
+  .review-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; font-weight: 700; color: white; flex-shrink: 0;
+  }
+  .review-meta { flex: 1; }
+  .review-name { font-size: 0.85rem; font-weight: 700; color: var(--text-dark); }
+  .review-date { font-size: 0.62rem; color: #bbb; margin-top: 1px; }
+  .review-stars { font-size: 0.8rem; color: #FFA000; }
+  .verified-badge {
+    font-size: 0.6rem; color: #2e7d32; background: #e8f5e9;
+    padding: 2px 7px; border-radius: 10px; font-weight: 600; white-space: nowrap;
+  }
+  .review-body { font-size: 0.8rem; color: var(--text-mid); line-height: 1.6; margin-bottom: 0.5rem; }
+  .review-product-tag {
+    font-size: 0.65rem; color: var(--deep-red); font-weight: 600;
+    background: rgba(232,101,10,0.08); padding: 2px 8px; border-radius: 10px;
+    display: inline-block;
+  }
+  .review-helpful {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 0.4rem; margin-top: 0.6rem; padding-top: 0.6rem;
+    border-top: 1px solid #f5f5f5;
+  }
+  .helpful-btn {
+    background: none; border: 1px solid #e0e0e0; border-radius: 20px;
+    padding: 0.25rem 0.7rem; font-size: 0.65rem; cursor: pointer;
+    color: var(--text-mid); font-family: 'Poppins', sans-serif;
+    transition: background 0.15s;
+  }
+  .helpful-btn:hover, .helpful-btn.liked { background: var(--cream); border-color: var(--deep-red); color: var(--deep-red); }
+  .helpful-label { font-size: 0.62rem; color: #bbb; }
+
+  /* Write review form */
+  .write-review-btn {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; padding: 0.9rem 1rem;
+    border-top: 1px solid #eee;
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.07);
+    z-index: 10;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  }
+  .write-review-btn.open { transform: translateX(0); }
+  .write-review-btn button {
+    width: 100%; background: var(--deep-red); color: white;
+    border: none; border-radius: 14px; padding: 0.85rem;
+    font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  /* Write Review Modal */
+  .review-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 300; display: none; align-items: flex-end;
+  }
+  .review-modal-overlay.open { display: flex; }
+  .review-modal {
+    background: white; width: 100%; border-radius: 20px 20px 0 0;
+    padding: 1.4rem 1.2rem 2rem; max-height: 85vh; overflow-y: auto;
+  }
+  .review-modal-title {
+    font-family: 'Playfair Display', serif; font-size: 1.2rem;
+    color: var(--brown); margin-bottom: 1.2rem; text-align: center;
+  }
+  .star-picker {
+    display: flex; justify-content: center; gap: 0.5rem;
+    margin-bottom: 1.2rem;
+  }
+  .star-pick {
+    font-size: 2rem; cursor: pointer; transition: transform 0.15s;
+    opacity: 0.3; filter: grayscale(1);
+  }
+  .star-pick.active { opacity: 1; filter: none; transform: scale(1.15); }
+  .star-label {
+    text-align: center; font-size: 0.78rem; font-weight: 600;
+    color: var(--deep-red); margin-bottom: 1rem; min-height: 20px;
+  }
+  .review-form-group { margin-bottom: 1rem; }
+  .review-form-label { font-size: 0.72rem; font-weight: 600; color: var(--text-mid); display: block; margin-bottom: 0.35rem; }
+  .review-form-input {
+    width: 100%; padding: 0.7rem 0.9rem;
+    border: 1.5px solid #e0e0e0; border-radius: 10px;
+    font-family: 'Poppins', sans-serif; font-size: 0.85rem;
+    color: var(--text-dark); outline: none; background: #fafafa;
+    transition: border-color 0.2s;
+  }
+  .review-form-input:focus { border-color: var(--deep-red); background: white; }
+  textarea.review-form-input { resize: none; height: 90px; }
+  .review-submit-btn {
+    width: 100%; background: var(--deep-red); color: white;
+    border: none; border-radius: 14px; padding: 0.9rem;
+    font-size: 0.95rem; font-weight: 700; cursor: pointer;
+    font-family: 'Poppins', sans-serif; margin-top: 0.5rem;
+  }
+  .review-cancel-btn {
+    width: 100%; background: transparent; color: var(--text-mid);
+    border: 1.5px solid #e0e0e0; border-radius: 14px; padding: 0.75rem;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    font-family: 'Poppins', sans-serif; margin-top: 0.5rem;
+  }
+
   /* ── TOAST (pointer-events fix) ── */
   .toast {
     position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
@@ -1411,11 +1587,63 @@
         <button class="pp-qty-btn" onclick="changePPQty(1)">+</button>
       </div>
     </div>
+
+    <div class="pp-section-title" style="margin-top:1.4rem">Ratings & Reviews</div>
+    <div id="ppReviewsSummary" style="background:white;border-radius:14px;padding:1rem;margin-bottom:0.8rem;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700;color:var(--deep-red);line-height:1;" id="ppAvgRating">4.9</div>
+          <div style="font-size:1rem;color:#FFA000;" id="ppStarsDisplay">★★★★★</div>
+          <div style="font-size:0.65rem;color:#aaa;" id="ppReviewCount">128 reviews</div>
+        </div>
+        <div style="flex:1;" id="ppMiniRatingBars"></div>
+      </div>
+    </div>
+    <div id="ppTopReviews"></div>
+    <button onclick="openReviewsPage()" style="width:100%;background:var(--cream);border:1.5px solid rgba(232,101,10,0.3);border-radius:12px;padding:0.7rem;font-size:0.82rem;font-weight:600;color:var(--deep-red);cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:0.5rem;">See All Reviews ›</button>
   </div>
 </div>
 <div class="pp-actions" id="ppActions">
   <button class="pp-add-cart" onclick="ppAddToCart()">🛒 Add to Cart</button>
   <button class="pp-buy-now" onclick="ppBuyNow()">⚡ Buy Now</button>
+</div>
+
+<!-- REVIEWS PAGE -->
+<div class="reviews-page" id="reviewsPage">
+  <div class="reviews-header">
+    <button onclick="closeReviewsPage()">←</button>
+    <h2 id="reviewsPageTitle">Reviews<small id="reviewsPageSub"></small></h2>
+  </div>
+  <div class="rating-summary" id="reviewsRatingSummary"></div>
+  <div class="reviews-list" id="reviewsListFull"></div>
+</div>
+<div class="write-review-btn" id="writeReviewBtn">
+  <button onclick="openWriteReview()">✍️ Write a Review</button>
+</div>
+
+<!-- WRITE REVIEW MODAL -->
+<div class="review-modal-overlay" id="reviewModalOverlay">
+  <div class="review-modal">
+    <div class="review-modal-title">✍️ Write a Review</div>
+    <div class="star-picker" id="starPicker">
+      <span class="star-pick" data-val="1" onclick="setRating(1)">★</span>
+      <span class="star-pick" data-val="2" onclick="setRating(2)">★</span>
+      <span class="star-pick" data-val="3" onclick="setRating(3)">★</span>
+      <span class="star-pick" data-val="4" onclick="setRating(4)">★</span>
+      <span class="star-pick" data-val="5" onclick="setRating(5)">★</span>
+    </div>
+    <div class="star-label" id="starLabel">Tap a star to rate</div>
+    <div class="review-form-group">
+      <label class="review-form-label">Your Name *</label>
+      <input class="review-form-input" id="reviewName" type="text" placeholder="e.g. Ravi Kumar" />
+    </div>
+    <div class="review-form-group">
+      <label class="review-form-label">Your Review *</label>
+      <textarea class="review-form-input" id="reviewText" placeholder="Tell us about your experience…"></textarea>
+    </div>
+    <button class="review-submit-btn" onclick="submitReview()">Submit Review</button>
+    <button class="review-cancel-btn" onclick="closeWriteReview()">Cancel</button>
+  </div>
 </div>
 
 <!-- TOAST -->
@@ -1647,6 +1875,7 @@ function closeAll() {
   closeProductPage();
   closeCategoriesPage();
   closeWishlistPage();
+  closeReviewsPage();
 }
 
 function closeCart() { closeAll(); }
@@ -1744,6 +1973,7 @@ function openProductPage(id) {
   document.getElementById('productPage').classList.add('open');
   document.getElementById('ppActions').classList.add('open');
   document.body.style.overflow = 'hidden';
+  renderProductReviews(id);
 }
 
 function closeProductPage() {
@@ -1775,6 +2005,227 @@ function ppBuyNow() {
   updateCartBadge();
   closeProductPage();
   setTimeout(() => openShipping(), 300);
+}
+
+// ── REVIEWS & RATINGS ──
+const reviewsData = {
+  1: { avg: 4.9, total: 128, dist: [2,3,8,24,91], reviews: [
+    { name:'Padma Lakshmi', loc:'Vijayawada', rating:5, text:'Best Mysore Pak in Vijayawada! Just like my grandmother used to make. We order every festival season.', date:'12 Feb 2025', color:'#E8650A', verified:true },
+    { name:'Suresh Babu', loc:'Guntur', rating:5, text:'Pure ghee taste is unmatched. Perfectly sweet, not too much, not too less. Will order again!', date:'08 Jan 2025', color:'#B84D00', verified:true },
+    { name:'Ananya P', loc:'Hyderabad', rating:4, text:'Really good quality. The texture was soft and melted right in the mouth. Packaging was neat too.', date:'22 Dec 2024', color:'#FF8C2A', verified:false },
+    { name:'Venkat Rao', loc:'Vijayawada', rating:5, text:'My whole family loved it. Have been buying from Sree Ramu Sweets for 10+ years now!', date:'05 Dec 2024', color:'#5C3A00', verified:true },
+  ]},
+  2: { avg: 4.8, total: 95, dist: [1,2,6,20,66], reviews: [
+    { name:'Ravi Shankar', loc:'Hyderabad', rating:5, text:'Ordered for Diwali gifting. Everyone at office was impressed. Premium quality cashews, perfect sweetness!', date:'15 Nov 2024', color:'#E8650A', verified:true },
+    { name:'Meera K', loc:'Vijayawada', rating:5, text:'Diamond cuts were so perfect and uniform. Presentation was also beautiful. Perfect for gifting.', date:'10 Nov 2024', color:'#B84D00', verified:true },
+    { name:'Harish M', loc:'Amaravati', rating:4, text:'Good Kaju Katli. Taste is authentic. Would have been 5 stars if the box was slightly bigger.', date:'01 Oct 2024', color:'#FF8C2A', verified:false },
+  ]},
+  3: { avg: 4.7, total: 74, dist: [1,3,7,18,45], reviews: [
+    { name:'Sravanthi G', loc:'Guntur', rating:5, text:'The Motichoor laddu was absolutely divine! Small, round, perfectly shaped and so tasty!', date:'18 Jan 2025', color:'#E8650A', verified:true },
+    { name:'Lakshmi D', loc:'Vijayawada', rating:4, text:'Both varieties are good. Boondi laddu is crispy and flavourful. Will definitely order again.', date:'09 Jan 2025', color:'#5C3A00', verified:true },
+  ]},
+  4: { avg: 4.6, total: 112, dist: [2,5,10,30,65], reviews: [
+    { name:'Ramesh T', loc:'Vijayawada', rating:5, text:'Soft like a cloud! The syrup soaked perfectly. Best gulab jamun I ever had from a sweet shop.', date:'20 Feb 2025', color:'#B84D00', verified:true },
+    { name:'Priya V', loc:'Hyderabad', rating:4, text:'Very good taste and size. Packaging kept them safe. Arrived fresh and perfect.', date:'14 Feb 2025', color:'#E8650A', verified:false },
+  ]},
+  5: { avg: 4.5, total: 58, dist: [1,3,8,22,24], reviews: [
+    { name:'Arun K', loc:'Vijayawada', rating:5, text:'Super crispy chakli! The rice flour taste is authentic. Great tea-time snack.', date:'25 Jan 2025', color:'#FF8C2A', verified:true },
+    { name:'Nirmala S', loc:'Guntur', rating:4, text:'Nice taste and crunch. A bit oily but that is how traditional chakli should be!', date:'11 Jan 2025', color:'#E8650A', verified:false },
+  ]},
+  6: { avg: 4.7, total: 43, dist: [0,2,5,15,21], reviews: [
+    { name:'Krishna R', loc:'Vijayawada', rating:5, text:'Authentic murukku taste. Crispy, flavourful, addictive! Finished the whole pack in one evening.', date:'02 Feb 2025', color:'#B84D00', verified:true },
+  ]},
+  7: { avg: 4.8, total: 67, dist: [1,1,4,18,43], reviews: [
+    { name:'Usha M', loc:'Vijayawada', rating:5, text:'Peda with saffron is so aromatic and delicious. Melt-in-mouth texture. Worth every rupee!', date:'28 Jan 2025', color:'#E8650A', verified:true },
+    { name:'Chandrika B', loc:'Eluru', rating:5, text:'Beautiful colour and amazing taste. Saffron flavour is subtle and perfect. Loved it!', date:'19 Jan 2025', color:'#FF8C2A', verified:true },
+  ]},
+  8: { avg: 4.9, total: 203, dist: [2,4,10,35,152], reviews: [
+    { name:'Vijay Kumar', loc:'Hyderabad', rating:5, text:'Gifted this box to my boss. He was very impressed! Great variety inside, premium packaging.', date:'08 Feb 2025', color:'#E8650A', verified:true },
+    { name:'Sunita R', loc:'Vijayawada', rating:5, text:'The assortment is perfect. Every piece was fresh and delicious. Already planning to order for Ugadi!', date:'01 Feb 2025', color:'#B84D00', verified:true },
+    { name:'Mohan P', loc:'Tenali', rating:4, text:'Good value for money. All items tasted great. Box looks premium. Minor complaint: one piece was slightly dry.', date:'25 Jan 2025', color:'#FF8C2A', verified:true },
+  ]},
+};
+
+function starsHtml(rating, size = '0.85rem') {
+  return `<span style="font-size:${size};color:#FFA000;">${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}</span>`;
+}
+
+function renderProductReviews(productId) {
+  const data = reviewsData[productId] || { avg: 4.8, total: 0, dist: [0,0,0,0,0], reviews: [] };
+
+  // Mini bars in product page
+  const barsHtml = [5,4,3,2,1].map(star => {
+    const count = data.dist[star - 1];
+    const pct = data.total > 0 ? Math.round(count / data.total * 100) : 0;
+    return `<div class="rating-bar-row" style="margin-bottom:0.25rem;">
+      <span class="rbar-label">${star}</span>
+      <div class="rbar-track"><div class="rbar-fill" style="width:${pct}%"></div></div>
+      <span class="rbar-count">${count}</span>
+    </div>`;
+  }).join('');
+
+  const miniRatingBars = document.getElementById('ppMiniRatingBars');
+  if (miniRatingBars) miniRatingBars.innerHTML = barsHtml;
+
+  const avgEl = document.getElementById('ppAvgRating');
+  if (avgEl) avgEl.textContent = data.avg.toFixed(1);
+  const starsEl = document.getElementById('ppStarsDisplay');
+  if (starsEl) starsEl.innerHTML = starsHtml(Math.round(data.avg), '1rem');
+  const countEl = document.getElementById('ppReviewCount');
+  if (countEl) countEl.textContent = data.total + ' reviews';
+
+  // Top 2 reviews preview
+  const topReviews = document.getElementById('ppTopReviews');
+  if (topReviews) {
+    topReviews.innerHTML = data.reviews.slice(0, 2).map(r => `
+      <div class="review-item" style="margin-bottom:0.6rem;">
+        <div class="review-item-header">
+          <div class="review-avatar" style="background:${r.color};font-size:0.8rem;">${r.name[0]}</div>
+          <div class="review-meta">
+            <div class="review-name">${r.name}</div>
+            <div>${starsHtml(r.rating)} ${r.verified ? '<span class="verified-badge">✓ Verified</span>' : ''}</div>
+          </div>
+        </div>
+        <div class="review-body">"${r.text}"</div>
+      </div>
+    `).join('');
+  }
+}
+
+let currentReviewProductId = null;
+let selectedRating = 0;
+const userReviews = {};
+
+function openReviewsPage() {
+  const id = currentProductId;
+  currentReviewProductId = id;
+  const p = products.find(x => x.id === id);
+  const data = reviewsData[id] || { avg: 4.8, total: 0, dist: [0,0,0,0,0], reviews: [] };
+
+  document.getElementById('reviewsPageTitle').innerHTML = `${p ? p.name : 'Reviews'} <small id="reviewsPageSub">${data.avg.toFixed(1)}★ · ${data.total} reviews</small>`;
+
+  // Full rating summary
+  const barsHtml = [5,4,3,2,1].map(star => {
+    const count = data.dist[star - 1];
+    const pct = data.total > 0 ? Math.round(count / data.total * 100) : 0;
+    return `<div class="rating-bar-row">
+      <span class="rbar-label">${star}</span>
+      <div class="rbar-track"><div class="rbar-fill" style="width:${pct}%"></div></div>
+      <span class="rbar-count">${count}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('reviewsRatingSummary').innerHTML = `
+    <div class="rating-big">
+      <div>
+        <div class="rating-num">${data.avg.toFixed(1)}</div>
+        <div class="rating-stars-big">${starsHtml(Math.round(data.avg), '1.1rem')}</div>
+        <div class="rating-total">${data.total} ratings</div>
+      </div>
+      <div class="rating-bars" style="flex:1;">${barsHtml}</div>
+    </div>
+    <div class="rating-chips">
+      <div class="rating-chip">✅ Pure Ingredients</div>
+      <div class="rating-chip">😋 Great Taste</div>
+      <div class="rating-chip">📦 Good Packaging</div>
+      <div class="rating-chip">🚚 Fast Delivery</div>
+    </div>
+  `;
+
+  // All reviews including user submitted
+  const allReviews = [...(userReviews[id] || []), ...(data.reviews || [])];
+  document.getElementById('reviewsListFull').innerHTML = allReviews.length === 0
+    ? `<div style="text-align:center;padding:3rem 1rem;color:#aaa;"><div style="font-size:3rem;margin-bottom:0.5rem;">💬</div><p>No reviews yet.<br><small>Be the first to review!</small></p></div>`
+    : allReviews.map((r, i) => `
+      <div class="review-item">
+        <div class="review-item-header">
+          <div class="review-avatar" style="background:${r.color || '#E8650A'}">${r.name[0].toUpperCase()}</div>
+          <div class="review-meta">
+            <div class="review-name">${r.name} <span style="font-size:0.62rem;color:#aaa;font-weight:400">· ${r.loc || 'India'}</span></div>
+            <div class="review-date">${r.date || 'Recently'}</div>
+          </div>
+          ${r.verified ? '<span class="verified-badge">✓ Verified</span>' : ''}
+        </div>
+        <div class="review-stars">${starsHtml(r.rating)}</div>
+        <div class="review-body">"${r.text}"</div>
+        <div class="review-helpful">
+          <span class="helpful-label">Helpful?</span>
+          <button class="helpful-btn" id="helpful-${i}" onclick="markHelpful(${i},'helpful-${i}')">👍 Yes</button>
+          <button class="helpful-btn" onclick="this.classList.toggle('liked')">👎 No</button>
+        </div>
+      </div>
+    `).join('');
+
+  document.getElementById('reviewsPage').classList.add('open');
+  document.getElementById('writeReviewBtn').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReviewsPage() {
+  document.getElementById('reviewsPage').classList.remove('open');
+  document.getElementById('writeReviewBtn').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function markHelpful(i, btnId) {
+  const btn = document.getElementById(btnId);
+  btn.classList.toggle('liked');
+}
+
+// Write Review
+function openWriteReview() {
+  selectedRating = 0;
+  document.getElementById('reviewName').value = '';
+  document.getElementById('reviewText').value = '';
+  document.getElementById('starLabel').textContent = 'Tap a star to rate';
+  document.querySelectorAll('.star-pick').forEach(s => s.classList.remove('active'));
+  document.getElementById('reviewModalOverlay').classList.add('open');
+}
+
+function closeWriteReview() {
+  document.getElementById('reviewModalOverlay').classList.remove('open');
+}
+
+function setRating(val) {
+  selectedRating = val;
+  const labels = ['', 'Poor 😞', 'Fair 😐', 'Good 🙂', 'Very Good 😊', 'Excellent 🤩'];
+  document.getElementById('starLabel').textContent = labels[val];
+  document.querySelectorAll('.star-pick').forEach(s => {
+    s.classList.toggle('active', parseInt(s.dataset.val) <= val);
+  });
+}
+
+function submitReview() {
+  const name = document.getElementById('reviewName').value.trim();
+  const text = document.getElementById('reviewText').value.trim();
+  if (!selectedRating) { showToast('⭐ Please select a star rating!'); return; }
+  if (name.length < 2) { showToast('📝 Please enter your name!'); return; }
+  if (text.length < 10) { showToast('📝 Please write at least a short review!'); return; }
+
+  const id = currentReviewProductId;
+  if (!userReviews[id]) userReviews[id] = [];
+  const colors = ['#E8650A','#B84D00','#FF8C2A','#5C3A00','#CC5500'];
+  userReviews[id].unshift({
+    name, text, rating: selectedRating,
+    loc: 'India', date: 'Just now',
+    color: colors[Math.floor(Math.random() * colors.length)],
+    verified: false
+  });
+
+  // update avg in reviewsData
+  if (reviewsData[id]) {
+    reviewsData[id].total += 1;
+    reviewsData[id].dist[selectedRating - 1] += 1;
+    const allRatings = reviewsData[id].reviews.map(r => r.rating).concat(userReviews[id].map(r => r.rating));
+    reviewsData[id].avg = +(allRatings.reduce((a,b) => a+b, 0) / allRatings.length).toFixed(1);
+  }
+
+  closeWriteReview();
+  showToast('🎉 Thank you for your review!');
+  setTimeout(() => {
+    openReviewsPage();
+    renderProductReviews(id);
+  }, 400);
 }
 
 // ── SHIPPING FLOW ──
