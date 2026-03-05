@@ -6,6 +6,7 @@
 <title>Sree Ramu Sweets</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
+
   :root {
     --saffron: #F4A223;
     --deep-red: #9B1C1C;
@@ -20,6 +21,22 @@
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ── MOBILE TAP FIX ── */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button, [role="button"],
+  .cat-pill, .nav-item, .add-btn, .qty-btn,
+  .checkout-btn, .ship-btn, .ship-btn-back,
+  .google-btn, .signout-btn, .promo-btn,
+  .btn-primary, .btn-outline, .account-menu-item,
+  .product-fav, .view-all, .drawer-handle {
+    touch-action: manipulation;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+  }
 
   html { scroll-behavior: smooth; }
 
@@ -350,6 +367,7 @@
     cursor: pointer; margin-top: 1rem;
     font-family: 'Poppins', sans-serif;
     transition: background 0.2s;
+    display: block;
   }
   .checkout-btn:hover { background: var(--brown); }
   .empty-cart { text-align: center; padding: 2rem; color: var(--text-mid); }
@@ -391,6 +409,7 @@
     font-size: 0.8rem; font-weight: 500; z-index: 300;
     opacity: 0; transition: opacity 0.3s;
     white-space: nowrap;
+    pointer-events: none;
   }
   .toast.show { opacity: 1; }
 
@@ -414,8 +433,241 @@
   .hero p { animation-delay: 0.3s; }
   .hero-btns { animation-delay: 0.4s; }
   .hero-stats { animation-delay: 0.5s; }
+
+  /* ── ORDERS DRAWER ── */
+  .orders-drawer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; z-index: 210;
+    border-radius: 20px 20px 0 0;
+    padding: 1.2rem;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    max-height: 80vh; overflow-y: auto;
+  }
+  .orders-drawer.open { transform: translateY(0); }
+  .order-card {
+    background: var(--cream);
+    border-radius: 14px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.8rem;
+    border-left: 4px solid var(--deep-red);
+  }
+  .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+  .order-id { font-size: 0.7rem; color: #999; }
+  .order-status {
+    font-size: 0.65rem; font-weight: 700; padding: 2px 8px;
+    border-radius: 10px; background: #e8f5e9; color: #2e7d32;
+  }
+  .order-items { font-size: 0.8rem; color: var(--text-mid); margin-bottom: 0.4rem; line-height: 1.6; }
+  .order-footer { display: flex; justify-content: space-between; align-items: center; }
+  .order-total { font-size: 0.95rem; font-weight: 700; color: var(--deep-red); }
+  .order-date { font-size: 0.65rem; color: #aaa; }
+  .orders-empty { text-align: center; padding: 2.5rem 1rem; color: var(--text-mid); }
+  .orders-empty div { font-size: 3rem; margin-bottom: 0.5rem; }
+  .orders-loading { text-align: center; padding: 2rem; color: #aaa; font-size: 0.85rem; }
+
+  /* ── ACCOUNT DRAWER ── */
+  .account-drawer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; z-index: 215;
+    border-radius: 20px 20px 0 0;
+    padding: 1.2rem;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .account-drawer.open { transform: translateY(0); }
+
+  /* Login screen */
+  .login-hero { text-align: center; padding: 1.5rem 1rem 1rem; }
+  .login-logo {
+    width: 72px; height: 72px; border-radius: 20px;
+    background: linear-gradient(135deg,#9B1C1C,#C04B00);
+    margin: 0 auto 1rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; box-shadow: 0 6px 20px rgba(155,28,28,0.3);
+  }
+  .login-title { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--brown); margin-bottom:0.3rem; }
+  .login-sub { font-size:0.78rem; color:var(--text-mid); line-height:1.5; margin-bottom:1.5rem; }
+
+  .google-btn {
+    width: 100%; background: white; color: #444;
+    border: 1.5px solid #e0e0e0; border-radius: 14px;
+    padding: 0.85rem 1rem; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; font-family:'Poppins',sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 0.7rem;
+    transition: box-shadow 0.2s, border-color 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .google-btn:hover { border-color: #4285F4; box-shadow: 0 4px 16px rgba(66,133,244,0.15); }
+  .google-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
+
+  .login-benefits {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;
+    margin-top: 1.4rem;
+  }
+  .benefit-item {
+    background: var(--cream); border-radius: 12px;
+    padding: 0.75rem 0.8rem; text-align: center;
+    border: 1px solid rgba(155,28,28,0.08);
+  }
+  .benefit-icon { font-size: 1.4rem; margin-bottom: 0.3rem; }
+  .benefit-text { font-size: 0.68rem; color: var(--text-mid); line-height: 1.4; font-weight: 500; }
+
+  /* Profile screen */
+  .profile-banner {
+    background: linear-gradient(135deg,#6B0000,#9B1C1C,#C04B00);
+    border-radius: 16px; padding: 1.4rem 1.2rem; margin-bottom: 1.2rem;
+    display: flex; align-items: center; gap: 1rem; position: relative; overflow: hidden;
+  }
+  .profile-banner::after {
+    content:'🍬'; position:absolute; right:-5px; bottom:-10px;
+    font-size:4.5rem; opacity:0.12;
+  }
+  .profile-avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.4);
+    object-fit: cover; flex-shrink: 0;
+  }
+  .profile-avatar-placeholder {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--saffron); border: 3px solid rgba(255,255,255,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; font-weight: 700; color: var(--brown); flex-shrink: 0;
+  }
+  .profile-info { flex: 1; }
+  .profile-name { font-family:'Playfair Display',serif; font-size:1.05rem; color:white; font-weight:700; margin-bottom:0.2rem; }
+  .profile-email { font-size: 0.7rem; color:rgba(255,255,255,0.7); }
+  .profile-member { font-size:0.62rem; color:var(--saffron); font-weight:600; margin-top:0.3rem; letter-spacing:0.5px; text-transform:uppercase; }
+
+  .account-menu { margin-bottom: 1rem; }
+  .account-menu-item {
+    display: flex; align-items: center; gap: 0.9rem;
+    padding: 0.9rem 0.3rem; border-bottom: 1px solid #f0f0f0;
+    cursor: pointer; transition: background 0.15s;
+    border-radius: 8px;
+  }
+  .account-menu-item:hover { background: var(--cream); }
+  .account-menu-item:last-child { border-bottom: none; }
+  .menu-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+  .menu-text { flex: 1; }
+  .menu-title { font-size: 0.85rem; font-weight: 600; color: var(--text-dark); }
+  .menu-sub { font-size: 0.68rem; color: #aaa; margin-top: 1px; }
+  .menu-arrow { color: #ccc; font-size: 0.9rem; }
+
+  .signout-btn {
+    width: 100%; background: #fff5f5; color: #e53935;
+    border: 1.5px solid #ffcdd2; border-radius: 14px;
+    padding: 0.85rem; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; font-family:'Poppins',sans-serif;
+    transition: background 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  }
+  .signout-btn:hover { background: #ffebee; }
+
+  /* Nav avatar badge */
+  .nav-avatar {
+    width: 22px; height: 22px; border-radius: 50%;
+    object-fit: cover; border: 1.5px solid var(--deep-red);
+  }
+
+  /* ── SHIPPING DRAWER ── */
+  .shipping-drawer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; z-index: 215;
+    border-radius: 20px 20px 0 0;
+    padding: 1.2rem;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    max-height: 92vh; overflow-y: auto;
+  }
+  .shipping-drawer.open { transform: translateY(0); }
+  .shipping-steps {
+    display: flex; margin-bottom: 1.4rem;
+    border-radius: 10px; overflow: hidden;
+    border: 1.5px solid rgba(155,28,28,0.2);
+  }
+  .shipping-step {
+    flex: 1; text-align: center; padding: 0.5rem 0.3rem;
+    font-size: 0.65rem; font-weight: 600; color: #aaa;
+    background: #fafafa; letter-spacing: 0.5px;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .shipping-step.active { background: var(--deep-red); color: white; }
+  .shipping-step.done { background: #e8f5e9; color: #2e7d32; }
+  .form-group { margin-bottom: 1rem; }
+  .form-label { font-size: 0.72rem; font-weight: 600; color: var(--text-mid); display: block; margin-bottom: 0.35rem; letter-spacing: 0.3px; }
+  .form-input {
+    width: 100%; padding: 0.7rem 0.9rem;
+    border: 1.5px solid #e0e0e0; border-radius: 10px;
+    font-family: 'Poppins', sans-serif; font-size: 0.85rem;
+    color: var(--text-dark); outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s; background: #fafafa;
+  }
+  .form-input:focus { border-color: var(--deep-red); box-shadow: 0 0 0 3px rgba(155,28,28,0.08); background: white; }
+  .form-input.error { border-color: #e53935; background: #fff5f5; }
+  .form-input.success { border-color: #43a047; background: #f0faf0; }
+  .form-input:disabled { background: #f0f0f0; color: #666; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+  .pincode-wrap { position: relative; }
+  .pincode-spinner {
+    position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%);
+    font-size: 0.8rem; display: none;
+  }
+  .pincode-spinner.show { display: block; }
+  .location-tag {
+    background: #e8f5e9; color: #2e7d32; border-radius: 8px;
+    padding: 0.45rem 0.8rem; font-size: 0.75rem; font-weight: 500;
+    margin-top: 0.4rem; display: none; align-items: center; gap: 0.4rem;
+  }
+  .location-tag.show { display: flex; }
+  .error-msg { font-size: 0.68rem; color: #e53935; margin-top: 0.3rem; display: none; }
+  .error-msg.show { display: block; }
+  .shipping-summary {
+    background: var(--cream); border-radius: 12px;
+    padding: 0.9rem 1rem; margin-bottom: 1rem;
+    border: 1px solid rgba(155,28,28,0.1);
+  }
+  .shipping-summary-title { font-size: 0.68rem; font-weight: 700; color: var(--text-mid); margin-bottom: 0.5rem; letter-spacing: 0.5px; text-transform: uppercase; }
+  .shipping-summary-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-dark); margin-bottom: 0.25rem; }
+  .shipping-summary-row.grand { font-weight: 700; color: var(--deep-red); font-size: 0.95rem; border-top: 1px dashed #ddd; padding-top: 0.5rem; margin-top: 0.4rem; }
+
+  /* ── THE FIXED BUTTONS ── */
+  .ship-btn {
+    width: 100%; background: var(--deep-red); color: white;
+    border: none; padding: 0.95rem; border-radius: 14px;
+    font-size: 0.95rem; font-weight: 700; cursor: pointer;
+    font-family: 'Poppins', sans-serif; transition: background 0.2s;
+    margin-top: 1rem; display: block; text-align: center;
+    -webkit-user-select: none; user-select: none;
+  }
+  .ship-btn:hover { background: var(--brown); }
+  .ship-btn:disabled { background: #ccc; cursor: not-allowed; }
+  .ship-btn-back {
+    width: 100%; background: transparent; color: var(--text-mid);
+    border: 1.5px solid #e0e0e0; padding: 0.75rem; border-radius: 14px;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    font-family: 'Poppins', sans-serif; margin-top: 0.6rem;
+    display: block; text-align: center; transition: background 0.2s;
+    -webkit-user-select: none; user-select: none;
+  }
+  .ship-btn-back:hover { background: #f5f5f5; }
+
+  .address-confirm-card {
+    background: #f0faf0; border: 1.5px solid #a5d6a7;
+    border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 1rem;
+  }
+  .address-confirm-card .addr-name { font-weight: 700; font-size: 0.9rem; color: var(--text-dark); margin-bottom: 0.3rem; }
+  .address-confirm-card .addr-detail { font-size: 0.78rem; color: var(--text-mid); line-height: 1.7; }
+  .section-divider { font-size: 0.68rem; font-weight: 700; color: var(--text-mid); letter-spacing: 1px; text-transform: uppercase; margin: 1.2rem 0 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid #eee; }
+
 </style>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -511,9 +763,7 @@
     <div class="section-title">Our <span>Bestsellers</span></div>
     <a class="view-all">View All</a>
   </div>
-  <div class="products-grid" id="productsGrid">
-    <!-- rendered by JS -->
-  </div>
+  <div class="products-grid" id="productsGrid"></div>
 </section>
 
 <!-- PROMO BANNER -->
@@ -620,13 +870,213 @@
   <div class="footer-bottom" style="margin-top:0.8rem">© 2025 Sree Ramu Sweets. All rights reserved.</div>
 </footer>
 
+<!-- OVERLAY -->
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+
 <!-- CART DRAWER -->
-<div class="overlay" id="overlay" onclick="closeCart()"></div>
 <div class="cart-drawer" id="cartDrawer">
   <div class="drawer-handle"></div>
   <div class="drawer-title">Your Cart 🛒</div>
   <div id="cartItems"></div>
   <div id="cartTotal"></div>
+</div>
+
+<!-- SHIPPING DRAWER -->
+<div class="shipping-drawer" id="shippingDrawer">
+  <div class="drawer-handle"></div>
+
+  <div class="shipping-steps">
+    <div class="shipping-step done" id="stepCart">✅ Cart</div>
+    <div class="shipping-step active" id="stepAddress">📍 Address</div>
+    <div class="shipping-step" id="stepPayment">💳 Payment</div>
+  </div>
+
+  <!-- PAGE 1: Address Form -->
+  <div id="shippingPage1">
+    <div class="drawer-title">Delivery Address 📍</div>
+
+    <div class="section-divider">Contact Details</div>
+
+    <div class="form-group">
+      <label class="form-label">Full Name *</label>
+      <input class="form-input" id="ship_name" type="text" placeholder="e.g. Ravi Kumar" />
+      <div class="error-msg" id="err_name">Please enter your full name</div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Mobile Number *</label>
+        <input class="form-input" id="ship_phone" type="tel" maxlength="10" placeholder="10-digit number" />
+        <div class="error-msg" id="err_phone">Enter valid 10-digit number</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Alternate Number</label>
+        <input class="form-input" id="ship_alt_phone" type="tel" maxlength="10" placeholder="Optional" />
+      </div>
+    </div>
+
+    <div class="section-divider">Delivery Address</div>
+
+    <div class="form-group">
+      <label class="form-label">Pincode *</label>
+      <div class="pincode-wrap">
+        <input class="form-input" id="ship_pincode" type="tel" maxlength="6" placeholder="6-digit pincode" />
+        <span class="pincode-spinner" id="pincodeSpinner">⏳</span>
+      </div>
+      <div class="location-tag" id="locationTag">📍 <span id="locationText"></span></div>
+      <div class="error-msg" id="err_pincode">Enter valid 6-digit pincode</div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">City *</label>
+        <input class="form-input" id="ship_city" type="text" placeholder="Auto-filled" />
+        <div class="error-msg" id="err_city">Enter city name</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">State *</label>
+        <input class="form-input" id="ship_state" type="text" placeholder="Auto-filled" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">House / Flat / Building *</label>
+      <input class="form-input" id="ship_house" type="text" placeholder="e.g. Flat 2B, Sunrise Apts" />
+      <div class="error-msg" id="err_house">Please enter house/flat details</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Street / Area / Landmark *</label>
+      <input class="form-input" id="ship_street" type="text" placeholder="e.g. Near Durga Temple, MG Road" />
+      <div class="error-msg" id="err_street">Please enter street/area details</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Delivery Instructions</label>
+      <input class="form-input" id="ship_note" type="text" placeholder="e.g. Call before delivery, leave at door…" />
+    </div>
+
+    <!-- ✅ FIXED: proper <button> tags instead of divs -->
+    <button class="ship-btn" onclick="goToReview()">Continue to Review →</button>
+    <button class="ship-btn-back" onclick="backToCart()">← Back to Cart</button>
+  </div>
+
+  <!-- PAGE 2: Review & Confirm -->
+  <div id="shippingPage2" style="display:none">
+    <div class="drawer-title">Review & Pay 💳</div>
+
+    <div class="address-confirm-card">
+      <div class="addr-name" id="confirm_name"></div>
+      <div class="addr-detail" id="confirm_address"></div>
+    </div>
+
+    <div class="shipping-summary">
+      <div class="shipping-summary-title">Order Summary</div>
+      <div id="confirm_items"></div>
+      <div class="shipping-summary-row grand">
+        <span>Total Payable</span>
+        <span id="confirm_total"></span>
+      </div>
+    </div>
+
+    <!-- ✅ FIXED: proper <button> tags instead of divs -->
+    <button class="ship-btn" onclick="proceedToPayment()">💳 Pay Now</button>
+    <button class="ship-btn-back" onclick="backToAddress()">← Edit Address</button>
+  </div>
+</div>
+
+<!-- ACCOUNT DRAWER -->
+<div class="account-drawer" id="accountDrawer">
+  <div class="drawer-handle"></div>
+
+  <!-- NOT LOGGED IN -->
+  <div id="loginView">
+    <div class="login-hero">
+      <div class="login-logo">🍬</div>
+      <div class="login-title">Welcome to Sree Ramu Sweets</div>
+      <div class="login-sub">Sign in to track your orders, save addresses, and get exclusive offers!</div>
+    </div>
+
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 19 13 24 13c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.4 0 10.2-2 13.8-5.3l-6.4-5.4C29.3 35.3 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-8H6.3C9.6 35.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6.4 5.4C42 35.3 44 30 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+      Continue with Google
+    </button>
+
+    <div class="login-benefits">
+      <div class="benefit-item">
+        <div class="benefit-icon">📦</div>
+        <div class="benefit-text">Track all your orders</div>
+      </div>
+      <div class="benefit-item">
+        <div class="benefit-icon">📍</div>
+        <div class="benefit-text">Save delivery addresses</div>
+      </div>
+      <div class="benefit-item">
+        <div class="benefit-icon">🎁</div>
+        <div class="benefit-text">Exclusive member offers</div>
+      </div>
+      <div class="benefit-item">
+        <div class="benefit-icon">⚡</div>
+        <div class="benefit-text">Faster checkout</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGGED IN -->
+  <div id="profileView" style="display:none">
+    <div class="profile-banner">
+      <div id="profileAvatarWrap"></div>
+      <div class="profile-info">
+        <div class="profile-name" id="profileName">Loading...</div>
+        <div class="profile-email" id="profileEmail"></div>
+        <div class="profile-member">⭐ Sweet Member</div>
+      </div>
+    </div>
+
+    <div class="account-menu">
+      <div class="account-menu-item" onclick="openMyOrders()">
+        <div class="menu-icon" style="background:#FDE8E8;">📦</div>
+        <div class="menu-text">
+          <div class="menu-title">My Orders</div>
+          <div class="menu-sub">View all your past orders</div>
+        </div>
+        <span class="menu-arrow">›</span>
+      </div>
+      <div class="account-menu-item" onclick="showToast('🚧 Coming soon!')">
+        <div class="menu-icon" style="background:#E8F5E9;">📍</div>
+        <div class="menu-text">
+          <div class="menu-title">Saved Addresses</div>
+          <div class="menu-sub">Manage delivery addresses</div>
+        </div>
+        <span class="menu-arrow">›</span>
+      </div>
+      <div class="account-menu-item" onclick="showToast('🚧 Coming soon!')">
+        <div class="menu-icon" style="background:#FFF3CD;">🎁</div>
+        <div class="menu-text">
+          <div class="menu-title">Offers & Coupons</div>
+          <div class="menu-sub">Your exclusive member deals</div>
+        </div>
+        <span class="menu-arrow">›</span>
+      </div>
+      <div class="account-menu-item" onclick="showToast('🚧 Coming soon!')">
+        <div class="menu-icon" style="background:#E3F2FD;">💬</div>
+        <div class="menu-text">
+          <div class="menu-title">Help & Support</div>
+          <div class="menu-sub">Chat with us · +91 98765 43210</div>
+        </div>
+        <span class="menu-arrow">›</span>
+      </div>
+    </div>
+
+    <button class="signout-btn" onclick="signOutUser()">🚪 Sign Out</button>
+  </div>
+</div>
+
+<!-- ORDERS DRAWER -->
+<div class="orders-drawer" id="ordersDrawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-title">My Orders 📦</div>
+  <div id="ordersList"><div class="orders-loading">Loading your orders...</div></div>
 </div>
 
 <!-- TOAST -->
@@ -651,8 +1101,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
     Wishlist
   </div>
-  <div class="nav-item">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  <div class="nav-item" id="accountNavBtn" onclick="openAccount()">
+    <div id="navAccountIcon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </div>
     Account
   </div>
 </nav>
@@ -741,7 +1193,7 @@ function openCart() {
         <div class="total-row"><span>Subtotal</span><span>₹${subtotal}</span></div>
         <div class="total-row"><span>Delivery</span><span>${delivery === 0 ? '<span style="color:green">FREE</span>' : '₹' + delivery}</span></div>
         <div class="total-row grand"><span>Total</span><span>₹${subtotal + delivery}</span></div>
-        <button class="checkout-btn" onclick="startPayment()">Proceed to Checkout</button>
+        <button class="checkout-btn" onclick="openShipping()">Proceed to Checkout 📍</button>
       </div>
     `;
   }
@@ -758,9 +1210,29 @@ function changeQty(id, delta) {
   openCart();
 }
 
-function closeCart() {
+function closeAll() {
   document.getElementById('overlay').classList.remove('open');
   document.getElementById('cartDrawer').classList.remove('open');
+  document.getElementById('ordersDrawer').classList.remove('open');
+  document.getElementById('shippingDrawer').classList.remove('open');
+  document.getElementById('accountDrawer').classList.remove('open');
+}
+
+function closeCart() { closeAll(); }
+
+function openOrders() {
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('ordersDrawer').classList.add('open');
+  const list = document.getElementById('ordersList');
+  list.innerHTML = '<div class="orders-loading">⏳ Loading...</div>';
+  if (window.loadOrders) {
+    window.loadOrders(list);
+  } else {
+    setTimeout(() => {
+      if (window.loadOrders) window.loadOrders(list);
+      else list.innerHTML = '<div class="orders-empty"><div>📶</div><p>Could not connect.<br><small>Check internet and try again.</small></p></div>';
+    }, 3000);
+  }
 }
 
 function toggleSearch() {
@@ -799,7 +1271,255 @@ function showToast(msg) {
 
 renderProducts();
 
-// ── PAYMENT FUNCTION (must be global) ──
+// ── SHIPPING FLOW ──
+let shippingData = {};
+
+function openShipping() {
+  if (!window.currentUser) {
+    document.getElementById('cartDrawer').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+    showToast('🔐 Please sign in to place your order!');
+    setTimeout(() => { if (window.openAccount) window.openAccount(); }, 800);
+    return;
+  }
+
+  document.getElementById('cartDrawer').classList.remove('open');
+  document.getElementById('shippingPage1').style.display = 'block';
+  document.getElementById('shippingPage2').style.display = 'none';
+  document.getElementById('stepAddress').className = 'shipping-step active';
+  document.getElementById('stepPayment').className = 'shipping-step';
+
+  const user = window.currentUser;
+  const nameField = document.getElementById('ship_name');
+  if (nameField && !nameField.value) nameField.value = user.displayName || '';
+
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('shippingDrawer').classList.add('open');
+}
+
+function backToCart() {
+  document.getElementById('shippingDrawer').classList.remove('open');
+  openCart();
+}
+
+function backToAddress() {
+  document.getElementById('shippingPage2').style.display = 'none';
+  document.getElementById('shippingPage1').style.display = 'block';
+  document.getElementById('stepAddress').className = 'shipping-step active';
+  document.getElementById('stepPayment').className = 'shipping-step';
+}
+
+// ── PINCODE AUTO-FILL ──
+let pincodeTimer = null;
+document.addEventListener('DOMContentLoaded', function() {
+  const pincodeInput = document.getElementById('ship_pincode');
+  if (pincodeInput) {
+    pincodeInput.addEventListener('input', function() {
+      const val = this.value.replace(/\D/g, '');
+      this.value = val;
+      clearTimeout(pincodeTimer);
+      hideErr('err_pincode');
+      document.getElementById('locationTag').classList.remove('show');
+      if (val.length === 6) {
+        pincodeTimer = setTimeout(() => lookupPincode(val), 400);
+      } else if (val.length < 6) {
+        document.getElementById('ship_city').value = '';
+        document.getElementById('ship_state').value = '';
+        document.getElementById('ship_city').disabled = false;
+        document.getElementById('ship_state').disabled = false;
+        document.getElementById('ship_city').classList.remove('success');
+        document.getElementById('ship_state').classList.remove('success');
+      }
+    });
+  }
+});
+
+async function lookupPincode(pin) {
+  const spinner = document.getElementById('pincodeSpinner');
+  const locationTag = document.getElementById('locationTag');
+  const cityInput = document.getElementById('ship_city');
+  const stateInput = document.getElementById('ship_state');
+  const pincodeInput = document.getElementById('ship_pincode');
+
+  spinner.classList.add('show');
+  pincodeInput.classList.remove('error', 'success');
+
+  try {
+    const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+    const data = await res.json();
+    spinner.classList.remove('show');
+
+    if (data[0].Status === 'Success' && data[0].PostOffice?.length > 0) {
+      const po = data[0].PostOffice[0];
+      const city = po.District || po.Block || po.Name;
+      const state = po.State;
+      const region = po.Region || po.Name;
+
+      cityInput.value = city;
+      stateInput.value = state;
+      cityInput.disabled = true;
+      stateInput.disabled = true;
+      cityInput.classList.add('success');
+      stateInput.classList.add('success');
+      pincodeInput.classList.add('success');
+
+      document.getElementById('locationText').textContent = `${region}, ${city}, ${state}`;
+      locationTag.classList.add('show');
+      hideErr('err_pincode');
+    } else {
+      pincodeInput.classList.add('error');
+      cityInput.value = ''; stateInput.value = '';
+      cityInput.disabled = false; stateInput.disabled = false;
+      locationTag.classList.remove('show');
+      showErr('err_pincode', 'Invalid pincode — please check and try again');
+    }
+  } catch(e) {
+    spinner.classList.remove('show');
+    pincodeInput.classList.add('error');
+    showErr('err_pincode', 'Could not verify pincode. Enter city manually.');
+    cityInput.disabled = false; stateInput.disabled = false;
+  }
+}
+
+// ── VALIDATION HELPERS ──
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg || el.textContent; el.classList.add('show'); }
+}
+function hideErr(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('show');
+}
+function setFieldError(inputId, errId, msg) {
+  document.getElementById(inputId).classList.add('error');
+  showErr(errId, msg);
+  return false;
+}
+function clearFieldError(inputId, errId) {
+  document.getElementById(inputId).classList.remove('error');
+  hideErr(errId);
+  return true;
+}
+
+function validateShippingForm() {
+  let valid = true;
+
+  const name = document.getElementById('ship_name').value.trim();
+  if (name.length < 3) { setFieldError('ship_name','err_name','Please enter your full name (min 3 characters)'); valid=false; }
+  else clearFieldError('ship_name','err_name');
+
+  const phone = document.getElementById('ship_phone').value.trim();
+  if (!/^[6-9]\d{9}$/.test(phone)) { setFieldError('ship_phone','err_phone','Enter a valid 10-digit Indian mobile number'); valid=false; }
+  else clearFieldError('ship_phone','err_phone');
+
+  const pincode = document.getElementById('ship_pincode').value.trim();
+  if (!/^\d{6}$/.test(pincode)) { setFieldError('ship_pincode','err_pincode','Enter a valid 6-digit pincode'); valid=false; }
+  else clearFieldError('ship_pincode','err_pincode');
+
+  const city = document.getElementById('ship_city').value.trim();
+  if (!city) { setFieldError('ship_city','err_city','City is required'); valid=false; }
+  else clearFieldError('ship_city','err_city');
+
+  const house = document.getElementById('ship_house').value.trim();
+  if (house.length < 3) { setFieldError('ship_house','err_house','Please enter your house/flat details'); valid=false; }
+  else clearFieldError('ship_house','err_house');
+
+  const street = document.getElementById('ship_street').value.trim();
+  if (street.length < 5) { setFieldError('ship_street','err_street','Please enter your street/area (min 5 chars)'); valid=false; }
+  else clearFieldError('ship_street','err_street');
+
+  return valid;
+}
+
+function goToReview() {
+
+  if (!validateShippingForm()) {
+    const firstErr = document.querySelector('.form-input.error');
+    if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  shippingData = {
+    name: document.getElementById('ship_name').value.trim(),
+    phone: document.getElementById('ship_phone').value.trim(),
+    altPhone: document.getElementById('ship_alt_phone').value.trim(),
+    pincode: document.getElementById('ship_pincode').value.trim(),
+    city: document.getElementById('ship_city').value.trim(),
+    state: document.getElementById('ship_state').value.trim(),
+    house: document.getElementById('ship_house').value.trim(),
+    street: document.getElementById('ship_street').value.trim(),
+    note: document.getElementById('ship_note').value.trim(),
+  };
+
+  document.getElementById('confirm_name').textContent = shippingData.name + '  📞 ' + shippingData.phone;
+  document.getElementById('confirm_address').innerHTML =
+    shippingData.house + ', ' + shippingData.street + '<br>' +
+    shippingData.city + ', ' + shippingData.state + ' - ' + shippingData.pincode +
+    (shippingData.note ? '<br>📝 ' + shippingData.note : '');
+
+  const items = Object.values(cart);
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const delivery = subtotal >= 499 ? 0 : 40;
+  const total = subtotal + delivery;
+
+  document.getElementById('confirm_items').innerHTML =
+    items.map(i => `<div class="shipping-summary-row"><span>${i.emoji} ${i.name} x${i.qty}</span><span>₹${i.price * i.qty}</span></div>`).join('') +
+    `<div class="shipping-summary-row"><span>Delivery</span><span>${delivery === 0 ? '<span style="color:green">FREE</span>' : '₹' + delivery}</span></div>`;
+  document.getElementById('confirm_total').textContent = '₹' + total;
+
+  document.getElementById('shippingPage1').style.display = 'none';
+  document.getElementById('shippingPage2').style.display = 'block';
+  document.getElementById('stepAddress').className = 'shipping-step done';
+  document.getElementById('stepPayment').className = 'shipping-step active';
+  document.getElementById('shippingDrawer').scrollTop = 0;
+}
+
+function proceedToPayment() {
+  if (proceedToPayment._busy) return;
+  proceedToPayment._busy = true;
+  setTimeout(() => proceedToPayment._busy = false, 2000);
+  document.getElementById('shippingDrawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+  startPayment();
+}
+
+// ── EMAIL ──
+emailjs.init('CmgzshDIJLAWVwlW8');
+
+function sendOrderEmail(items, total, shipping, paymentId) {
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const delivery = subtotal >= 499 ? 0 : 40;
+  const itemLines = items.map(i => i.name + ' x' + i.qty + ' = Rs.' + (i.price * i.qty)).join('\n');
+  const address = shipping ? [shipping.house + ', ' + shipping.street, shipping.city + ', ' + shipping.state + ' - ' + shipping.pincode].join(', ') : 'Not provided';
+  const now = new Date().toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+  emailjs.send('service_1hzy94j', 'template_wclu0uv', {
+    date: now, payment_id: paymentId || 'N/A',
+    items: itemLines, subtotal, delivery: delivery === 0 ? 'FREE' : delivery,
+    total, customer_name: shipping?.name || 'Guest', phone: shipping?.phone || 'N/A', address
+  }).then(() => console.log('Order email sent!')).catch(err => console.error('Email failed:', err));
+}
+
+// ── WHATSAPP ──
+function sendOrderWhatsApp(items, total, shipping, paymentId) {
+  const OWNER_NUMBER = '919876543210'; // ← CHANGE THIS
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const delivery = subtotal >= 499 ? 0 : 40;
+  const itemLines = items.map(i => `• ${i.name} x${i.qty} = Rs.${i.price * i.qty}`).join('\n');
+  const address = shipping
+    ? [shipping.name, 'Phone: ' + shipping.phone, shipping.house + ', ' + shipping.street, shipping.city + ', ' + shipping.state + ' - ' + shipping.pincode, shipping.note ? 'Note: ' + shipping.note : ''].filter(Boolean).join('\n')
+    : 'Address not provided';
+  const now = new Date().toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+  const msg = ['*NEW ORDER - Sree Ramu Sweets*','--------------------','*Date:* ' + now,'*Payment ID:* ' + (paymentId || 'N/A'),'','*ITEMS ORDERED:*',itemLines,'','*PRICE SUMMARY:*','Subtotal: Rs.' + subtotal,'Delivery: ' + (delivery === 0 ? 'FREE' : 'Rs.' + delivery),'*Total Paid: Rs.' + total + '*','','*DELIVER TO:*',address].join('\n');
+
+  const a = document.createElement('a');
+  a.href = 'https://wa.me/' + OWNER_NUMBER + '?text=' + encodeURIComponent(msg);
+  a.target = '_blank'; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+// ── PAYMENT ──
 function startPayment() {
   const items = Object.values(cart);
   if (items.length === 0) return;
@@ -816,14 +1536,14 @@ function startPayment() {
     theme: { color: '#9B1C1C' },
     handler: async function(response) {
       try {
-        if (window.saveOrderToFirebase) {
-          await window.saveOrderToFirebase(items, total);
-        }
+        if (window.saveOrderToFirebase) await window.saveOrderToFirebase(items, total, shippingData);
       } catch(e) { console.log('Firebase save failed:', e); }
+      sendOrderWhatsApp(items, total, shippingData, response.razorpay_payment_id);
+      sendOrderEmail(items, total, shippingData, response.razorpay_payment_id);
       cart = {};
       updateCartBadge();
       closeCart();
-      showToast('🎉 Payment done! Order placed!');
+      showToast('🎉 Payment done! Order sent to shop!');
     }
   };
   const rzp = new Razorpay(options);
@@ -831,10 +1551,11 @@ function startPayment() {
 }
 </script>
 
-<!-- Firebase (module script) -->
+<!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs, orderBy, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyChB0J289Ihu8OxE60Vc-CHsWcKT28RtAU",
@@ -846,13 +1567,155 @@ function startPayment() {
   };
 
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  const db  = getFirestore(app);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
 
-  window.saveOrderToFirebase = async function(items, total) {
+  onAuthStateChanged(auth, (user) => {
+    window.currentUser = user || null;
+    updateNavAvatar(user);
+    const drawer = document.getElementById('accountDrawer');
+    if (drawer && drawer.classList.contains('open')) renderAccountView(user);
+  });
+
+  function updateNavAvatar(user) {
+    const wrap = document.getElementById('navAccountIcon');
+    if (!wrap) return;
+    if (user && user.photoURL) {
+      wrap.innerHTML = `<img src="${user.photoURL}" class="nav-avatar" alt="avatar" referrerpolicy="no-referrer"/>`;
+    } else {
+      wrap.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    }
+  }
+
+  function renderAccountView(user) {
+    const loginView   = document.getElementById('loginView');
+    const profileView = document.getElementById('profileView');
+    if (!loginView || !profileView) return;
+    if (user) {
+      loginView.style.display   = 'none';
+      profileView.style.display = 'block';
+      document.getElementById('profileName').textContent  = user.displayName || 'Sweet Customer';
+      document.getElementById('profileEmail').textContent = user.email || '';
+      const wrap = document.getElementById('profileAvatarWrap');
+      if (user.photoURL) {
+        wrap.innerHTML = `<img src="${user.photoURL}" class="profile-avatar" referrerpolicy="no-referrer"/>`;
+      } else {
+        const initial = (user.displayName || 'U')[0].toUpperCase();
+        wrap.innerHTML = `<div class="profile-avatar-placeholder">${initial}</div>`;
+      }
+    } else {
+      loginView.style.display   = 'block';
+      profileView.style.display = 'none';
+    }
+  }
+
+  window.signInWithGoogle = async function() {
+    try {
+      showToast('⏳ Opening Google login...');
+      await signInWithPopup(auth, provider);
+      showToast('✅ Signed in successfully!');
+    } catch(e) {
+      showToast('❌ Login failed. Try again.');
+      console.error(e);
+    }
+  };
+
+  window.signOutUser = async function() {
+    try {
+      await signOut(auth);
+      window.currentUser = null;
+      renderAccountView(null);
+      showToast('👋 Signed out successfully');
+    } catch(e) { showToast('❌ Sign out failed'); }
+  };
+
+  window.openAccount = function() {
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('accountDrawer').classList.add('open');
+    renderAccountView(auth.currentUser);
+  };
+
+  window.openMyOrders = function() {
+    document.getElementById('accountDrawer').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+    setTimeout(() => {
+      document.getElementById('overlay').classList.add('open');
+      document.getElementById('ordersDrawer').classList.add('open');
+      const list = document.getElementById('ordersList');
+      window.loadOrders(list);
+    }, 300);
+  };
+
+  window.saveOrderToFirebase = async function(items, total, shipping) {
+    const uid = auth.currentUser ? auth.currentUser.uid : 'guest';
+    const userName = auth.currentUser ? auth.currentUser.displayName : (shipping?.name || 'Guest');
     await addDoc(collection(db, 'orders'), {
-      items, total, date: new Date(), status: 'paid'
+      items, total, shipping: shipping || {}, uid, userName, date: new Date(), status: 'paid'
     });
   };
+
+  window.loadOrders = async function(listEl) {
+    try {
+      listEl.innerHTML = '<div class="orders-loading">⏳ Loading your orders...</div>';
+      const user = auth.currentUser;
+      if (!user) {
+        listEl.innerHTML = `
+          <div class="orders-empty">
+            <div>🔐</div>
+            <p>Please sign in to view your orders<br><small>Tap the Account tab to login</small></p>
+            <button onclick="window.openAccount()" style="margin-top:1rem;padding:0.6rem 1.4rem;background:#9B1C1C;color:white;border:none;border-radius:20px;font-family:Poppins,sans-serif;font-weight:600;cursor:pointer;font-size:0.82rem;">
+              Sign In with Google
+            </button>
+          </div>`;
+        return;
+      }
+
+      const q = query(collection(db, 'orders'), where('uid', '==', user.uid), orderBy('date', 'desc'));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        listEl.innerHTML = `
+          <div class="orders-empty">
+            <div>🛍️</div>
+            <p style="font-weight:600;color:#5C2B00;font-size:0.95rem;margin-bottom:0.4rem;">No orders yet!</p>
+            <p style="font-size:0.78rem;color:#aaa;line-height:1.6;">Looks like you haven't ordered anything yet.<br>Go pick some delicious sweets! 😋</p>
+            <button onclick="closeAll()" style="margin-top:1.2rem;padding:0.65rem 1.6rem;background:#9B1C1C;color:white;border:none;border-radius:20px;font-family:Poppins,sans-serif;font-weight:600;cursor:pointer;font-size:0.82rem;box-shadow:0 4px 12px rgba(155,28,28,0.3);">
+              🍬 Shop Now
+            </button>
+          </div>`;
+        return;
+      }
+
+      listEl.innerHTML = snapshot.docs.map((doc, i) => {
+        const o = doc.data();
+        const date = o.date?.toDate
+          ? o.date.toDate().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+          : 'Recent';
+        const itemNames = (o.items || []).map(it => `${it.emoji || '🍬'} ${it.name} x${it.qty}`).join('<br>');
+        const orderId = '#' + String(i + 1).padStart(4, '0');
+        const addr = o.shipping?.city ? `📍 ${o.shipping.house}, ${o.shipping.city} - ${o.shipping.pincode}` : '';
+        return `
+          <div class="order-card">
+            <div class="order-header">
+              <span class="order-id">Order ${orderId}</span>
+              <span class="order-status">✅ Paid</span>
+            </div>
+            <div class="order-items">${itemNames}</div>
+            ${addr ? `<div style="font-size:0.7rem;color:#888;margin:0.4rem 0 0;">${addr}</div>` : ''}
+            <div class="order-footer" style="margin-top:0.6rem">
+              <span class="order-total">₹${o.total}</span>
+              <span class="order-date">🕐 ${date}</span>
+            </div>
+          </div>`;
+      }).join('');
+
+    } catch(e) {
+      listEl.innerHTML = `<div class="orders-empty"><div>⚠️</div><p>Could not load orders.<br><small>${e.message}</small></p></div>`;
+      console.error(e);
+    }
+  };
 </script>
+
 </body>
 </html>
