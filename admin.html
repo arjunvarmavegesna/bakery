@@ -720,18 +720,23 @@ const COLORS = ['#FFF3CD','#E8F5E9','#FDE8E8','#FFF0E0','#F3E5F5','#E3F2FD','#FC
 // ── AUTH ──
 let accessDeniedEmail = null; // remember denied email so error survives signOut re-trigger
 
-// Safety fallback — if Firebase doesn't respond in 8s, show login screen anyway
+// Safety fallback — if Firebase doesn't respond in 3s, show login screen anyway
 setTimeout(() => {
   const loader = document.getElementById('authLoading');
   if (loader && loader.style.display !== 'none') {
     console.warn('Auth timeout — showing login screen');
     showAuthGate();
   }
-}, 8000);
+}, 3000);
 
 function hideAuthLoading() {
   const el = document.getElementById('authLoading');
-  if (el) el.style.display = 'none';
+  if (el) {
+    el.style.display = 'none';
+    el.style.visibility = 'hidden';
+    el.style.opacity = '0';
+    el.style.pointerEvents = 'none';
+  }
 }
 
 function showAuthGate() {
