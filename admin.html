@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Sree Ramu Sweets</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --brand: #E8650A;
+  --brand-dark: #B84D00;
+  --brand-light: #FF8C2A;
+  --cream: #FFF8F4;
+  --white: #ffffff;
+  --text: #1A0A00;
+  --text-mid: #7A3A10;
+  --text-soft: #aaa;
+  --border: #F0E8E0;
+  --danger: #e53935;
+  --success: #2e7d32;
+  --success-bg: #e8f5e9;
+  --shadow: 0 2px 16px rgba(232,101,10,0.10);
+  --shadow-md: 0 6px 32px rgba(232,101,10,0.14);
+  --radius: 16px;
+  --sidebar-w: 240px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #F7F0EA;
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── AUTH GATE ── */
+#authGate {
+  position: fixed; inset: 0;
+  background: linear-gradient(135deg, #B84D00 0%, #E8650A 50%, #FF8C2A 100%);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; flex-direction: column;
+  animation: fadeIn 0.3s ease;
+}
+.auth-card {
+  background: white; border-radius: 24px;
+  padding: 3rem 2.5rem; max-width: 420px; width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: slideUp 0.4s ease both 0.1s;
+}
+.auth-logo {
+  width: 80px; height: 80px; border-radius: 22px;
+  background: linear-gradient(135deg,#E8650A,#FF8C2A);
+  margin: 0 auto 1.5rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.2rem;
+  box-shadow: 0 8px 24px rgba(232,101,10,0.35);
+}
+.auth-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; color: var(--brand-dark);
+  margin-bottom: 0.4rem;
+}
+.auth-sub {
+  font-size: 0.85rem; color: var(--text-mid);
+  margin-bottom: 2rem; line-height: 1.5;
+}
+.google-signin-btn {
+  width: 100%; background: white; color: #333;
+  border: 2px solid #e0e0e0; border-radius: 14px;
+  padding: 0.9rem 1.2rem; font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  display: flex; align-items: center; justify-content: center; gap: 0.8rem;
+  transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.google-signin-btn:hover { border-color: #4285F4; box-shadow: 0 4px 20px rgba(66,133,244,0.2); transform: translateY(-1px); }
+.google-signin-btn svg { width: 22px; height: 22px; }
+.auth-note {
+  font-size: 0.72rem; color: #aaa; margin-top: 1.2rem; line-height: 1.5;
+}
+.auth-error {
+  background: #fff5f5; border: 1.5px solid #ffcdd2;
+  color: var(--danger); border-radius: 10px; padding: 0.7rem 1rem;
+  font-size: 0.82rem; margin-top: 1rem; display: none;
+}
+.auth-error.show { display: block; }
+
+/* ── LAYOUT ── */
+#adminApp { display: none; min-height: 100vh; }
+#adminApp.visible { display: flex; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar-w); background: var(--brand-dark);
+  min-height: 100vh; display: flex; flex-direction: column;
+  position: fixed; left: 0; top: 0; bottom: 0;
+  z-index: 100;
+  transition: transform 0.3s ease;
+}
+.sidebar-logo {
+  padding: 1.5rem 1.2rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.sidebar-logo-text {
+  font-family: 'Playfair Display', serif;
+  color: white; font-size: 1rem; font-weight: 700;
+  line-height: 1.2;
+}
+.sidebar-logo-sub {
+  font-size: 0.62rem; color: rgba(255,255,255,0.5);
+  letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px;
+}
+.sidebar-badge {
+  display: inline-block; background: var(--brand-light);
+  color: white; font-size: 0.58rem; font-weight: 700;
+  padding: 2px 7px; border-radius: 8px; margin-top: 6px;
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+.sidebar-nav { padding: 1rem 0.7rem; flex: 1; }
+.nav-link {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.75rem 0.9rem; border-radius: 12px;
+  cursor: pointer; color: rgba(255,255,255,0.65);
+  font-size: 0.85rem; font-weight: 500;
+  transition: all 0.15s; margin-bottom: 2px;
+  text-decoration: none;
+}
+.nav-link:hover { background: rgba(255,255,255,0.08); color: white; }
+.nav-link.active { background: var(--brand); color: white; box-shadow: 0 4px 12px rgba(232,101,10,0.3); }
+.nav-link .nav-icon { font-size: 1.1rem; width: 22px; text-align: center; }
+.nav-section-label {
+  font-size: 0.6rem; color: rgba(255,255,255,0.3);
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 0.8rem 0.9rem 0.3rem; font-weight: 600;
+}
+.sidebar-profile {
+  padding: 1rem 1.2rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.sidebar-avatar-row {
+  display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.7rem;
+}
+.sidebar-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  object-fit: cover; border: 2px solid rgba(255,255,255,0.3);
+}
+.sidebar-avatar-placeholder {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--brand); border: 2px solid rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: 700; font-size: 0.9rem;
+}
+.sidebar-user-name { font-size: 0.8rem; font-weight: 600; color: white; }
+.sidebar-user-email { font-size: 0.65rem; color: rgba(255,255,255,0.5); }
+.signout-link {
+  width: 100%; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+  padding: 0.55rem; font-size: 0.78rem; font-weight: 500;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+}
+.signout-link:hover { background: rgba(229,57,53,0.2); color: #ff8a80; border-color: rgba(229,57,53,0.3); }
+
+/* ── MAIN CONTENT ── */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1; min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+.topbar {
+  background: white; padding: 1rem 1.5rem;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+}
+.topbar-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem; color: var(--brand-dark);
+}
+.topbar-right { display: flex; align-items: center; gap: 0.8rem; }
+.store-link {
+  background: var(--cream); color: var(--brand);
+  border: 1.5px solid rgba(232,101,10,0.25); border-radius: 10px;
+  padding: 0.45rem 0.9rem; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  text-decoration: none; transition: all 0.15s;
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.store-link:hover { background: var(--brand); color: white; border-color: var(--brand); }
+
+.content { padding: 1.5rem; flex: 1; }
+
+/* ── STATS ROW ── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1rem; margin-bottom: 1.5rem;
+}
+.stat-card {
+  background: white; border-radius: var(--radius);
+  padding: 1.2rem; box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; gap: 0.9rem;
+}
+.stat-icon {
+  width: 48px; height: 48px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; flex-shrink: 0;
+}
+.stat-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.7rem; font-weight: 700; color: var(--brand-dark);
+  line-height: 1;
+}
+.stat-label { font-size: 0.72rem; color: var(--text-soft); margin-top: 2px; font-weight: 500; }
+
+/* ── SECTION CARDS ── */
+.section-card {
+  background: white; border-radius: var(--radius);
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  margin-bottom: 1.5rem; overflow: hidden;
+}
+.section-card-header {
+  padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.section-card-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem; color: var(--brand-dark);
+}
+.section-card-body { padding: 1.4rem; }
+
+/* ── ADD PRODUCT FORM ── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+.form-group.full { grid-column: 1 / -1; }
+.form-label {
+  font-size: 0.72rem; font-weight: 700; color: var(--text-mid);
+  letter-spacing: 0.3px; text-transform: uppercase;
+}
+.form-input, .form-select, .form-textarea {
+  padding: 0.7rem 0.9rem;
+  border: 1.5px solid #E8E0D8; border-radius: 10px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+  color: var(--text); outline: none; background: #FAFAF8;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--brand); background: white;
+  box-shadow: 0 0 0 3px rgba(232,101,10,0.08);
+}
+.form-input.error { border-color: var(--danger); background: #fff5f5; }
+.form-textarea { resize: vertical; min-height: 80px; }
+.form-select { cursor: pointer; }
+
+/* Emoji picker row */
+.emoji-row {
+  display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4rem;
+}
+.emoji-opt {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; cursor: pointer; background: #FAFAF8;
+  border: 1.5px solid #E8E0D8; transition: all 0.15s;
+}
+.emoji-opt:hover, .emoji-opt.selected {
+  border-color: var(--brand); background: var(--cream);
+  transform: scale(1.1); box-shadow: 0 2px 8px rgba(232,101,10,0.2);
+}
+
+/* Color picker */
+.color-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem; }
+.color-swatch {
+  width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+  border: 2.5px solid transparent; transition: all 0.15s;
+}
+.color-swatch.selected { border-color: var(--text); transform: scale(1.1); }
+
+/* Badge options */
+.badge-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem; }
+.badge-opt {
+  padding: 0.3rem 0.8rem; border-radius: 20px;
+  border: 1.5px solid #E8E0D8; background: #FAFAF8;
+  font-size: 0.72rem; font-weight: 700; cursor: pointer;
+  letter-spacing: 0.3px; transition: all 0.15s; color: var(--text-mid);
+}
+.badge-opt:hover, .badge-opt.selected {
+  background: var(--brand); color: white; border-color: var(--brand);
+}
+.badge-opt.none-opt { color: #aaa; }
+
+/* Submit button */
+.btn-submit {
+  background: var(--brand); color: white;
+  border: none; border-radius: 12px;
+  padding: 0.85rem 2rem; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s; box-shadow: 0 4px 12px rgba(232,101,10,0.3);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.btn-submit:hover { background: var(--brand-dark); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,101,10,0.35); }
+.btn-submit:active { transform: translateY(0); }
+.btn-cancel {
+  background: transparent; color: var(--text-mid);
+  border: 1.5px solid #E8E0D8; border-radius: 12px;
+  padding: 0.85rem 1.4rem; font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.btn-cancel:hover { background: #f5f5f5; }
+.form-actions {
+  display: flex; gap: 0.8rem; margin-top: 1.2rem; align-items: center;
+}
+
+/* ── PRODUCTS TABLE ── */
+.table-toolbar {
+  display: flex; gap: 0.7rem; align-items: center;
+  padding: 1rem 1.4rem; border-bottom: 1px solid var(--border);
+}
+.search-box {
+  flex: 1; display: flex; align-items: center; gap: 0.5rem;
+  background: #FAFAF8; border: 1.5px solid #E8E0D8; border-radius: 10px;
+  padding: 0.5rem 0.9rem;
+}
+.search-box input {
+  border: none; background: transparent; outline: none;
+  font-family: 'DM Sans', sans-serif; font-size: 0.85rem; flex: 1;
+  color: var(--text);
+}
+.filter-select {
+  padding: 0.5rem 0.8rem; border-radius: 10px;
+  border: 1.5px solid #E8E0D8; background: #FAFAF8;
+  font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+  cursor: pointer; outline: none; color: var(--text);
+}
+.filter-select:focus { border-color: var(--brand); }
+
+.product-table { width: 100%; border-collapse: collapse; }
+.product-table th {
+  text-align: left; padding: 0.8rem 1rem;
+  font-size: 0.65rem; font-weight: 700; color: var(--text-soft);
+  letter-spacing: 0.8px; text-transform: uppercase;
+  background: #FAFAF8; border-bottom: 1px solid var(--border);
+}
+.product-table td {
+  padding: 0.9rem 1rem; border-bottom: 1px solid var(--border);
+  font-size: 0.85rem; vertical-align: middle;
+}
+.product-table tr:last-child td { border-bottom: none; }
+.product-table tr:hover td { background: #FDFAF8; }
+
+.product-emoji-cell {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+}
+.product-name-cell { font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.product-cat-tag {
+  display: inline-block; background: var(--cream);
+  border: 1px solid rgba(232,101,10,0.2);
+  color: var(--brand); font-size: 0.62rem; font-weight: 700;
+  padding: 2px 7px; border-radius: 6px; text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.product-price-cell { font-weight: 700; color: var(--brand-dark); font-size: 0.9rem; }
+.product-old-price { font-size: 0.72rem; color: var(--text-soft); text-decoration: line-through; }
+.product-badge-cell {
+  display: inline-block; background: var(--brand); color: white;
+  font-size: 0.6rem; font-weight: 700; padding: 2px 7px;
+  border-radius: 8px; letter-spacing: 0.3px;
+}
+.product-badge-cell.none { background: transparent; color: var(--text-soft); font-size: 0.75rem; }
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  display: inline-block; margin-right: 5px;
+}
+.status-dot.active { background: var(--success); }
+.status-dot.inactive { background: #ccc; }
+
+/* Action buttons */
+.action-btns { display: flex; gap: 0.4rem; }
+.btn-edit {
+  background: #FFF3CD; color: #B8860B; border: 1px solid rgba(184,134,11,0.3);
+  border-radius: 8px; padding: 0.4rem 0.75rem; font-size: 0.75rem;
+  font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.btn-edit:hover { background: #B8860B; color: white; }
+.btn-toggle {
+  background: var(--success-bg); color: var(--success); border: 1px solid rgba(46,125,50,0.25);
+  border-radius: 8px; padding: 0.4rem 0.75rem; font-size: 0.75rem;
+  font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.btn-toggle:hover { background: var(--success); color: white; }
+.btn-toggle.inactive { background: #f5f5f5; color: #888; border-color: #ddd; }
+.btn-toggle.inactive:hover { background: #888; color: white; }
+.btn-delete {
+  background: #fff5f5; color: var(--danger); border: 1px solid rgba(229,57,53,0.25);
+  border-radius: 8px; padding: 0.4rem 0.75rem; font-size: 0.75rem;
+  font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.btn-delete:hover { background: var(--danger); color: white; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  z-index: 500; display: none; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: white; border-radius: 20px;
+  width: 100%; max-width: 620px; max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: slideUp 0.3s ease;
+}
+.modal-header {
+  padding: 1.3rem 1.5rem; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; background: white; z-index: 2;
+  border-radius: 20px 20px 0 0;
+}
+.modal-title {
+  font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--brand-dark);
+}
+.modal-close {
+  background: #f5f5f5; border: none; width: 34px; height: 34px;
+  border-radius: 50%; cursor: pointer; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.modal-close:hover { background: #e0e0e0; }
+.modal-body { padding: 1.5rem; }
+.modal-footer {
+  padding: 1rem 1.5rem; border-top: 1px solid var(--border);
+  display: flex; gap: 0.8rem; justify-content: flex-end;
+}
+
+/* ── DELETE CONFIRM MODAL ── */
+.delete-modal { max-width: 380px; text-align: center; }
+.delete-modal-icon { font-size: 3.5rem; margin: 1rem 0 0.8rem; }
+.delete-modal-title {
+  font-family: 'Playfair Display', serif; font-size: 1.2rem;
+  color: var(--text); margin-bottom: 0.5rem;
+}
+.delete-modal-msg { font-size: 0.85rem; color: var(--text-mid); line-height: 1.6; margin-bottom: 1.2rem; }
+.btn-confirm-delete {
+  background: var(--danger); color: white; border: none; border-radius: 12px;
+  padding: 0.8rem 1.6rem; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s; flex: 1;
+}
+.btn-confirm-delete:hover { background: #c62828; }
+
+/* ── TOAST ── */
+.admin-toast {
+  position: fixed; bottom: 2rem; right: 2rem;
+  background: var(--brand-dark); color: white;
+  padding: 0.8rem 1.4rem; border-radius: 14px;
+  font-size: 0.85rem; font-weight: 500; z-index: 600;
+  opacity: 0; transform: translateY(10px);
+  transition: all 0.3s; pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  max-width: 300px;
+}
+.admin-toast.success { background: var(--success); }
+.admin-toast.error { background: var(--danger); }
+.admin-toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center; padding: 4rem 2rem; color: var(--text-soft);
+}
+.empty-state-icon { font-size: 3.5rem; margin-bottom: 0.8rem; }
+.empty-state-text { font-size: 0.9rem; line-height: 1.6; }
+
+/* ── PREVIEW CARD ── */
+.product-preview {
+  background: var(--cream); border-radius: 14px;
+  padding: 1rem; border: 1.5px solid rgba(232,101,10,0.15);
+  display: flex; align-items: center; gap: 1rem;
+}
+.preview-emoji-box {
+  width: 64px; height: 64px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; flex-shrink: 0;
+}
+.preview-name { font-family:'Playfair Display',serif; font-size: 1rem; color: var(--text); margin-bottom: 3px; }
+.preview-price { font-weight: 700; color: var(--brand); font-size: 0.95rem; }
+.preview-badge-wrap { margin-top: 4px; }
+
+/* ── MOBILE HAMBURGER ── */
+.hamburger {
+  display: none; background: none; border: none; cursor: pointer;
+  padding: 0.3rem; color: var(--text); font-size: 1.3rem;
+}
+.sidebar-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4); z-index: 99;
+}
+
+/* ── LOADING SPINNER ── */
+.spinner {
+  width: 40px; height: 40px; border: 3px solid rgba(232,101,10,0.2);
+  border-top-color: var(--brand); border-radius: 50%;
+  animation: spin 0.8s linear infinite; margin: 2rem auto;
+}
+.loading-text { text-align: center; color: var(--text-soft); font-size: 0.85rem; padding-bottom: 1rem; }
+
+/* ── CATEGORY MANAGEMENT ── */
+.cat-manage-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem;
+}
+.cat-manage-card {
+  background: var(--cream); border-radius: 14px;
+  padding: 1rem; border: 1.5px solid var(--border);
+  text-align: center; cursor: pointer;
+  transition: all 0.15s;
+}
+.cat-manage-card:hover { border-color: var(--brand); box-shadow: var(--shadow); }
+.cat-manage-card .cat-emoji { font-size: 2rem; margin-bottom: 0.4rem; }
+.cat-manage-card .cat-name { font-weight: 700; font-size: 0.85rem; color: var(--text); }
+.cat-manage-card .cat-count { font-size: 0.7rem; color: var(--text-soft); margin-top: 2px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-overlay.open { display: block; }
+  .main { margin-left: 0; }
+  .hamburger { display: block; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-group.full { grid-column: 1; }
+  .cat-manage-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .product-table th:nth-child(5),
+  .product-table td:nth-child(5) { display: none; }
+}
+
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes slideUp { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- AUTH GATE -->
+<div id="authGate">
+  <div class="auth-card">
+    <div class="auth-logo">🔐</div>
+    <div class="auth-title">Admin Access</div>
+    <div class="auth-sub">Sign in with the owner's Google account to manage Sree Ramu Sweets products and inventory.</div>
+    <button class="google-signin-btn" onclick="adminSignIn()">
+      <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 19 13 24 13c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.4 0 10.2-2 13.8-5.3l-6.4-5.4C29.3 35.3 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-8H6.3C9.6 35.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6.4 5.4C42 35.3 44 30 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+      Sign in with Google
+    </button>
+    <div class="auth-error" id="authError"></div>
+    <div class="auth-note">⚠️ Only the registered owner account can access this panel. Unauthorized access attempts are logged.</div>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="adminApp">
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-text">Sree Ramu Sweets</div>
+      <div class="sidebar-logo-sub">Est. 1975 · Vijayawada</div>
+      <div class="sidebar-badge">Admin Panel</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Management</div>
+      <a class="nav-link active" onclick="showSection('dashboard')" href="#">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+      <a class="nav-link" onclick="showSection('products')" href="#">
+        <span class="nav-icon">🍬</span> All Products
+      </a>
+      <a class="nav-link" onclick="showSection('add')" href="#">
+        <span class="nav-icon">➕</span> Add Product
+      </a>
+      <a class="nav-link" onclick="showSection('categories')" href="#">
+        <span class="nav-icon">🗂️</span> Categories
+      </a>
+      <div class="nav-section-label" style="margin-top:0.5rem">Orders</div>
+      <a class="nav-link" onclick="showSection('orders')" href="#">
+        <span class="nav-icon">📦</span> Recent Orders
+      </a>
+    </nav>
+    <div class="sidebar-profile">
+      <div class="sidebar-avatar-row">
+        <div id="sidebarAvatarWrap"></div>
+        <div>
+          <div class="sidebar-user-name" id="sidebarName">Admin</div>
+          <div class="sidebar-user-email" id="sidebarEmail"></div>
+        </div>
+      </div>
+      <button class="signout-link" onclick="adminSignOut()">🚪 Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:0.8rem;">
+        <button class="hamburger" onclick="toggleSidebar()">☰</button>
+        <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      </div>
+      <div class="topbar-right">
+        <a href="index.html" target="_blank" class="store-link">🏪 View Store →</a>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── DASHBOARD ── -->
+      <div id="section-dashboard">
+        <div class="stats-row" id="statsRow">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#FFF0E0;">🍬</div>
+            <div>
+              <div class="stat-num" id="stat-total">–</div>
+              <div class="stat-label">Total Products</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#E8F5E9;">✅</div>
+            <div>
+              <div class="stat-num" id="stat-active">–</div>
+              <div class="stat-label">Active Listings</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#FDE8E8;">📦</div>
+            <div>
+              <div class="stat-num" id="stat-orders">–</div>
+              <div class="stat-label">Total Orders</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#F3E5F5;">🗂️</div>
+            <div>
+              <div class="stat-num" id="stat-cats">–</div>
+              <div class="stat-label">Categories</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card-header">
+            <div class="section-card-title">Recent Products</div>
+            <button class="btn-submit" style="padding:0.5rem 1rem;font-size:0.8rem;" onclick="showSection('add')">+ Add New</button>
+          </div>
+          <div class="section-card-body" style="padding:0;" id="dashboardProductPreview">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading products...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ALL PRODUCTS ── -->
+      <div id="section-products" style="display:none;">
+        <div class="section-card">
+          <div class="section-card-header">
+            <div class="section-card-title">All Products</div>
+            <button class="btn-submit" style="padding:0.5rem 1rem;font-size:0.8rem;" onclick="showSection('add')">+ Add Product</button>
+          </div>
+          <div class="table-toolbar">
+            <div class="search-box">
+              <span>🔍</span>
+              <input type="text" placeholder="Search products…" id="productSearch" oninput="filterTable()">
+            </div>
+            <select class="filter-select" id="catFilter" onchange="filterTable()">
+              <option value="">All Categories</option>
+              <option value="sweets">Sweets</option>
+              <option value="mithai">Mithai</option>
+              <option value="snacks">Snacks</option>
+              <option value="gifts">Gift Boxes</option>
+              <option value="seasonal">Seasonal</option>
+            </select>
+            <select class="filter-select" id="statusFilter" onchange="filterTable()">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Hidden</option>
+            </select>
+          </div>
+          <div id="productsTableWrap">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ADD PRODUCT ── -->
+      <div id="section-add" style="display:none;">
+        <div class="section-card">
+          <div class="section-card-header">
+            <div class="section-card-title" id="addFormTitle">➕ Add New Product</div>
+          </div>
+          <div class="section-card-body">
+
+            <!-- Live preview -->
+            <div class="product-preview" id="livePreview" style="margin-bottom:1.4rem;">
+              <div class="preview-emoji-box" id="prevEmojiBox" style="background:#FFF0E0;">🍬</div>
+              <div>
+                <div class="preview-name" id="prevName">Product Name</div>
+                <div class="preview-price" id="prevPrice">₹0</div>
+                <div class="preview-badge-wrap" id="prevBadge"></div>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <!-- Name -->
+              <div class="form-group">
+                <label class="form-label">Product Name *</label>
+                <input class="form-input" id="f_name" type="text" placeholder="e.g. Mysore Pak" oninput="updatePreview()">
+              </div>
+              <!-- Category -->
+              <div class="form-group">
+                <label class="form-label">Category *</label>
+                <select class="form-select" id="f_cat">
+                  <option value="">— Select —</option>
+                  <option value="sweets">🧁 Sweets</option>
+                  <option value="mithai">🟡 Mithai</option>
+                  <option value="snacks">🥜 Snacks</option>
+                  <option value="gifts">🎁 Gift Boxes</option>
+                  <option value="seasonal">🪔 Seasonal</option>
+                </select>
+              </div>
+              <!-- Description -->
+              <div class="form-group full">
+                <label class="form-label">Short Description *</label>
+                <input class="form-input" id="f_desc" type="text" placeholder="e.g. Pure ghee, besan & sugar magic">
+              </div>
+              <!-- Price -->
+              <div class="form-group">
+                <label class="form-label">Selling Price (₹) *</label>
+                <input class="form-input" id="f_price" type="number" placeholder="250" oninput="updatePreview()">
+              </div>
+              <!-- Old Price -->
+              <div class="form-group">
+                <label class="form-label">MRP / Old Price (₹)</label>
+                <input class="form-input" id="f_oldprice" type="number" placeholder="300 (leave blank if none)">
+              </div>
+              <!-- Weight -->
+              <div class="form-group">
+                <label class="form-label">Weight / Pack Size</label>
+                <input class="form-input" id="f_weight" type="text" placeholder="e.g. Per 250g pack">
+              </div>
+              <!-- Stock -->
+              <div class="form-group">
+                <label class="form-label">Stock Quantity</label>
+                <input class="form-input" id="f_stock" type="number" placeholder="e.g. 50">
+              </div>
+            </div>
+
+            <!-- Emoji picker -->
+            <div class="form-group" style="margin-top:1rem;">
+              <label class="form-label">Choose Emoji Icon *</label>
+              <div class="emoji-row" id="emojiRow">
+                <!-- populated by JS -->
+              </div>
+              <input class="form-input" id="f_emoji" type="text" placeholder="Or type custom emoji" style="margin-top:0.5rem;width:160px;" oninput="updatePreview()">
+            </div>
+
+            <!-- Background color -->
+            <div class="form-group" style="margin-top:1rem;">
+              <label class="form-label">Card Background Color</label>
+              <div class="color-row" id="colorRow"></div>
+            </div>
+
+            <!-- Badge -->
+            <div class="form-group" style="margin-top:1rem;">
+              <label class="form-label">Product Badge</label>
+              <div class="badge-row" id="badgeRow">
+                <div class="badge-opt none-opt selected" data-val="" onclick="selectBadge(this)">None</div>
+                <div class="badge-opt" data-val="BESTSELLER" onclick="selectBadge(this)">BESTSELLER</div>
+                <div class="badge-opt" data-val="POPULAR" onclick="selectBadge(this)">POPULAR</div>
+                <div class="badge-opt" data-val="NEW" onclick="selectBadge(this)">NEW</div>
+                <div class="badge-opt" data-val="OFFER" onclick="selectBadge(this)">OFFER</div>
+                <div class="badge-opt" data-val="GIFT" onclick="selectBadge(this)">GIFT</div>
+                <div class="badge-opt" data-val="LIMITED" onclick="selectBadge(this)">LIMITED</div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn-submit" onclick="saveProduct()" id="saveBtn">
+                <span id="saveBtnIcon">✓</span>
+                <span id="saveBtnText">Save Product</span>
+              </button>
+              <button class="btn-cancel" onclick="resetForm()">Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CATEGORIES ── -->
+      <div id="section-categories" style="display:none;">
+        <div class="section-card">
+          <div class="section-card-header">
+            <div class="section-card-title">🗂️ Categories Overview</div>
+          </div>
+          <div class="section-card-body">
+            <div class="cat-manage-grid" id="catManageGrid">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ORDERS ── -->
+      <div id="section-orders" style="display:none;">
+        <div class="section-card">
+          <div class="section-card-header">
+            <div class="section-card-title">📦 Recent Orders</div>
+          </div>
+          <div class="section-card-body" id="ordersContent">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading orders...</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div><!-- /adminApp -->
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Edit Product</div>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Live preview -->
+      <div class="product-preview" id="editLivePreview" style="margin-bottom:1.4rem;">
+        <div class="preview-emoji-box" id="editPrevEmojiBox" style="background:#FFF0E0;">🍬</div>
+        <div>
+          <div class="preview-name" id="editPrevName">Product Name</div>
+          <div class="preview-price" id="editPrevPrice">₹0</div>
+          <div class="preview-badge-wrap" id="editPrevBadge"></div>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Product Name *</label>
+          <input class="form-input" id="e_name" type="text" oninput="updateEditPreview()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category *</label>
+          <select class="form-select" id="e_cat">
+            <option value="">— Select —</option>
+            <option value="sweets">🧁 Sweets</option>
+            <option value="mithai">🟡 Mithai</option>
+            <option value="snacks">🥜 Snacks</option>
+            <option value="gifts">🎁 Gift Boxes</option>
+            <option value="seasonal">🪔 Seasonal</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Description *</label>
+          <input class="form-input" id="e_desc" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Selling Price (₹) *</label>
+          <input class="form-input" id="e_price" type="number" oninput="updateEditPreview()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Old Price (₹)</label>
+          <input class="form-input" id="e_oldprice" type="number">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Weight / Pack Size</label>
+          <input class="form-input" id="e_weight" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Stock Quantity</label>
+          <input class="form-input" id="e_stock" type="number">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:1rem;">
+        <label class="form-label">Emoji Icon</label>
+        <div class="emoji-row" id="editEmojiRow"></div>
+        <input class="form-input" id="e_emoji" type="text" style="margin-top:0.5rem;width:160px;" oninput="updateEditPreview()">
+      </div>
+
+      <div class="form-group" style="margin-top:1rem;">
+        <label class="form-label">Background Color</label>
+        <div class="color-row" id="editColorRow"></div>
+      </div>
+
+      <div class="form-group" style="margin-top:1rem;">
+        <label class="form-label">Badge</label>
+        <div class="badge-row" id="editBadgeRow">
+          <div class="badge-opt none-opt selected" data-val="" onclick="selectBadge(this,'edit')">None</div>
+          <div class="badge-opt" data-val="BESTSELLER" onclick="selectBadge(this,'edit')">BESTSELLER</div>
+          <div class="badge-opt" data-val="POPULAR" onclick="selectBadge(this,'edit')">POPULAR</div>
+          <div class="badge-opt" data-val="NEW" onclick="selectBadge(this,'edit')">NEW</div>
+          <div class="badge-opt" data-val="OFFER" onclick="selectBadge(this,'edit')">OFFER</div>
+          <div class="badge-opt" data-val="GIFT" onclick="selectBadge(this,'edit')">GIFT</div>
+          <div class="badge-opt" data-val="LIMITED" onclick="selectBadge(this,'edit')">LIMITED</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-submit" onclick="updateProduct()">
+        ✓ Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal delete-modal">
+    <div class="modal-body">
+      <div class="delete-modal-icon">🗑️</div>
+      <div class="delete-modal-title">Delete Product?</div>
+      <div class="delete-modal-msg" id="deleteModalMsg">This will permanently remove the product from your store. This action cannot be undone.</div>
+      <div style="display:flex;gap:0.8rem;">
+        <button class="btn-cancel" style="flex:1;" onclick="closeDeleteModal()">Cancel</button>
+        <button class="btn-confirm-delete" onclick="confirmDelete()">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="admin-toast" id="adminToast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc,
+  doc, orderBy, query, serverTimestamp, where, getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+  getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+// ══════════════════════
+// CONFIG
+// ══════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyChB0J289Ihu8OxE60Vc-CHsWcKT28RtAU",
+  authDomain: "sree-ramu-sweets.firebaseapp.com",
+  projectId: "sree-ramu-sweets",
+  storageBucket: "sree-ramu-sweets.firebasestorage.app",
+  messagingSenderId: "217706015668",
+  appId: "1:217706015668:web:c03e8659136877b9a860e1"
+};
+
+// ⚠️ IMPORTANT: Replace this with the shop owner's actual Google account email
+// Only this email can access the admin panel
+const ADMIN_EMAIL = "arjunvarmavegesna@gmail.com"; // ← CHANGE THIS to owner's email
+
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+// ══════════════════════
+// STATE
+// ══════════════════════
+let allProducts = [];
+let editingId = null;
+let deleteTargetId = null;
+let selectedEmoji = '🍬';
+let selectedColor = '#FFF0E0';
+let selectedBadge = '';
+let editSelectedEmoji = '🍬';
+let editSelectedColor = '#FFF0E0';
+let editSelectedBadge = '';
+
+const EMOJIS = ['🟨','🔷','🟠','🫐','🌀','🌿','🟤','🎁','🍮','🧆','🥧','🫓','🧁','🟡','🥜','🪔','💛','🍯','🫙','🥮','🧇','🥐','🍱','🫕'];
+const COLORS = ['#FFF3CD','#E8F5E9','#FDE8E8','#FFF0E0','#F3E5F5','#E3F2FD','#FCE4EC','#E0F7FA','#FFF8E1','#F1F8E9'];
+
+// ══════════════════════
+// AUTH
+// ══════════════════════
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // Check if the logged in user is the admin
+    if (user.email === ADMIN_EMAIL || ADMIN_EMAIL === "sreeramusweets@gmail.com") {
+      // Allow if email matches OR if ADMIN_EMAIL hasn't been changed from default
+      // (In production, remove the second condition)
+      showAdmin(user);
+    } else {
+      // Wrong account - sign out and show error
+      signOut(auth);
+      showAuthError(`❌ Access denied. Only the shop owner (${ADMIN_EMAIL}) can access this panel.`);
+    }
+  } else {
+    document.getElementById('authGate').style.display = 'flex';
+    document.getElementById('adminApp').classList.remove('visible');
+  }
+});
+
+window.adminSignIn = async function() {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    // Auth state listener above handles the rest
+  } catch(e) {
+    showAuthError('❌ Sign in failed: ' + e.message);
+  }
+};
+
+window.adminSignOut = async function() {
+  await signOut(auth);
+};
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function showAdmin(user) {
+  document.getElementById('authGate').style.display = 'none';
+  document.getElementById('adminApp').classList.add('visible');
+  // Update sidebar profile
+  const nameEl = document.getElementById('sidebarName');
+  const emailEl = document.getElementById('sidebarEmail');
+  const avatarWrap = document.getElementById('sidebarAvatarWrap');
+  if (nameEl) nameEl.textContent = user.displayName || 'Admin';
+  if (emailEl) emailEl.textContent = user.email;
+  if (avatarWrap) {
+    avatarWrap.innerHTML = user.photoURL
+      ? `<img src="${user.photoURL}" class="sidebar-avatar" referrerpolicy="no-referrer"/>`
+      : `<div class="sidebar-avatar-placeholder">${(user.displayName||'A')[0].toUpperCase()}</div>`;
+  }
+  loadAllData();
+  initFormPickers();
+}
+
+// ══════════════════════
+// INIT PICKERS
+// ══════════════════════
+function initFormPickers() {
+  // Add form emoji row
+  const emojiRow = document.getElementById('emojiRow');
+  emojiRow.innerHTML = EMOJIS.map(e =>
+    `<div class="emoji-opt${e===selectedEmoji?' selected':''}" onclick="pickEmoji('${e}','add')">${e}</div>`
+  ).join('');
+
+  // Edit form emoji row
+  const editEmojiRow = document.getElementById('editEmojiRow');
+  editEmojiRow.innerHTML = EMOJIS.map(e =>
+    `<div class="emoji-opt" onclick="pickEmoji('${e}','edit')">${e}</div>`
+  ).join('');
+
+  // Add form color row
+  const colorRow = document.getElementById('colorRow');
+  colorRow.innerHTML = COLORS.map(c =>
+    `<div class="color-swatch${c===selectedColor?' selected':''}" style="background:${c};" onclick="pickColor('${c}','add')"></div>`
+  ).join('');
+
+  // Edit form color row
+  const editColorRow = document.getElementById('editColorRow');
+  editColorRow.innerHTML = COLORS.map(c =>
+    `<div class="color-swatch" style="background:${c};" onclick="pickColor('${c}','edit')"></div>`
+  ).join('');
+}
+
+window.pickEmoji = function(emoji, context) {
+  if (context === 'add') {
+    selectedEmoji = emoji;
+    document.getElementById('f_emoji').value = emoji;
+    document.querySelectorAll('#emojiRow .emoji-opt').forEach(el =>
+      el.classList.toggle('selected', el.textContent === emoji));
+  } else {
+    editSelectedEmoji = emoji;
+    document.getElementById('e_emoji').value = emoji;
+    document.querySelectorAll('#editEmojiRow .emoji-opt').forEach(el =>
+      el.classList.toggle('selected', el.textContent === emoji));
+  }
+  updatePreviewFor(context);
+};
+
+window.pickColor = function(color, context) {
+  if (context === 'add') {
+    selectedColor = color;
+    document.querySelectorAll('#colorRow .color-swatch').forEach(el =>
+      el.classList.toggle('selected', el.style.background === color));
+  } else {
+    editSelectedColor = color;
+    document.querySelectorAll('#editColorRow .color-swatch').forEach(el =>
+      el.classList.toggle('selected', el.style.background === color));
+  }
+  updatePreviewFor(context);
+};
+
+window.selectBadge = function(el, context='add') {
+  const row = context === 'add' ? document.getElementById('badgeRow') : document.getElementById('editBadgeRow');
+  row.querySelectorAll('.badge-opt').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  const val = el.dataset.val;
+  if (context === 'add') selectedBadge = val;
+  else editSelectedBadge = val;
+  updatePreviewFor(context);
+};
+
+// ══════════════════════
+// LIVE PREVIEW
+// ══════════════════════
+function updatePreviewFor(context) {
+  if (context === 'add') window.updatePreview();
+  else window.updateEditPreview();
+}
+
+window.updatePreview = function() {
+  const emoji = document.getElementById('f_emoji').value || selectedEmoji;
+  const name = document.getElementById('f_name').value || 'Product Name';
+  const price = document.getElementById('f_price').value || '0';
+  document.getElementById('prevEmojiBox').textContent = emoji;
+  document.getElementById('prevEmojiBox').style.background = selectedColor;
+  document.getElementById('prevName').textContent = name;
+  document.getElementById('prevPrice').textContent = '₹' + price;
+  document.getElementById('prevBadge').innerHTML = selectedBadge
+    ? `<span style="background:var(--brand);color:white;font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:6px;">${selectedBadge}</span>`
+    : '';
+};
+
+window.updateEditPreview = function() {
+  const emoji = document.getElementById('e_emoji').value || editSelectedEmoji;
+  const name = document.getElementById('e_name').value || 'Product Name';
+  const price = document.getElementById('e_price').value || '0';
+  document.getElementById('editPrevEmojiBox').textContent = emoji;
+  document.getElementById('editPrevEmojiBox').style.background = editSelectedColor;
+  document.getElementById('editPrevName').textContent = name;
+  document.getElementById('editPrevPrice').textContent = '₹' + price;
+  document.getElementById('editPrevBadge').innerHTML = editSelectedBadge
+    ? `<span style="background:var(--brand);color:white;font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:6px;">${editSelectedBadge}</span>`
+    : '';
+};
+
+// ══════════════════════
+// DATA LOADING
+// ══════════════════════
+async function loadAllData() {
+  await loadProducts();
+  await loadStats();
+}
+
+async function loadProducts() {
+  try {
+    const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
+    allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // If Firestore is empty, seed with default products
+    if (allProducts.length === 0) {
+      await seedDefaultProducts();
+      return;
+    }
+
+    renderProductsTable(allProducts);
+    renderDashboardPreview(allProducts);
+    renderCategoryGrid(allProducts);
+    updateStats(allProducts);
+  } catch(e) {
+    console.error('Load products failed:', e);
+    toast('⚠️ Failed to load products', 'error');
+  }
+}
+
+async function seedDefaultProducts() {
+  const defaults = [
+    { name:"Mysore Pak", desc:"Pure ghee, besan & sugar magic", price:250, oldPrice:300, emoji:"🟨", bg:"#FFF3CD", badge:"BESTSELLER", cat:"sweets", active:true, stock:50, weight:"Per 250g pack" },
+    { name:"Kaju Katli", desc:"Premium cashew diamond cuts", price:480, oldPrice:550, emoji:"🔷", bg:"#E8F5E9", badge:"POPULAR", cat:"mithai", active:true, stock:30, weight:"Per 250g pack" },
+    { name:"Laddu", desc:"Motichoor & Boondi varieties", price:200, oldPrice:240, emoji:"🟠", bg:"#FDE8E8", badge:"", cat:"sweets", active:true, stock:60, weight:"Per 250g pack" },
+    { name:"Gulab Jamun", desc:"Soft, juicy, melt-in-mouth", price:150, oldPrice:180, emoji:"🫐", bg:"#FFF0E0", badge:"OFFER", cat:"sweets", active:true, stock:80, weight:"Per 250g pack" },
+    { name:"Chakli", desc:"Crispy rice flour snack", price:120, oldPrice:null, emoji:"🌀", bg:"#F3E5F5", badge:"", cat:"snacks", active:true, stock:100, weight:"Per 250g pack" },
+    { name:"Murukku", desc:"Traditional Telugu snack", price:100, oldPrice:120, emoji:"🌿", bg:"#E3F2FD", badge:"", cat:"snacks", active:true, stock:90, weight:"Per 250g pack" },
+    { name:"Peda", desc:"Milk solids with saffron", price:180, oldPrice:210, emoji:"🟤", bg:"#FFF0E0", badge:"", cat:"mithai", active:true, stock:40, weight:"Per 250g pack" },
+    { name:"Gift Box", desc:"Assorted 500g premium box", price:399, oldPrice:499, emoji:"🎁", bg:"#FDE8E8", badge:"GIFT", cat:"gifts", active:true, stock:20, weight:"500g assorted" },
+  ];
+  for (const p of defaults) {
+    await addDoc(collection(db, 'products'), { ...p, createdAt: serverTimestamp() });
+  }
+  toast('✅ Default products seeded!', 'success');
+  await loadProducts();
+}
+
+async function loadStats() {
+  try {
+    const ordersSnap = await getDocs(collection(db, 'orders'));
+    document.getElementById('stat-orders').textContent = ordersSnap.size;
+  } catch(e) { document.getElementById('stat-orders').textContent = '–'; }
+}
+
+function updateStats(products) {
+  document.getElementById('stat-total').textContent = products.length;
+  document.getElementById('stat-active').textContent = products.filter(p => p.active !== false).length;
+  const cats = new Set(products.map(p => p.cat));
+  document.getElementById('stat-cats').textContent = cats.size;
+}
+
+// ══════════════════════
+// RENDER TABLE
+// ══════════════════════
+function renderProductsTable(products) {
+  const wrap = document.getElementById('productsTableWrap');
+  if (!products.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🍬</div><div class="empty-state-text">No products found.<br><small>Add your first product!</small></div></div>`;
+    return;
+  }
+  wrap.innerHTML = `
+    <table class="product-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Badge</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${products.map(p => `
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:0.7rem;">
+                <div class="product-emoji-cell" style="background:${p.bg||'#FFF0E0'}">${p.emoji||'🍬'}</div>
+                <div>
+                  <div class="product-name-cell">${p.name}</div>
+                  <div style="font-size:0.72rem;color:var(--text-soft);margin-top:1px;">${p.desc||''}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="product-cat-tag">${p.cat||'–'}</span></td>
+            <td>
+              <div class="product-price-cell">₹${p.price}</div>
+              ${p.oldPrice ? `<div class="product-old-price">₹${p.oldPrice}</div>` : ''}
+            </td>
+            <td>
+              ${p.badge ? `<span class="product-badge-cell">${p.badge}</span>` : '<span class="product-badge-cell none">—</span>'}
+            </td>
+            <td>
+              <span class="status-dot ${p.active!==false?'active':'inactive'}"></span>
+              ${p.active!==false ? 'Active' : 'Hidden'}
+            </td>
+            <td>
+              <div class="action-btns">
+                <button class="btn-edit" onclick="openEditModal('${p.id}')">✏️ Edit</button>
+                <button class="btn-toggle ${p.active!==false?'':'inactive'}" onclick="toggleProductStatus('${p.id}',${p.active!==false})">
+                  ${p.active!==false ? '👁 Hide' : '👁 Show'}
+                </button>
+                <button class="btn-delete" onclick="openDeleteModal('${p.id}','${p.name.replace(/'/g,"\\'")}')">🗑</button>
+              </div>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderDashboardPreview(products) {
+  const wrap = document.getElementById('dashboardProductPreview');
+  const recent = products.slice(0, 5);
+  if (!recent.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-text">No products yet.</div></div>`;
+    return;
+  }
+  wrap.innerHTML = `
+    <table class="product-table">
+      <thead>
+        <tr><th>Product</th><th>Category</th><th>Price</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        ${recent.map(p => `
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:0.7rem;">
+                <div class="product-emoji-cell" style="background:${p.bg||'#FFF0E0'}">${p.emoji||'🍬'}</div>
+                <div class="product-name-cell">${p.name}</div>
+              </div>
+            </td>
+            <td><span class="product-cat-tag">${p.cat||'–'}</span></td>
+            <td class="product-price-cell">₹${p.price}</td>
+            <td><span class="status-dot ${p.active!==false?'active':'inactive'}"></span>${p.active!==false?'Active':'Hidden'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderCategoryGrid(products) {
+  const cats = [
+    { key:'sweets', emoji:'🧁', label:'Sweets' },
+    { key:'mithai', emoji:'🟡', label:'Mithai' },
+    { key:'snacks', emoji:'🥜', label:'Snacks' },
+    { key:'gifts',  emoji:'🎁', label:'Gift Boxes' },
+    { key:'seasonal',emoji:'🪔',label:'Seasonal' },
+  ];
+  const grid = document.getElementById('catManageGrid');
+  grid.innerHTML = cats.map(c => {
+    const count = products.filter(p => p.cat === c.key).length;
+    return `
+      <div class="cat-manage-card" onclick="showSection('products');document.getElementById('catFilter').value='${c.key}';filterTable()">
+        <div class="cat-emoji">${c.emoji}</div>
+        <div class="cat-name">${c.label}</div>
+        <div class="cat-count">${count} product${count!==1?'s':''}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ══════════════════════
+// FILTER
+// ══════════════════════
+window.filterTable = function() {
+  const q = document.getElementById('productSearch').value.toLowerCase();
+  const cat = document.getElementById('catFilter').value;
+  const status = document.getElementById('statusFilter').value;
+
+  let filtered = allProducts.filter(p => {
+    const matchQ = !q || p.name.toLowerCase().includes(q) || (p.desc||'').toLowerCase().includes(q);
+    const matchCat = !cat || p.cat === cat;
+    const matchStatus = !status || (status==='active' ? p.active!==false : p.active===false);
+    return matchQ && matchCat && matchStatus;
+  });
+  renderProductsTable(filtered);
+};
+
+// ══════════════════════
+// ADD PRODUCT
+// ══════════════════════
+window.saveProduct = async function() {
+  const name = document.getElementById('f_name').value.trim();
+  const cat  = document.getElementById('f_cat').value;
+  const desc = document.getElementById('f_desc').value.trim();
+  const price = parseFloat(document.getElementById('f_price').value);
+  const oldPrice = parseFloat(document.getElementById('f_oldprice').value) || null;
+  const weight = document.getElementById('f_weight').value.trim();
+  const stock = parseInt(document.getElementById('f_stock').value) || 0;
+  const emoji = document.getElementById('f_emoji').value || selectedEmoji;
+
+  // Validation
+  if (!name) { highlight('f_name'); toast('⚠️ Product name is required', 'error'); return; }
+  if (!cat)  { highlight('f_cat');  toast('⚠️ Please select a category', 'error'); return; }
+  if (!desc) { highlight('f_desc'); toast('⚠️ Description is required', 'error'); return; }
+  if (!price || price <= 0) { highlight('f_price'); toast('⚠️ Valid price is required', 'error'); return; }
+  if (!emoji){ toast('⚠️ Please select an emoji', 'error'); return; }
+
+  const btn = document.getElementById('saveBtn');
+  const btnIcon = document.getElementById('saveBtnIcon');
+  const btnText = document.getElementById('saveBtnText');
+  btn.disabled = true;
+  btnIcon.textContent = '⏳';
+  btnText.textContent = 'Saving…';
+
+  try {
+    await addDoc(collection(db, 'products'), {
+      name, cat, desc, price,
+      oldPrice: oldPrice || null,
+      weight: weight || 'Per 250g pack',
+      stock, emoji,
+      bg: selectedColor,
+      badge: selectedBadge || null,
+      active: true,
+      createdAt: serverTimestamp()
+    });
+    toast('✅ Product added successfully!', 'success');
+    resetForm();
+    await loadProducts();
+    showSection('products');
+  } catch(e) {
+    toast('❌ Failed to save: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btnIcon.textContent = '✓';
+    btnText.textContent = 'Save Product';
+  }
+};
+
+window.resetForm = function() {
+  ['f_name','f_cat','f_desc','f_price','f_oldprice','f_weight','f_stock'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; el.classList.remove('error'); }
+  });
+  selectedEmoji = '🍬';
+  selectedColor = '#FFF0E0';
+  selectedBadge = '';
+  document.getElementById('f_emoji').value = '';
+  document.querySelectorAll('#emojiRow .emoji-opt').forEach((el,i) => el.classList.toggle('selected', EMOJIS[i]==='🍬'));
+  document.querySelectorAll('#colorRow .color-swatch').forEach((el,i) => el.classList.toggle('selected', COLORS[i]==='#FFF0E0'));
+  document.querySelectorAll('#badgeRow .badge-opt').forEach(el => el.classList.toggle('selected', el.dataset.val===''));
+  updatePreview();
+};
+
+function highlight(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.add('error'); el.focus(); setTimeout(()=>el.classList.remove('error'),2000); }
+}
+
+// ══════════════════════
+// EDIT PRODUCT
+// ══════════════════════
+window.openEditModal = function(id) {
+  const p = allProducts.find(x => x.id === id);
+  if (!p) return;
+  editingId = id;
+
+  // Fill form
+  document.getElementById('e_name').value = p.name || '';
+  document.getElementById('e_cat').value = p.cat || '';
+  document.getElementById('e_desc').value = p.desc || '';
+  document.getElementById('e_price').value = p.price || '';
+  document.getElementById('e_oldprice').value = p.oldPrice || '';
+  document.getElementById('e_weight').value = p.weight || '';
+  document.getElementById('e_stock').value = p.stock || '';
+  document.getElementById('e_emoji').value = p.emoji || '';
+
+  editSelectedEmoji = p.emoji || '🍬';
+  editSelectedColor = p.bg || '#FFF0E0';
+  editSelectedBadge = p.badge || '';
+
+  // Update emoji row
+  document.querySelectorAll('#editEmojiRow .emoji-opt').forEach(el =>
+    el.classList.toggle('selected', el.textContent === editSelectedEmoji));
+  // Update color row
+  document.querySelectorAll('#editColorRow .color-swatch').forEach(el =>
+    el.classList.toggle('selected', el.style.background === editSelectedColor));
+  // Update badge row
+  document.querySelectorAll('#editBadgeRow .badge-opt').forEach(el =>
+    el.classList.toggle('selected', el.dataset.val === editSelectedBadge));
+
+  updateEditPreview();
+  document.getElementById('editModal').classList.add('open');
+};
+
+window.closeEditModal = function() {
+  document.getElementById('editModal').classList.remove('open');
+  editingId = null;
+};
+
+window.updateProduct = async function() {
+  if (!editingId) return;
+
+  const name = document.getElementById('e_name').value.trim();
+  const cat  = document.getElementById('e_cat').value;
+  const desc = document.getElementById('e_desc').value.trim();
+  const price = parseFloat(document.getElementById('e_price').value);
+  const oldPrice = parseFloat(document.getElementById('e_oldprice').value) || null;
+  const weight = document.getElementById('e_weight').value.trim();
+  const stock = parseInt(document.getElementById('e_stock').value) || 0;
+  const emoji = document.getElementById('e_emoji').value || editSelectedEmoji;
+
+  if (!name || !cat || !desc || !price) {
+    toast('⚠️ Please fill all required fields', 'error'); return;
+  }
+
+  try {
+    await updateDoc(doc(db, 'products', editingId), {
+      name, cat, desc, price,
+      oldPrice: oldPrice || null,
+      weight: weight || 'Per 250g pack',
+      stock, emoji,
+      bg: editSelectedColor,
+      badge: editSelectedBadge || null,
+      updatedAt: serverTimestamp()
+    });
+    toast('✅ Product updated!', 'success');
+    closeEditModal();
+    await loadProducts();
+  } catch(e) {
+    toast('❌ Update failed: ' + e.message, 'error');
+  }
+};
+
+// ══════════════════════
+// TOGGLE STATUS
+// ══════════════════════
+window.toggleProductStatus = async function(id, currentlyActive) {
+  try {
+    await updateDoc(doc(db, 'products', id), {
+      active: !currentlyActive,
+      updatedAt: serverTimestamp()
+    });
+    toast(currentlyActive ? '👁 Product hidden from store' : '✅ Product is now visible', 'success');
+    await loadProducts();
+  } catch(e) {
+    toast('❌ Failed to update status', 'error');
+  }
+};
+
+// ══════════════════════
+// DELETE PRODUCT
+// ══════════════════════
+window.openDeleteModal = function(id, name) {
+  deleteTargetId = id;
+  document.getElementById('deleteModalMsg').textContent = `This will permanently delete "${name}" from your store. This cannot be undone.`;
+  document.getElementById('deleteModal').classList.add('open');
+};
+
+window.closeDeleteModal = function() {
+  document.getElementById('deleteModal').classList.remove('open');
+  deleteTargetId = null;
+};
+
+window.confirmDelete = async function() {
+  if (!deleteTargetId) return;
+  try {
+    await deleteDoc(doc(db, 'products', deleteTargetId));
+    toast('🗑️ Product deleted', 'success');
+    closeDeleteModal();
+    await loadProducts();
+  } catch(e) {
+    toast('❌ Delete failed: ' + e.message, 'error');
+  }
+};
+
+// ══════════════════════
+// ORDERS
+// ══════════════════════
+async function loadOrdersSection() {
+  const wrap = document.getElementById('ordersContent');
+  wrap.innerHTML = '<div class="spinner"></div><div class="loading-text">Loading orders...</div>';
+  try {
+    const q = query(collection(db, 'orders'), orderBy('date', 'desc'));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-text">No orders yet.</div></div>`;
+      return;
+    }
+    wrap.innerHTML = `
+      <table class="product-table">
+        <thead>
+          <tr><th>#</th><th>Customer</th><th>Items</th><th>Total</th><th>Date</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          ${snap.docs.map((d, i) => {
+            const o = d.data();
+            const date = o.date?.toDate ? o.date.toDate().toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}) : 'Recent';
+            const items = (o.items||[]).map(it => `${it.emoji||'🍬'} ${it.name} ×${it.qty}`).join(', ');
+            return `
+              <tr>
+                <td style="font-size:0.72rem;color:var(--text-soft);">#${String(i+1).padStart(4,'0')}</td>
+                <td>
+                  <div style="font-weight:600;font-size:0.85rem;">${o.shipping?.name || o.userName || 'Guest'}</div>
+                  <div style="font-size:0.7rem;color:var(--text-soft);">📞 ${o.shipping?.phone||'–'}</div>
+                </td>
+                <td style="font-size:0.78rem;max-width:200px;">${items}</td>
+                <td style="font-weight:700;color:var(--brand-dark);">₹${o.total}</td>
+                <td style="font-size:0.78rem;color:var(--text-soft);">${date}</td>
+                <td><span style="background:var(--success-bg);color:var(--success);font-size:0.65rem;font-weight:700;padding:3px 8px;border-radius:8px;">✅ Paid</span></td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Failed to load orders.<br><small>${e.message}</small></div></div>`;
+  }
+}
+
+// ══════════════════════
+// NAVIGATION
+// ══════════════════════
+const sections = ['dashboard','products','add','categories','orders'];
+const titles = { dashboard:'Dashboard', products:'All Products', add:'Add Product', categories:'Categories', orders:'Recent Orders' };
+
+window.showSection = function(name) {
+  sections.forEach(s => {
+    const el = document.getElementById('section-' + s);
+    if (el) el.style.display = s === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.nav-link').forEach(el => {
+    el.classList.toggle('active', el.getAttribute('onclick')?.includes(`'${name}'`));
+  });
+  document.getElementById('topbarTitle').textContent = titles[name] || name;
+  if (name === 'add') {
+    document.getElementById('addFormTitle').textContent = '➕ Add New Product';
+    resetForm();
+  }
+  if (name === 'orders') loadOrdersSection();
+  if (name === 'categories') renderCategoryGrid(allProducts);
+  // Close sidebar on mobile
+  closeSidebar();
+};
+
+// ══════════════════════
+// SIDEBAR MOBILE
+// ══════════════════════
+window.toggleSidebar = function() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+};
+window.closeSidebar = function() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+};
+
+// ══════════════════════
+// TOAST
+// ══════════════════════
+let toastTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('adminToast');
+  el.textContent = msg;
+  el.className = 'admin-toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+window.toast = toast;
+</script>
+
+</body>
+</html>
