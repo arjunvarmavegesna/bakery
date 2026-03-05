@@ -1795,7 +1795,7 @@ function renderWishlist() {
   content.innerHTML = `<div class="wishlist-grid">${items.map(p => `
     <div class="wishlist-card" onclick="closeWishlistPage();setTimeout(()=>openProductPage('${p.id}'),300)">
       <div class="wishlist-card-img"
-        style="background-color:${p.bg||'#FFF0E0'};${p.photoUrl ? `background-image:url('${p.photoUrl}');` : ''}">
+        style="background-color:${p.bg||'#FFF0E0'};${p.photoUrl ? `background-image:url('${p.photoUrl}');background-size:cover;background-position:center center;` : ''}">
         ${!p.photoUrl ? '🍬' : ''}
       </div>
       <button class="wishlist-remove" onclick="event.stopPropagation();removeFromWishlist('${p.id}')">✕</button>
@@ -1849,7 +1849,7 @@ function renderProducts(list = products, containerId = 'productsGrid') {
   grid.innerHTML = list.map(p => `
     <div class="product-card" onclick="openProductPage('${p.id}')">
       <div class="product-img"
-        style="background-color:${p.bg||'#FFF0E0'};${p.photoUrl ? `background-image:url('${p.photoUrl}');` : ''}">
+        style="background-color:${p.bg||'#FFF0E0'};${p.photoUrl ? `background-image:url('${p.photoUrl}');background-size:cover;background-position:center center;` : ''}">
         ${!p.photoUrl ? `<span style="position:relative;z-index:1;">🍬</span>` : ''}
         ${p.badge ? `<div class="product-badge">${p.badge}</div>` : ''}
         <button class="product-fav" onclick="event.stopPropagation();toggleWishlist('${p.id}',this)" id="fav-${containerId}-${p.id}">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
@@ -1895,7 +1895,7 @@ function openCart() {
     cartItemsEl.innerHTML = items.map(item => `
       <div class="cart-item">
         <div class="cart-item-img"
-          style="background-color:${item.bg||'#FFF0E0'};${item.photoUrl ? `background-image:url('${item.photoUrl}');` : ''}">
+          style="background-color:${item.bg||'#FFF0E0'};${item.photoUrl ? `background-image:url('${item.photoUrl}');background-size:cover;background-position:center center;` : ''}">
           ${!item.photoUrl ? '🍬' : ''}
         </div>
         <div class="cart-item-info">
@@ -2021,6 +2021,9 @@ function openProductPage(id) {
   hero.style.backgroundColor = p.bg || '#FFF0E0';
   if (p.photoUrl) {
     hero.style.backgroundImage = `url('${p.photoUrl}')`;
+    hero.style.backgroundSize = 'cover';
+    hero.style.backgroundPosition = 'center center';
+    hero.style.backgroundRepeat = 'no-repeat';
     hero.innerHTML = `
       ${p.badge ? `<div class="pp-badge">${p.badge}</div>` : ''}
       <button class="product-fav" style="position:absolute;top:12px;right:12px;width:36px;height:36px;font-size:1.1rem;z-index:2;" onclick="toggleWishlist('${p.id}',this)">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
