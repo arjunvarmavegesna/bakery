@@ -1402,6 +1402,7 @@
       <input class="form-input" id="ship_note" type="text" placeholder="e.g. Call before delivery, leave at door…" />
     </div>
 
+    <!-- ✅ FIXED: proper <button> tags instead of divs -->
     <button class="ship-btn" onclick="goToReview()">Continue to Review →</button>
     <button class="ship-btn-back" onclick="backToCart()">← Back to Cart</button>
   </div>
@@ -1424,6 +1425,7 @@
       </div>
     </div>
 
+    <!-- ✅ FIXED: proper <button> tags instead of divs -->
     <button class="ship-btn" onclick="proceedToPayment()">💳 Pay Now</button>
     <button class="ship-btn-back" onclick="backToAddress()">← Edit Address</button>
   </div>
@@ -1719,24 +1721,14 @@
 </nav>
 
 <script>
-// Products — populated from Firestore by loadProductsFromFirebase()
-// Falls back to built-in list if Firestore is unreachable
-let products = [
-  { id:1, name:"Mysore Pak", desc:"Pure ghee, besan & sugar magic", price:250, oldPrice:300, emoji:"🟨", bg:"#FFF3CD", badge:"BESTSELLER", cat:"sweets" },
-  { id:2, name:"Kaju Katli", desc:"Premium cashew diamond cuts", price:480, oldPrice:550, emoji:"🔷", bg:"#E8F5E9", badge:"POPULAR", cat:"mithai" },
-  { id:3, name:"Laddu", desc:"Motichoor & Boondi varieties", price:200, oldPrice:240, emoji:"🟠", bg:"#FDE8E8", badge:null, cat:"sweets" },
-  { id:4, name:"Gulab Jamun", desc:"Soft, juicy, melt-in-mouth", price:150, oldPrice:180, emoji:"🫐", bg:"#FFF0E0", badge:"OFFER", cat:"sweets" },
-  { id:5, name:"Chakli", desc:"Crispy rice flour snack", price:120, oldPrice:null, emoji:"🌀", bg:"#F3E5F5", badge:null, cat:"snacks" },
-  { id:6, name:"Murukku", desc:"Traditional Telugu snack", price:100, oldPrice:120, emoji:"🌿", bg:"#E3F2FD", badge:null, cat:"snacks" },
-  { id:7, name:"Peda", desc:"Milk solids with saffron", price:180, oldPrice:210, emoji:"🟤", bg:"#FFF0E0", badge:null, cat:"mithai" },
-  { id:8, name:"Gift Box", desc:"Assorted 500g premium box", price:399, oldPrice:499, emoji:"🎁", bg:"#FDE8E8", badge:"GIFT", cat:"gifts" },
-];
+let products = []; // Loaded from Firebase Firestore
 
 let cart = {};
 let searchVisible = false;
 let wishlist = new Set();
-let purchasedProducts = new Set();
+let purchasedProducts = new Set(); // tracks product IDs the user has bought
 
+// ── WISHLIST ──
 function toggleWishlist(id, btn) {
   const p = products.find(x => x.id === id);
   if (wishlist.has(id)) {
@@ -1747,7 +1739,7 @@ function toggleWishlist(id, btn) {
   } else {
     wishlist.add(id);
     if (btn) btn.textContent = '❤️';
-    showToast(`${p.emoji} Added to wishlist!`);
+    showToast(`Added to wishlist!`);
     if (window.saveWishlistToFirebase) window.saveWishlistToFirebase(id, true);
   }
   updateWishlistBadge();
@@ -1778,13 +1770,13 @@ function renderWishlist() {
     return;
   }
   content.innerHTML = `<div class="wishlist-grid">${items.map(p => `
-    <div class="wishlist-card" onclick="closeWishlistPage();setTimeout(()=>openProductPage(${p.id}),300)">
-      <div class="wishlist-card-img" style="background:${p.bg}">${p.emoji}</div>
-      <button class="wishlist-remove" onclick="event.stopPropagation();removeFromWishlist(${p.id})">✕</button>
+    <div class="wishlist-card" onclick="closeWishlistPage();setTimeout(()=>openProductPage('${p.id}'),300)">
+      <div class="wishlist-card-img" style="background:${p.bg||'#FFF0E0'}">${p.photoUrl ? `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;" alt="${p.name}">` : '🍬'}</div>
+      <button class="wishlist-remove" onclick="event.stopPropagation();removeFromWishlist('${p.id}')">✕</button>
       <div class="wishlist-card-info">
         <div class="wishlist-card-name">${p.name}</div>
         <div class="wishlist-card-price">₹${p.price}</div>
-        <button class="wishlist-add-btn" onclick="event.stopPropagation();addToCart(${p.id})">🛒 Add to Cart</button>
+        <button class="wishlist-add-btn" onclick="event.stopPropagation();addToCart('${p.id}')">🛒 Add to Cart</button>
       </div>
     </div>
   `).join('')}</div>`;
@@ -1793,12 +1785,14 @@ function renderWishlist() {
 function removeFromWishlist(id) {
   wishlist.delete(id);
   updateWishlistBadge();
-  document.querySelectorAll(`[id^="fav-"]`).forEach(el => {
+  // update heart on main grid
+  document.querySelectorAll(`[id*="fav-"]`).forEach(el => {
     if (el.id.endsWith('-' + id)) el.textContent = '🤍';
   });
   renderWishlist();
 }
 
+// ── CATEGORIES PAGE ──
 function openCategoriesPage() {
   backToCatGrid();
   document.getElementById('categoriesPage').classList.add('open');
@@ -1826,17 +1820,23 @@ function backToCatGrid() {
 function renderProducts(list = products, containerId = 'productsGrid') {
   const grid = document.getElementById(containerId);
   if (!grid) return;
+  if (!list.length) {
+    grid.innerHTML = `<div style="text-align:center;padding:3rem;color:#aaa;grid-column:1/-1;"><div style="font-size:3rem;margin-bottom:1rem;">🍬</div><p>No products found</p></div>`;
+    return;
+  }
   grid.innerHTML = list.map(p => `
-    <div class="product-card" onclick="openProductPage(${p.id})">
-      <div class="product-img" style="background:${p.bg}">
-        <span style="font-size:3.2rem">${p.emoji}</span>
+    <div class="product-card" onclick="openProductPage('${p.id}')">
+      <div class="product-img" style="background:${p.bg||'#FFF0E0'}">
+        ${p.photoUrl
+          ? `<img src="${p.photoUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">`
+          : `<span style="font-size:3.2rem">🍬</span>`}
         ${p.badge ? `<div class="product-badge">${p.badge}</div>` : ''}
-        <button class="product-fav" onclick="event.stopPropagation();toggleWishlist(${p.id},this)" id="fav-${containerId}-${p.id}">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
+        <button class="product-fav" onclick="event.stopPropagation();toggleWishlist('${p.id}',this)" id="fav-${containerId}-${p.id}">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
       </div>
       <div class="product-info">
         <div class="product-name">${p.name}</div>
         <div class="product-desc">${p.desc}</div>
-        <div class="product-weight">Per 250g pack</div>
+        <div class="product-weight">${p.weight||'Per 250g pack'}</div>
         <div class="product-footer">
           <div class="product-price">
             ${p.oldPrice ? `<span>₹${p.oldPrice}</span>` : ''}
@@ -1854,7 +1854,7 @@ function addToCart(id) {
   if (!cart[id]) cart[id] = { ...p, qty: 0 };
   cart[id].qty++;
   updateCartBadge();
-  showToast(`${p.emoji} ${p.name} added to cart!`);
+  showToast(`${p.name} added to cart!`);
 }
 
 function updateCartBadge() {
@@ -1873,15 +1873,15 @@ function openCart() {
   } else {
     cartItemsEl.innerHTML = items.map(item => `
       <div class="cart-item">
-        <div class="cart-item-img">${item.emoji}</div>
+        <div class="cart-item-img" style="background:${item.bg||'#FFF0E0'};overflow:hidden;">${item.photoUrl ? `<img src="${item.photoUrl}" style="width:100%;height:100%;object-fit:cover;" alt="${item.name}">` : '🍬'}</div>
         <div class="cart-item-info">
           <div class="cart-item-name">${item.name}</div>
           <div class="cart-item-price">₹${item.price * item.qty}</div>
         </div>
         <div class="qty-ctrl">
-          <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+          <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
           <span class="qty-val">${item.qty}</span>
-          <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+          <button class="qty-btn" onclick="changeQty('${item.id}',1)">+</button>
         </div>
       </div>
     `).join('');
@@ -1973,9 +1973,12 @@ function showToast(msg) {
   toastTimeout = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-renderProducts();
+// Show loading skeleton while Firebase loads products
+document.getElementById('productsGrid').innerHTML = `
+  <div style="grid-column:1/-1;text-align:center;padding:3rem;color:#B84D00;">
+    <p style="font-size:0.9rem;opacity:0.7;">Loading fresh sweets...</p>
+  </div>`;
 
-// ── PRODUCT PAGE ──
 let currentProductId = null;
 let ppQty = 1;
 
@@ -1985,15 +1988,18 @@ function openProductPage(id) {
   currentProductId = id;
   ppQty = 1;
 
+  // close other pages first
   document.getElementById('categoriesPage').classList.remove('open');
   document.getElementById('wishlistPage').classList.remove('open');
 
   document.getElementById('ppHeaderTitle').textContent = p.name;
-  document.getElementById('ppHero').style.background = p.bg;
+  document.getElementById('ppHero').style.background = p.bg||'#FFF0E0';
   document.getElementById('ppHero').innerHTML = `
-    <span style="font-size:7rem">${p.emoji}</span>
+    ${p.photoUrl
+      ? `<img src="${p.photoUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">`
+      : `<span style="font-size:7rem">🍬</span>`}
     ${p.badge ? `<div class="pp-badge">${p.badge}</div>` : ''}
-    <button class="product-fav" style="position:absolute;top:12px;right:12px;width:36px;height:36px;font-size:1.1rem;" onclick="toggleWishlist(${p.id},this)">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
+    <button class="product-fav" style="position:absolute;top:12px;right:12px;width:36px;height:36px;font-size:1.1rem;" onclick="toggleWishlist('${p.id}',this)">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
   `;
   document.getElementById('ppName').textContent = p.name;
   document.getElementById('ppDesc').textContent = p.desc;
@@ -2036,7 +2042,7 @@ function ppAddToCart() {
   if (!cart[p.id]) cart[p.id] = { ...p, qty: 0 };
   cart[p.id].qty += ppQty;
   updateCartBadge();
-  showToast(`${p.emoji} ${p.name} x${ppQty} added to cart!`);
+  showToast(`${p.name} x${ppQty} added to cart!`);
   closeProductPage();
 }
 
@@ -2096,6 +2102,7 @@ function starsHtml(rating, size = '0.85rem') {
 function renderProductReviews(productId) {
   const data = reviewsData[productId] || { avg: 4.8, total: 0, dist: [0,0,0,0,0], reviews: [] };
 
+  // Mini bars in product page
   const barsHtml = [5,4,3,2,1].map(star => {
     const count = data.dist[star - 1];
     const pct = data.total > 0 ? Math.round(count / data.total * 100) : 0;
@@ -2116,6 +2123,7 @@ function renderProductReviews(productId) {
   const countEl = document.getElementById('ppReviewCount');
   if (countEl) countEl.textContent = data.total + ' reviews';
 
+  // Top 2 reviews preview
   const topReviews = document.getElementById('ppTopReviews');
   if (topReviews) {
     topReviews.innerHTML = data.reviews.slice(0, 2).map(r => `
@@ -2145,6 +2153,7 @@ function openReviewsPage() {
 
   document.getElementById('reviewsPageTitle').innerHTML = `${p ? p.name : 'Reviews'} <small id="reviewsPageSub">${data.avg.toFixed(1)}★ · ${data.total} reviews</small>`;
 
+  // Full rating summary
   const barsHtml = [5,4,3,2,1].map(star => {
     const count = data.dist[star - 1];
     const pct = data.total > 0 ? Math.round(count / data.total * 100) : 0;
@@ -2172,6 +2181,7 @@ function openReviewsPage() {
     </div>
   `;
 
+  // All reviews including user submitted
   const allReviews = [...(userReviews[id] || []), ...(data.reviews || [])];
   document.getElementById('reviewsListFull').innerHTML = allReviews.length === 0
     ? `<div style="text-align:center;padding:3rem 1rem;color:#aaa;"><div style="font-size:3rem;margin-bottom:0.5rem;">💬</div><p>No reviews yet.<br><small>Be the first to review!</small></p></div>`
@@ -2196,6 +2206,7 @@ function openReviewsPage() {
     `).join('');
 
   document.getElementById('reviewsPage').classList.add('open');
+  // Show write review only if user has purchased this product
   const writeBtn = document.getElementById('writeReviewBtn');
   if (purchasedProducts.has(id)) {
     writeBtn.classList.add('open');
@@ -2223,12 +2234,14 @@ function markHelpful(i, btnId) {
   btn.classList.toggle('liked');
 }
 
+// Write Review
 function openWriteReview() {
   if (!purchasedProducts.has(currentReviewProductId)) {
     showToast('🔒 Only verified buyers can review!');
     return;
   }
   selectedRating = 0;
+  // Auto-fill name from logged-in user
   const userName = window.currentUser ? window.currentUser.displayName || '' : '';
   document.getElementById('reviewName').value = userName;
   document.getElementById('reviewName').readOnly = !!userName;
@@ -2269,9 +2282,10 @@ function submitReview() {
     name, text, rating: selectedRating,
     loc: userCity, date: now,
     color: colors[Math.floor(Math.random() * colors.length)],
-    verified: true
+    verified: true  // always verified since we checked purchasedProducts
   });
 
+  // update avg in reviewsData
   if (reviewsData[id]) {
     reviewsData[id].total += 1;
     reviewsData[id].dist[selectedRating - 1] += 1;
@@ -2282,6 +2296,7 @@ function submitReview() {
   closeWriteReview();
   showToast('🎉 Thank you for your verified review!');
 
+  // Save to Firebase
   if (window.saveReviewToFirebase) {
     window.saveReviewToFirebase(id, {
       name, text, rating: selectedRating,
@@ -2295,6 +2310,7 @@ function submitReview() {
   }, 400);
 }
 
+// ── POST-PURCHASE REVIEW PROMPT ──
 function showReviewPrompt(productIds) {
   const items = productIds.map(id => products.find(p => p.id === id)).filter(Boolean);
   if (!items.length) return;
@@ -2355,6 +2371,7 @@ function backToAddress() {
   document.getElementById('stepPayment').className = 'shipping-step';
 }
 
+// ── PINCODE AUTO-FILL ──
 let pincodeTimer = null;
 document.addEventListener('DOMContentLoaded', function() {
   const pincodeInput = document.getElementById('ship_pincode');
@@ -2426,6 +2443,7 @@ async function lookupPincode(pin) {
   }
 }
 
+// ── VALIDATION HELPERS ──
 function showErr(id, msg) {
   const el = document.getElementById(id);
   if (el) { el.textContent = msg || el.textContent; el.classList.add('show'); }
@@ -2530,6 +2548,7 @@ function proceedToPayment() {
   startPayment();
 }
 
+// ── EMAIL ──
 emailjs.init('CmgzshDIJLAWVwlW8');
 
 function sendOrderEmail(items, total, shipping, paymentId) {
@@ -2546,8 +2565,9 @@ function sendOrderEmail(items, total, shipping, paymentId) {
   }).then(() => console.log('Order email sent!')).catch(err => console.error('Email failed:', err));
 }
 
+// ── WHATSAPP ──
 function sendOrderWhatsApp(items, total, shipping, paymentId) {
-  const OWNER_NUMBER = '919876543210';
+  const OWNER_NUMBER = '919876543210'; // ← CHANGE THIS
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
   const delivery = subtotal >= 499 ? 0 : 40;
   const itemLines = items.map(i => `• ${i.name} x${i.qty} = Rs.${i.price * i.qty}`).join('\n');
@@ -2564,6 +2584,7 @@ function sendOrderWhatsApp(items, total, shipping, paymentId) {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
+// ── PAYMENT ──
 function startPayment() {
   const items = Object.values(cart);
   if (items.length === 0) return;
@@ -2579,6 +2600,7 @@ function startPayment() {
     description: "Sweet Order",
     theme: { color: '#E8650A' },
     handler: async function(response) {
+      // Track purchased product IDs for verified reviews
       const purchasedIds = items.map(i => i.id);
       purchasedIds.forEach(pid => purchasedProducts.add(pid));
 
@@ -2591,6 +2613,7 @@ function startPayment() {
       updateCartBadge();
       closeCart();
       showToast('🎉 Payment done! Order sent to shop!');
+      // Prompt to review after a short delay
       setTimeout(() => showReviewPrompt(purchasedIds), 2000);
     }
   };
@@ -2627,16 +2650,22 @@ function startPayment() {
     try {
       const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'));
       const snap = await getDocs(q);
-      if (snap.empty) { renderProducts(); return; }
-      products = snap.docs
-        .map(d => ({ ...d.data(), id: d.id }))
-        .filter(p => p.active !== false);
+      const loaded = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(p => p.active !== false); // only show active products
+      products.length = 0;
+      products.push(...loaded);
       renderProducts();
     } catch(e) {
-      console.warn('Firestore load failed, using defaults:', e.message);
-      renderProducts();
+      console.error('Failed to load products:', e);
+      document.getElementById('productsGrid').innerHTML = `
+        <div style="grid-column:1/-1;text-align:center;padding:3rem;color:#aaa;">
+          <div style="font-size:2rem;margin-bottom:0.5rem;">⚠️</div>
+          <p>Could not load products. Please refresh and try again.</p>
+        </div>`;
     }
   }
+  // Load products immediately on page init
   loadProductsFromFirebase();
 
   onAuthStateChanged(auth, async (user) => {
@@ -2645,12 +2674,14 @@ function startPayment() {
     const drawer = document.getElementById('accountDrawer');
     if (drawer && drawer.classList.contains('open')) renderAccountView(user);
     if (user) {
+      // Load all persisted data on login
       await Promise.all([
         loadWishlistFromFirebase(user.uid),
         loadPurchasesFromFirebase(user.uid),
         loadReviewsFromFirebase()
       ]);
     } else {
+      // Clear in-memory data on logout
       wishlist.clear();
       purchasedProducts.clear();
       updateWishlistBadge();
@@ -2658,6 +2689,7 @@ function startPayment() {
     }
   });
 
+  // ── NAV AVATAR ──
   function updateNavAvatar(user) {
     const wrap = document.getElementById('navAccountIcon');
     if (!wrap) return;
@@ -2685,6 +2717,7 @@ function startPayment() {
     }
   }
 
+  // ── SIGN IN / OUT ──
   window.signInWithGoogle = async function() {
     try {
       showToast('⏳ Opening Google login...');
@@ -2711,13 +2744,17 @@ function startPayment() {
     renderAccountView(auth.currentUser);
   };
 
+  // ══════════════════════════════════════
+  // ── WISHLIST PERSISTENCE ──
+  // ══════════════════════════════════════
+
   async function loadWishlistFromFirebase(uid) {
     try {
       const snap = await getDocs(query(collection(db, 'wishlist'), where('uid', '==', uid)));
       wishlist.clear();
       snap.forEach(d => wishlist.add(d.data().productId));
       updateWishlistBadge();
-      renderProducts();
+      renderProducts(); // re-render to show correct heart icons
     } catch(e) { console.error('Wishlist load failed:', e); }
   }
 
@@ -2734,6 +2771,10 @@ function startPayment() {
       }
     } catch(e) { console.error('Wishlist save failed:', e); }
   };
+
+  // ══════════════════════════════════════
+  // ── PURCHASES PERSISTENCE ──
+  // ══════════════════════════════════════
 
   async function loadPurchasesFromFirebase(uid) {
     try {
@@ -2756,21 +2797,28 @@ function startPayment() {
     } catch(e) { console.error('Purchases save failed:', e); }
   };
 
+  // ══════════════════════════════════════
+  // ── REVIEWS PERSISTENCE ──
+  // ══════════════════════════════════════
+
   async function loadReviewsFromFirebase() {
     try {
       const snap = await getDocs(query(collection(db, 'reviews'), orderBy('createdAt', 'desc')));
       snap.forEach(d => {
         const r = d.data();
         if (!userReviews[r.productId]) userReviews[r.productId] = [];
+        // avoid duplicates on re-load
         const exists = userReviews[r.productId].some(x => x.firestoreId === d.id);
         if (!exists) {
           userReviews[r.productId].unshift({ ...r, firestoreId: d.id, verified: true });
+          // update reviewsData avg
           if (reviewsData[r.productId]) {
             reviewsData[r.productId].total += 1;
             reviewsData[r.productId].dist[r.rating - 1] += 1;
           }
         }
       });
+      // recalculate averages
       Object.keys(userReviews).forEach(pid => {
         const id = parseInt(pid);
         if (reviewsData[id]) {
@@ -2795,6 +2843,10 @@ function startPayment() {
     } catch(e) { console.error('Review save failed:', e); return null; }
   };
 
+  // ══════════════════════════════════════
+  // ── ORDERS ──
+  // ══════════════════════════════════════
+
   window.saveOrderToFirebase = async function(items, total, shipping) {
     const uid = auth.currentUser ? auth.currentUser.uid : 'guest';
     const userName = auth.currentUser ? auth.currentUser.displayName : (shipping?.name || 'Guest');
@@ -2802,6 +2854,7 @@ function startPayment() {
       items, total, shipping: shipping || {}, uid, userName,
       date: serverTimestamp(), status: 'paid'
     });
+    // Also persist purchased product IDs
     if (auth.currentUser) {
       await window.savePurchasesToFirebase(items.map(i => i.id));
     }
