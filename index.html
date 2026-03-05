@@ -814,6 +814,39 @@
     font-family: 'Poppins', sans-serif; margin-top: 0.5rem;
   }
 
+  /* ── REVIEW PROMPT (post-purchase) ── */
+  .review-prompt-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 350; display: none; align-items: flex-end;
+  }
+  .review-prompt-overlay.open { display: flex; }
+  .review-prompt {
+    background: white; width: 100%; border-radius: 20px 20px 0 0;
+    padding: 1.4rem 1.2rem 2.5rem;
+  }
+  .review-prompt-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 1.2rem; }
+  .review-prompt h3 { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--brown); margin-bottom: 0.4rem; }
+  .review-prompt p { font-size: 0.8rem; color: var(--text-mid); margin-bottom: 1.2rem; line-height: 1.5; }
+  .review-prompt-items { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.2rem; }
+  .review-prompt-item {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--cream); border-radius: 12px; padding: 0.7rem 0.9rem;
+  }
+  .review-prompt-item-left { display: flex; align-items: center; gap: 0.7rem; }
+  .review-prompt-item-emoji { font-size: 1.6rem; }
+  .review-prompt-item-name { font-size: 0.85rem; font-weight: 600; color: var(--text-dark); }
+  .review-prompt-item-btn {
+    background: var(--deep-red); color: white; border: none;
+    border-radius: 10px; padding: 0.35rem 0.8rem;
+    font-size: 0.72rem; font-weight: 700; cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+  }
+  .review-prompt-skip {
+    width: 100%; background: none; border: none;
+    font-size: 0.8rem; color: #aaa; cursor: pointer;
+    font-family: 'Poppins', sans-serif; padding: 0.3rem;
+  }
+
   /* ── TOAST (pointer-events fix) ── */
   .toast {
     position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
@@ -1646,6 +1679,17 @@
   </div>
 </div>
 
+<!-- REVIEW PROMPT (post-purchase) -->
+<div class="review-prompt-overlay" id="reviewPromptOverlay">
+  <div class="review-prompt">
+    <div class="review-prompt-handle"></div>
+    <h3>🎉 Order placed! How was it?</h3>
+    <p>You can now leave a verified review for the products you ordered.</p>
+    <div class="review-prompt-items" id="reviewPromptItems"></div>
+    <button class="review-prompt-skip" onclick="document.getElementById('reviewPromptOverlay').classList.remove('open')">Skip for now</button>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -1691,6 +1735,7 @@ const products = [
 let cart = {};
 let searchVisible = false;
 let wishlist = new Set();
+let purchasedProducts = new Set(); // tracks product IDs the user has bought
 
 // ── WISHLIST ──
 function toggleWishlist(id, btn) {
@@ -2157,7 +2202,20 @@ function openReviewsPage() {
     `).join('');
 
   document.getElementById('reviewsPage').classList.add('open');
-  document.getElementById('writeReviewBtn').classList.add('open');
+  // Show write review only if user has purchased this product
+  const writeBtn = document.getElementById('writeReviewBtn');
+  if (purchasedProducts.has(id)) {
+    writeBtn.classList.add('open');
+    writeBtn.querySelector('button').textContent = '✍️ Write a Review';
+    writeBtn.querySelector('button').disabled = false;
+    writeBtn.querySelector('button').style.opacity = '1';
+  } else {
+    writeBtn.classList.add('open');
+    writeBtn.querySelector('button').innerHTML = '🔒 Purchase this product to review';
+    writeBtn.querySelector('button').disabled = true;
+    writeBtn.querySelector('button').style.opacity = '0.5';
+    writeBtn.querySelector('button').style.background = '#aaa';
+  }
   document.body.style.overflow = 'hidden';
 }
 
@@ -2174,8 +2232,15 @@ function markHelpful(i, btnId) {
 
 // Write Review
 function openWriteReview() {
+  if (!purchasedProducts.has(currentReviewProductId)) {
+    showToast('🔒 Only verified buyers can review!');
+    return;
+  }
   selectedRating = 0;
-  document.getElementById('reviewName').value = '';
+  // Auto-fill name from logged-in user
+  const userName = window.currentUser ? window.currentUser.displayName || '' : '';
+  document.getElementById('reviewName').value = userName;
+  document.getElementById('reviewName').readOnly = !!userName;
   document.getElementById('reviewText').value = '';
   document.getElementById('starLabel').textContent = 'Tap a star to rate';
   document.querySelectorAll('.star-pick').forEach(s => s.classList.remove('active'));
@@ -2201,15 +2266,19 @@ function submitReview() {
   if (!selectedRating) { showToast('⭐ Please select a star rating!'); return; }
   if (name.length < 2) { showToast('📝 Please enter your name!'); return; }
   if (text.length < 10) { showToast('📝 Please write at least a short review!'); return; }
+  if (!purchasedProducts.has(currentReviewProductId)) { showToast('🔒 Only verified buyers can review!'); return; }
 
   const id = currentReviewProductId;
   if (!userReviews[id]) userReviews[id] = [];
   const colors = ['#E8650A','#B84D00','#FF8C2A','#5C3A00','#CC5500'];
+  const now = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+  const userCity = shippingData?.city || 'India';
+
   userReviews[id].unshift({
     name, text, rating: selectedRating,
-    loc: 'India', date: 'Just now',
+    loc: userCity, date: now,
     color: colors[Math.floor(Math.random() * colors.length)],
-    verified: false
+    verified: true  // always verified since we checked purchasedProducts
   });
 
   // update avg in reviewsData
@@ -2221,11 +2290,34 @@ function submitReview() {
   }
 
   closeWriteReview();
-  showToast('🎉 Thank you for your review!');
+  showToast('🎉 Thank you for your verified review!');
   setTimeout(() => {
     openReviewsPage();
     renderProductReviews(id);
   }, 400);
+}
+
+// ── POST-PURCHASE REVIEW PROMPT ──
+function showReviewPrompt(productIds) {
+  const items = productIds.map(id => products.find(p => p.id === id)).filter(Boolean);
+  if (!items.length) return;
+
+  document.getElementById('reviewPromptItems').innerHTML = items.map(p => `
+    <div class="review-prompt-item">
+      <div class="review-prompt-item-left">
+        <span class="review-prompt-item-emoji">${p.emoji}</span>
+        <span class="review-prompt-item-name">${p.name}</span>
+      </div>
+      <button class="review-prompt-item-btn" onclick="
+        document.getElementById('reviewPromptOverlay').classList.remove('open');
+        currentProductId = ${p.id};
+        currentReviewProductId = ${p.id};
+        setTimeout(() => { openReviewsPage(); setTimeout(openWriteReview, 400); }, 300);
+      ">Rate ★</button>
+    </div>
+  `).join('');
+
+  document.getElementById('reviewPromptOverlay').classList.add('open');
 }
 
 // ── SHIPPING FLOW ──
@@ -2495,6 +2587,10 @@ function startPayment() {
     description: "Sweet Order",
     theme: { color: '#E8650A' },
     handler: async function(response) {
+      // Track purchased product IDs for verified reviews
+      const purchasedIds = items.map(i => i.id);
+      purchasedIds.forEach(pid => purchasedProducts.add(pid));
+
       try {
         if (window.saveOrderToFirebase) await window.saveOrderToFirebase(items, total, shippingData);
       } catch(e) { console.log('Firebase save failed:', e); }
@@ -2504,6 +2600,8 @@ function startPayment() {
       updateCartBadge();
       closeCart();
       showToast('🎉 Payment done! Order sent to shop!');
+      // Prompt to review after a short delay
+      setTimeout(() => showReviewPrompt(purchasedIds), 2000);
     }
   };
   const rzp = new Razorpay(options);
