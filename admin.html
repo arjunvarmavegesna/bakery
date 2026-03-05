@@ -28,7 +28,8 @@
 html { scroll-behavior:smooth; }
 body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); min-height:100vh; overflow-x:hidden; }
 
-/* ── AUTH LOADING OVERLAY ── */
+/* ── AUTH GATE ── */
+/* ── AUTH LOADING ── */
 #authLoading {
   position:fixed; inset:0;
   background:linear-gradient(135deg,#B84D00 0%,#E8650A 50%,#FF8C2A 100%);
@@ -38,10 +39,7 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
 #authLoading .loading-logo { font-size:3rem; animation:pulse 1.2s ease-in-out infinite; }
 #authLoading .loading-label { color:rgba(255,255,255,0.85); font-size:0.9rem; font-weight:500; }
 @keyframes pulse { 0%,100%{transform:scale(1);opacity:0.8} 50%{transform:scale(1.1);opacity:1} }
-.google-signin-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none !important; }
 .signin-spinner { width:18px; height:18px; border:2.5px solid rgba(0,0,0,0.15); border-top-color:#4285F4; border-radius:50%; animation:spin 0.7s linear infinite; }
-
-/* ── AUTH GATE ── */
 #authGate {
   position:fixed; inset:0;
   background:linear-gradient(135deg,#B84D00 0%,#E8650A 50%,#FF8C2A 100%);
@@ -277,7 +275,7 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
 </head>
 <body>
 
-<!-- AUTH LOADING (shown while Firebase checks session) -->
+<!-- AUTH LOADING -->
 <div id="authLoading">
   <div class="loading-logo">🍬</div>
   <div class="loading-label">Loading Sree Ramu Sweets Admin…</div>
@@ -291,7 +289,7 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
     <div class="auth-sub">Sign in with the owner's Google account to manage Sree Ramu Sweets products and orders.</div>
     <button class="google-signin-btn" id="googleSignInBtn" onclick="adminSignIn()">
       <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 19 13 24 13c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.4 0 10.2-2 13.8-5.3l-6.4-5.4C29.3 35.3 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-8H6.3C9.6 35.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6.4 5.4C42 35.3 44 30 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
-      <span id="signInBtnText">Sign in with Google</span>
+      <span>Sign in with Google</span>
     </button>
     <div class="auth-error" id="authError"></div>
     <div class="auth-note">⚠️ Only the registered owner account can access this panel.</div>
@@ -682,11 +680,8 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc,
-  doc, orderBy, query, serverTimestamp, where
+  doc, orderBy, query, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import {
-  getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import {
   getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -702,10 +697,13 @@ const firebaseConfig = {
 };
 const ADMIN_EMAIL = "arjunvarmavegesna@gmail.com";
 
-const app      = initializeApp(firebaseConfig);
-const db       = getFirestore(app);
-const storage  = getStorage(app);
-const auth     = getAuth(app);
+// ── CLOUDINARY CONFIG ──
+const CLOUDINARY_CLOUD  = 'dbbxybt5j';
+const CLOUDINARY_PRESET = 'sree-ramu-sweets';
+
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 // ── STATE ──
@@ -716,26 +714,32 @@ let selectedColor = '#FFF0E0';
 let selectedBadge = '';
 let editSelectedColor = '#FFF0E0';
 let editSelectedBadge = '';
-let addPhotoFile = null;      // File object for new product
-let editPhotoFile = null;     // File object for edit
-let editCurrentPhotoUrl = ''; // existing photo URL when editing
+let addPhotoFile  = null;
+let editPhotoFile = null;
+let addPhotoBlob  = null;   // pre-compressed blob cache
+let editPhotoBlob = null;
+let editCurrentPhotoUrl = '';
 
 const COLORS = ['#FFF3CD','#E8F5E9','#FDE8E8','#FFF0E0','#F3E5F5','#E3F2FD','#FCE4EC','#E0F7FA','#FFF8E1','#F1F8E9'];
 
 // ── AUTH ──
-let accessDeniedEmail = null; // remember denied email so error survives signOut re-trigger
+let accessDeniedEmail = null;
+
+// Fallback: show login if Firebase doesn't respond in 5s
+setTimeout(() => {
+  const loader = document.getElementById('authLoading');
+  if (loader && loader.style.display !== 'none') showAuthGate();
+}, 5000);
 
 function hideAuthLoading() {
   const el = document.getElementById('authLoading');
-  if (el) el.style.display = 'none';
+  if (el) { el.style.display = 'none'; el.style.visibility = 'hidden'; }
 }
-
 function showAuthGate() {
   hideAuthLoading();
   document.getElementById('authGate').classList.add('visible');
   document.getElementById('adminApp').classList.remove('visible');
 }
-
 function hideAuthGate() {
   document.getElementById('authGate').classList.remove('visible');
 }
@@ -748,12 +752,10 @@ onAuthStateChanged(auth, (user) => {
       hideAuthGate();
       showAdmin(user);
     } else {
-      // Wrong account — sign out silently, then show error
       accessDeniedEmail = user.email;
-      signOut(auth); // this will re-trigger onAuthStateChanged with user=null
+      signOut(auth);
     }
   } else {
-    // user is null — could be initial load OR after a signOut
     showAuthGate();
     if (accessDeniedEmail) {
       showAuthError(`❌ Access denied. "${accessDeniedEmail}" is not the owner account.`);
@@ -765,14 +767,11 @@ onAuthStateChanged(auth, (user) => {
 
 function setSignInBtnLoading(loading) {
   const btn = document.getElementById('googleSignInBtn');
-  const txt = document.getElementById('signInBtnText');
   if (!btn) return;
   btn.disabled = loading;
-  if (loading) {
-    btn.innerHTML = `<div class="signin-spinner"></div><span>Signing in…</span>`;
-  } else {
-    btn.innerHTML = `<svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 19 13 24 13c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.4 0 10.2-2 13.8-5.3l-6.4-5.4C29.3 35.3 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-8H6.3C9.6 35.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6.4 5.4C42 35.3 44 30 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span id="signInBtnText">Sign in with Google</span>`;
-  }
+  btn.innerHTML = loading
+    ? `<div class="signin-spinner"></div><span>Signing in…</span>`
+    : `<svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 19 13 24 13c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.4 0 10.2-2 13.8-5.3l-6.4-5.4C29.3 35.3 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-8H6.3C9.6 35.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6.4 5.4C42 35.3 44 30 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>Sign in with Google</span>`;
 }
 
 window.adminSignIn = async function() {
@@ -780,25 +779,18 @@ window.adminSignIn = async function() {
   document.getElementById('authError').classList.remove('show');
   try {
     await signInWithPopup(auth, provider);
-    // onAuthStateChanged handles the rest
   } catch(e) {
     setSignInBtnLoading(false);
     if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
-      // User closed popup — silent, no error needed
+      // silent — user closed popup
     } else if (e.code === 'auth/popup-blocked') {
-      showAuthError('❌ Popup blocked by browser. Please allow popups for this site and try again.');
-    } else if (e.code === 'auth/network-request-failed') {
-      showAuthError('❌ No internet connection. Please check your network and try again.');
+      showAuthError('❌ Popup blocked. Please allow popups for this site.');
     } else {
       showAuthError('❌ Sign in failed: ' + (e.message || e.code));
     }
   }
 };
-
-window.adminSignOut = async function() {
-  await signOut(auth);
-  // onAuthStateChanged will show auth gate
-};
+window.adminSignOut = async function() { await signOut(auth); };
 
 function showAuthError(msg) {
   const el = document.getElementById('authError');
@@ -806,7 +798,6 @@ function showAuthError(msg) {
 }
 
 function showAdmin(user) {
-  document.getElementById('authGate').style.display = 'none';
   document.getElementById('adminApp').classList.add('visible');
   document.getElementById('sidebarName').textContent = user.displayName || 'Admin';
   document.getElementById('sidebarEmail').textContent = user.email;
@@ -862,68 +853,60 @@ window.onFileSelect = function(event, ctx) {
   if (!file.type.startsWith('image/')) { toast('❌ Please select an image file', 'error'); return; }
   setPhotoFile(ctx, file);
 };
-
 window.onDragOver = function(event, ctx) {
   event.preventDefault();
-  const areaId = ctx==='add' ? 'uploadArea' : 'editUploadArea';
-  document.getElementById(areaId).classList.add('dragover');
+  document.getElementById(ctx==='add'?'uploadArea':'editUploadArea').classList.add('dragover');
 };
-
 window.onDragLeave = function(ctx) {
-  const areaId = ctx==='add' ? 'uploadArea' : 'editUploadArea';
-  document.getElementById(areaId).classList.remove('dragover');
+  document.getElementById(ctx==='add'?'uploadArea':'editUploadArea').classList.remove('dragover');
 };
-
 window.onDrop = function(event, ctx) {
-  event.preventDefault();
-  onDragLeave(ctx);
+  event.preventDefault(); onDragLeave(ctx);
   const file = event.dataTransfer.files[0];
-  if (!file) return;
-  if (!file.type.startsWith('image/')) { toast('❌ Please drop an image file', 'error'); return; }
+  if (!file || !file.type.startsWith('image/')) { toast('❌ Please drop an image file','error'); return; }
   setPhotoFile(ctx, file);
 };
 
 function setPhotoFile(ctx, file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    if (ctx === 'add') {
-      addPhotoFile = file;
-      const img = document.getElementById('uploadPreviewImg');
-      const area = document.getElementById('uploadArea');
-      const placeholder = document.getElementById('uploadPlaceholder');
-      img.src = e.target.result;
-      img.style.display = 'block';
-      placeholder.style.display = 'none';
-      area.classList.add('has-image');
-      // Update live preview
-      document.getElementById('prevImgBox').innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
-    } else {
-      editPhotoFile = file;
-      const img = document.getElementById('editUploadPreviewImg');
-      const area = document.getElementById('editUploadArea');
-      const placeholder = document.getElementById('editUploadPlaceholder');
-      img.src = e.target.result;
-      img.style.display = 'block';
-      placeholder.style.display = 'none';
-      area.classList.add('has-image');
-      document.getElementById('editPrevImgBox').innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
-    }
-  };
-  reader.readAsDataURL(file);
+  // Instant preview via ObjectURL — no FileReader delay
+  const previewUrl = URL.createObjectURL(file);
+  if (ctx === 'add') {
+    if (addPhotoFile?._previewUrl) URL.revokeObjectURL(addPhotoFile._previewUrl);
+    addPhotoFile = file; addPhotoFile._previewUrl = previewUrl; addPhotoBlob = null;
+    const img = document.getElementById('uploadPreviewImg');
+    img.src = previewUrl; img.style.display = 'block';
+    document.getElementById('uploadPlaceholder').style.display = 'none';
+    document.getElementById('uploadArea').classList.add('has-image');
+    document.getElementById('prevImgBox').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
+  } else {
+    if (editPhotoFile?._previewUrl) URL.revokeObjectURL(editPhotoFile._previewUrl);
+    editPhotoFile = file; editPhotoFile._previewUrl = previewUrl; editPhotoBlob = null;
+    const img = document.getElementById('editUploadPreviewImg');
+    img.src = previewUrl; img.style.display = 'block';
+    document.getElementById('editUploadPlaceholder').style.display = 'none';
+    document.getElementById('editUploadArea').classList.add('has-image');
+    document.getElementById('editPrevImgBox').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
+  }
+  // Pre-compress in background so upload is instant when Save is clicked
+  compressToBlob(file).then(blob => {
+    if (ctx === 'add') addPhotoBlob = blob;
+    else editPhotoBlob = blob;
+  }).catch(() => {});
 }
 
 window.clearPhoto = function(ctx, event) {
   if (event) event.stopPropagation();
   if (ctx === 'add') {
-    addPhotoFile = null;
+    if (addPhotoFile?._previewUrl) URL.revokeObjectURL(addPhotoFile._previewUrl);
+    addPhotoFile = null; addPhotoBlob = null;
     document.getElementById('f_photo').value = '';
     document.getElementById('uploadPreviewImg').style.display = 'none';
     document.getElementById('uploadPlaceholder').style.display = 'block';
     document.getElementById('uploadArea').classList.remove('has-image');
     document.getElementById('prevImgBox').innerHTML = '🍬';
   } else {
-    editPhotoFile = null;
-    editCurrentPhotoUrl = '';
+    if (editPhotoFile?._previewUrl) URL.revokeObjectURL(editPhotoFile._previewUrl);
+    editPhotoFile = null; editPhotoBlob = null; editCurrentPhotoUrl = '';
     document.getElementById('e_photo').value = '';
     document.getElementById('editUploadPreviewImg').style.display = 'none';
     document.getElementById('editUploadPlaceholder').style.display = 'block';
@@ -932,117 +915,103 @@ window.clearPhoto = function(ctx, event) {
   }
 };
 
-// Compress image to base64
-function compressImageToBase64(file, maxW, maxH, quality) {
-  maxW = maxW||900; maxH = maxH||900; quality = quality||0.82;
-  return new Promise(function(resolve, reject) {
-    var img = new Image();
-    var objUrl = URL.createObjectURL(file);
-    img.onload = function() {
+// Compress to Blob (efficient — no base64 overhead)
+function compressToBlob(file, maxW=900, maxH=900, quality=0.82) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objUrl = URL.createObjectURL(file);
+    img.onload = () => {
       URL.revokeObjectURL(objUrl);
-      var w = img.width, h = img.height;
+      let w = img.width, h = img.height;
       if (w > maxW || h > maxH) {
-        var ratio = Math.min(maxW/w, maxH/h);
-        w = Math.round(w * ratio); h = Math.round(h * ratio);
+        const ratio = Math.min(maxW/w, maxH/h);
+        w = Math.round(w*ratio); h = Math.round(h*ratio);
       }
-      var canvas = document.createElement('canvas');
+      const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('toBlob failed')), 'image/jpeg', quality);
     };
-    img.onerror = function() { reject(new Error('Could not load image')); };
+    img.onerror = () => reject(new Error('Could not load image'));
     img.src = objUrl;
   });
 }
 
-// Upload photo: tries Firebase Storage, falls back to base64 in Firestore
+// Upload to Cloudinary with real progress bar
 async function uploadPhoto(file, productName, ctx) {
-  const progressBarId  = ctx==='add' ? 'uploadProgressFill'  : 'editUploadProgressFill';
-  const progressTextId = ctx==='add' ? 'uploadProgressText'  : 'editUploadProgressText';
-  const progressWrapId = ctx==='add' ? 'uploadProgress'      : 'editUploadProgress';
+  const fillId = ctx==='add' ? 'uploadProgressFill'  : 'editUploadProgressFill';
+  const textId = ctx==='add' ? 'uploadProgressText'  : 'editUploadProgressText';
+  const wrapId = ctx==='add' ? 'uploadProgress'      : 'editUploadProgress';
 
   const setProgress = (pct, msg) => {
-    const wrap = document.getElementById(progressWrapId);
+    const wrap = document.getElementById(wrapId);
     if (wrap) wrap.style.display = 'block';
-    const bar  = document.getElementById(progressBarId);
-    if (bar)  bar.style.width = pct + '%';
-    const txt  = document.getElementById(progressTextId);
-    if (txt)  txt.textContent = msg;
+    const bar = document.getElementById(fillId);
+    if (bar) bar.style.width = pct + '%';
+    const txt = document.getElementById(textId);
+    if (txt) txt.textContent = msg;
   };
+  const hideProgress = () => setTimeout(() => {
+    const w = document.getElementById(wrapId); if (w) w.style.display = 'none';
+  }, 1500);
 
-  setProgress(10, 'Compressing image...');
+  setProgress(10, 'Preparing image...');
 
-  let base64DataUrl;
-  try {
-    base64DataUrl = await compressImageToBase64(file);
-  } catch(e) {
-    throw new Error('Image read failed: ' + e.message);
+  // Use pre-compressed blob if ready, else compress now
+  let blob = ctx === 'add' ? addPhotoBlob : editPhotoBlob;
+  if (!blob) {
+    setProgress(20, 'Compressing...');
+    blob = await compressToBlob(file);
   }
-  setProgress(35, 'Uploading to cloud...');
 
-  // Try Firebase Storage upload
-  try {
-    const sanitized = productName.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase();
-    const storagePath = 'products/' + sanitized + '_' + Date.now() + '.jpg';
-    const storageRef = ref(storage, storagePath);
-    const fetchRes = await fetch(base64DataUrl);
-    const blob = await fetchRes.blob();
-    await new Promise((resolve, reject) => {
-      const task = uploadBytesResumable(storageRef, blob, { contentType: 'image/jpeg' });
-      task.on('state_changed',
-        (snap) => {
-          const pct = 35 + Math.round(snap.bytesTransferred / snap.totalBytes * 55);
-          setProgress(pct, 'Uploading... ' + Math.round(snap.bytesTransferred/snap.totalBytes*100) + '%');
-        },
-        reject,
-        () => resolve()
-      );
-    });
-    const downloadUrl = await getDownloadURL(storageRef);
-    setProgress(100, 'Upload complete!');
-    setTimeout(() => { const w = document.getElementById(progressWrapId); if(w) w.style.display='none'; }, 1500);
-    return downloadUrl;
+  setProgress(35, 'Uploading...');
 
-  } catch(storageErr) {
-    console.warn('Firebase Storage upload failed, using base64 fallback. Error:', storageErr.message || storageErr.code);
-    toast('Photo saved (compressed). See the Storage setup banner in Dashboard.', 'error');
-    const banner = document.getElementById('storageBanner');
-    if (banner) banner.style.display = 'block';
-    // Fallback: store compressed base64 directly in Firestore
-    const approxKB = Math.round(base64DataUrl.length * 0.75 / 1024);
-    if (approxKB > 800) {
-      base64DataUrl = await compressImageToBase64(file, 600, 600, 0.65);
-    }
-    setProgress(100, 'Image saved (compressed)!');
-    setTimeout(() => { const w = document.getElementById(progressWrapId); if(w) w.style.display='none'; }, 1500);
-    return base64DataUrl;
-  }
+  return new Promise((resolve, reject) => {
+    const fd = new FormData();
+    fd.append('file', blob, 'photo.jpg');
+    fd.append('upload_preset', CLOUDINARY_PRESET);
+    fd.append('folder', 'sree-ramu-sweets');
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const pct = 35 + Math.round(e.loaded / e.total * 60);
+        setProgress(pct, `Uploading... ${Math.round(e.loaded/e.total*100)}%`);
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const res = JSON.parse(xhr.responseText);
+        setProgress(100, '✅ Upload complete!');
+        hideProgress();
+        resolve(res.secure_url);
+      } else {
+        reject(new Error('Cloudinary error ' + xhr.status + ': ' + xhr.statusText));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Network error during upload'));
+    xhr.send(fd);
+  });
 }
 
 // ── LIVE PREVIEW ──
 window.updatePreview = function() {
-  const name = document.getElementById('f_name').value || 'Product Name';
-  const price = document.getElementById('f_price').value || '0';
-  document.getElementById('prevName').textContent = name;
-  document.getElementById('prevPrice').textContent = '₹' + price;
+  document.getElementById('prevName').textContent = document.getElementById('f_name').value || 'Product Name';
+  document.getElementById('prevPrice').textContent = '₹' + (document.getElementById('f_price').value || '0');
   document.getElementById('prevBadge').innerHTML = selectedBadge
     ? `<span style="background:var(--brand);color:white;font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:6px;">${selectedBadge}</span>` : '';
 };
-
 window.updateEditPreview = function() {
-  const name = document.getElementById('e_name').value || 'Product Name';
-  const price = document.getElementById('e_price').value || '0';
-  document.getElementById('editPrevName').textContent = name;
-  document.getElementById('editPrevPrice').textContent = '₹' + price;
+  document.getElementById('editPrevName').textContent = document.getElementById('e_name').value || 'Product Name';
+  document.getElementById('editPrevPrice').textContent = '₹' + (document.getElementById('e_price').value || '0');
   document.getElementById('editPrevBadge').innerHTML = editSelectedBadge
     ? `<span style="background:var(--brand);color:white;font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:6px;">${editSelectedBadge}</span>` : '';
 };
 
 // ── DATA LOADING ──
-async function loadAllData() {
-  await loadProducts();
-  await loadStats();
-}
+async function loadAllData() { await loadProducts(); await loadStats(); }
 
 async function loadProducts() {
   try {
@@ -1072,10 +1041,10 @@ function updateStats(products) {
   document.getElementById('stat-cats').textContent = new Set(products.map(p => p.cat)).size;
 }
 
-// ── RENDER TABLE ──
+// ── RENDER ──
 function imgCell(p) {
   if (p.photoUrl) return `<div class="product-img-cell"><img src="${p.photoUrl}" alt="${p.name}"></div>`;
-  return `<div class="product-img-cell" style="background:${p.bg||'#FFF0E0'};font-size:1.5rem;color:#ccc;">📷</div>`;
+  return `<div class="product-img-cell" style="background:${p.bg||'#FFF0E0'};">📷</div>`;
 }
 
 function renderProductsTable(products) {
@@ -1087,91 +1056,53 @@ function renderProductsTable(products) {
   wrap.innerHTML = `
     <table class="product-table">
       <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Badge</th><th>Status</th><th>Actions</th></tr></thead>
-      <tbody>
-        ${products.map(p => `
-          <tr>
-            <td>
-              <div style="display:flex;align-items:center;gap:0.7rem;">
-                ${imgCell(p)}
-                <div>
-                  <div class="product-name-cell">${p.name}</div>
-                  <div style="font-size:0.72rem;color:var(--text-soft);margin-top:1px;">${p.desc||''}</div>
-                </div>
-              </div>
-            </td>
-            <td><span class="product-cat-tag">${p.cat||'–'}</span></td>
-            <td>
-              <div class="product-price-cell">₹${p.price}</div>
-              ${p.oldPrice ? `<div class="product-old-price">₹${p.oldPrice}</div>` : ''}
-            </td>
-            <td>${p.badge ? `<span class="product-badge-cell">${p.badge}</span>` : '<span class="product-badge-cell none">—</span>'}</td>
-            <td>
-              <span class="status-dot ${p.active!==false?'active':'inactive'}"></span>
-              ${p.active!==false ? 'Active' : 'Hidden'}
-            </td>
-            <td>
-              <div class="action-btns">
-                <button class="btn-edit" onclick="openEditModal('${p.id}')">✏️ Edit</button>
-                <button class="btn-toggle ${p.active!==false?'':'inactive'}" onclick="toggleProductStatus('${p.id}',${p.active!==false})">
-                  ${p.active!==false ? '👁 Hide' : '👁 Show'}
-                </button>
-                <button class="btn-delete" onclick="openDeleteModal('${p.id}','${p.name.replace(/'/g,"\\'")}')">🗑</button>
-              </div>
-            </td>
-          </tr>
-        `).join('')}
+      <tbody>${products.map(p => `
+        <tr>
+          <td><div style="display:flex;align-items:center;gap:0.7rem;">${imgCell(p)}<div>
+            <div class="product-name-cell">${p.name}</div>
+            <div style="font-size:0.72rem;color:var(--text-soft);">${p.desc||''}</div>
+          </div></div></td>
+          <td><span class="product-cat-tag">${p.cat||'–'}</span></td>
+          <td><div class="product-price-cell">₹${p.price}</div>${p.oldPrice?`<div class="product-old-price">₹${p.oldPrice}</div>`:''}</td>
+          <td>${p.badge?`<span class="product-badge-cell">${p.badge}</span>`:'<span class="product-badge-cell none">—</span>'}</td>
+          <td><span class="status-dot ${p.active!==false?'active':'inactive'}"></span>${p.active!==false?'Active':'Hidden'}</td>
+          <td><div class="action-btns">
+            <button class="btn-edit" onclick="openEditModal('${p.id}')">✏️ Edit</button>
+            <button class="btn-toggle ${p.active!==false?'':'inactive'}" onclick="toggleProductStatus('${p.id}',${p.active!==false})">${p.active!==false?'👁 Hide':'👁 Show'}</button>
+            <button class="btn-delete" onclick="openDeleteModal('${p.id}','${p.name.replace(/'/g,"\\'")}')">🗑</button>
+          </div></td>
+        </tr>`).join('')}
       </tbody>
     </table>`;
 }
 
 function renderDashboardPreview(products) {
   const wrap = document.getElementById('dashboardProductPreview');
-  if (!products.length) {
-    wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-text">No products yet.</div></div>`;
-    return;
-  }
+  if (!products.length) { wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-text">No products yet.</div></div>`; return; }
   wrap.innerHTML = `
     <table class="product-table">
       <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Status</th></tr></thead>
-      <tbody>
-        ${products.slice(0,5).map(p => `
-          <tr>
-            <td>
-              <div style="display:flex;align-items:center;gap:0.7rem;">
-                ${imgCell(p)}
-                <div class="product-name-cell">${p.name}</div>
-              </div>
-            </td>
-            <td><span class="product-cat-tag">${p.cat||'–'}</span></td>
-            <td class="product-price-cell">₹${p.price}</td>
-            <td><span class="status-dot ${p.active!==false?'active':'inactive'}"></span>${p.active!==false?'Active':'Hidden'}</td>
-          </tr>
-        `).join('')}
+      <tbody>${products.slice(0,5).map(p => `
+        <tr>
+          <td><div style="display:flex;align-items:center;gap:0.7rem;">${imgCell(p)}<div class="product-name-cell">${p.name}</div></div></td>
+          <td><span class="product-cat-tag">${p.cat||'–'}</span></td>
+          <td class="product-price-cell">₹${p.price}</td>
+          <td><span class="status-dot ${p.active!==false?'active':'inactive'}"></span>${p.active!==false?'Active':'Hidden'}</td>
+        </tr>`).join('')}
       </tbody>
     </table>`;
 }
 
 function renderCategoryGrid(products) {
-  const cats = [
-    {key:'sweets',label:'Sweets'},
-    {key:'mithai',label:'Mithai'},
-    {key:'snacks',label:'Snacks'},
-    {key:'gifts',label:'Gift Boxes'},
-    {key:'seasonal',label:'Seasonal'},
-  ];
+  const cats = [{key:'sweets',label:'Sweets'},{key:'mithai',label:'Mithai'},{key:'snacks',label:'Snacks'},{key:'gifts',label:'Gift Boxes'},{key:'seasonal',label:'Seasonal'}];
   document.getElementById('catManageGrid').innerHTML = cats.map(c => {
-    const catProducts = products.filter(p => p.cat === c.key);
-    const count = catProducts.length;
-    const firstPhoto = catProducts.find(p => p.photoUrl)?.photoUrl;
-    const thumbHtml = firstPhoto
-      ? `<img src="${firstPhoto}" style="width:56px;height:56px;object-fit:cover;border-radius:12px;margin-bottom:0.5rem;" alt="${c.label}">`
-      : `<div style="font-size:2rem;margin-bottom:0.4rem;">📦</div>`;
-    return `
-      <div class="cat-manage-card" onclick="showSection('products');document.getElementById('catFilter').value='${c.key}';filterTable()">
-        ${thumbHtml}
-        <div class="cat-name">${c.label}</div>
-        <div class="cat-count">${count} product${count!==1?'s':''}</div>
-      </div>`;
+    const cp = products.filter(p => p.cat === c.key);
+    const photo = cp.find(p => p.photoUrl)?.photoUrl;
+    return `<div class="cat-manage-card" onclick="showSection('products');document.getElementById('catFilter').value='${c.key}';filterTable()">
+      ${photo ? `<img src="${photo}" style="width:56px;height:56px;object-fit:cover;border-radius:12px;margin-bottom:0.5rem;">` : `<div style="font-size:2rem;margin-bottom:0.4rem;">📦</div>`}
+      <div class="cat-name">${c.label}</div>
+      <div class="cat-count">${cp.length} product${cp.length!==1?'s':''}</div>
+    </div>`;
   }).join('');
 }
 
@@ -1180,50 +1111,44 @@ window.filterTable = function() {
   const q = document.getElementById('productSearch').value.toLowerCase();
   const cat = document.getElementById('catFilter').value;
   const status = document.getElementById('statusFilter').value;
-  const filtered = allProducts.filter(p => {
-    const matchQ = !q || p.name.toLowerCase().includes(q) || (p.desc||'').toLowerCase().includes(q);
-    const matchCat = !cat || p.cat === cat;
-    const matchStatus = !status || (status==='active' ? p.active!==false : p.active===false);
-    return matchQ && matchCat && matchStatus;
-  });
-  renderProductsTable(filtered);
+  renderProductsTable(allProducts.filter(p =>
+    (!q || p.name.toLowerCase().includes(q) || (p.desc||'').toLowerCase().includes(q)) &&
+    (!cat || p.cat === cat) &&
+    (!status || (status==='active' ? p.active!==false : p.active===false))
+  ));
 };
 
 // ── ADD PRODUCT ──
 window.saveProduct = async function() {
-  const name     = document.getElementById('f_name').value.trim();
-  const cat      = document.getElementById('f_cat').value;
-  const desc     = document.getElementById('f_desc').value.trim();
-  const price    = parseFloat(document.getElementById('f_price').value);
+  const name  = document.getElementById('f_name').value.trim();
+  const cat   = document.getElementById('f_cat').value;
+  const desc  = document.getElementById('f_desc').value.trim();
+  const price = parseFloat(document.getElementById('f_price').value);
   const oldPrice = parseFloat(document.getElementById('f_oldprice').value) || null;
-  const weight   = document.getElementById('f_weight').value.trim();
-  const stock    = parseInt(document.getElementById('f_stock').value) || 0;
+  const weight = document.getElementById('f_weight').value.trim();
+  const stock  = parseInt(document.getElementById('f_stock').value) || 0;
 
-  if (!name)          { highlight('f_name');  toast('⚠️ Product name is required','error'); return; }
-  if (!cat)           { highlight('f_cat');   toast('⚠️ Please select a category','error'); return; }
-  if (!desc)          { highlight('f_desc');  toast('⚠️ Description is required','error'); return; }
+  if (!name)           { highlight('f_name');  toast('⚠️ Product name is required','error'); return; }
+  if (!cat)            { highlight('f_cat');   toast('⚠️ Please select a category','error'); return; }
+  if (!desc)           { highlight('f_desc');  toast('⚠️ Description is required','error'); return; }
   if (!price || price<=0) { highlight('f_price'); toast('⚠️ Valid price is required','error'); return; }
-  if (!addPhotoFile)  { toast('⚠️ Please upload a product photo','error'); return; }
+  if (!addPhotoFile)   { toast('⚠️ Please upload a product photo','error'); return; }
 
   setBtnLoading('saveBtn','saveBtnIcon','saveBtnText', true, 'Saving…');
   try {
     const photoUrl = await uploadPhoto(addPhotoFile, name, 'add');
     await addDoc(collection(db, 'products'), {
-      name, cat, desc, price,
-      oldPrice: oldPrice || null,
-      weight: weight || 'Per 250g pack',
-      stock, photoUrl,
-      bg: selectedColor,
-      badge: selectedBadge || null,
-      active: true,
-      createdAt: serverTimestamp()
+      name, cat, desc, price, oldPrice: oldPrice||null,
+      weight: weight||'Per 250g pack', stock, photoUrl,
+      bg: selectedColor, badge: selectedBadge||null,
+      active: true, createdAt: serverTimestamp()
     });
-    toast('✅ Product added successfully!','success');
+    toast('✅ Product added successfully!', 'success');
     resetForm();
     await loadProducts();
     showSection('products');
   } catch(e) {
-    toast('❌ Failed to save: ' + e.message,'error');
+    toast('❌ Failed to save: ' + e.message, 'error');
   } finally {
     setBtnLoading('saveBtn','saveBtnIcon','saveBtnText', false, 'Save Product');
   }
@@ -1247,91 +1172,72 @@ window.resetForm = function() {
 window.openEditModal = function(id) {
   const p = allProducts.find(x => x.id === id);
   if (!p) return;
-  editingId = id;
-  editPhotoFile = null;
+  editingId = id; editPhotoFile = null; editPhotoBlob = null;
   editCurrentPhotoUrl = p.photoUrl || '';
 
-  document.getElementById('e_name').value    = p.name || '';
-  document.getElementById('e_cat').value     = p.cat || '';
-  document.getElementById('e_desc').value    = p.desc || '';
-  document.getElementById('e_price').value   = p.price || '';
-  document.getElementById('e_oldprice').value= p.oldPrice || '';
-  document.getElementById('e_weight').value  = p.weight || '';
-  document.getElementById('e_stock').value   = p.stock || '';
-
+  document.getElementById('e_name').value     = p.name || '';
+  document.getElementById('e_cat').value      = p.cat || '';
+  document.getElementById('e_desc').value     = p.desc || '';
+  document.getElementById('e_price').value    = p.price || '';
+  document.getElementById('e_oldprice').value = p.oldPrice || '';
+  document.getElementById('e_weight').value   = p.weight || '';
+  document.getElementById('e_stock').value    = p.stock || '';
   editSelectedColor = p.bg || '#FFF0E0';
   editSelectedBadge = p.badge || '';
 
-  // Show current photo in edit form
   const editImg = document.getElementById('editUploadPreviewImg');
   const editArea = document.getElementById('editUploadArea');
   const editPlaceholder = document.getElementById('editUploadPlaceholder');
   if (p.photoUrl) {
-    editImg.src = p.photoUrl;
-    editImg.style.display = 'block';
-    editPlaceholder.style.display = 'none';
-    editArea.classList.add('has-image');
+    editImg.src = p.photoUrl; editImg.style.display = 'block';
+    editPlaceholder.style.display = 'none'; editArea.classList.add('has-image');
     document.getElementById('editPrevImgBox').innerHTML = `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
   } else {
-    editImg.style.display = 'none';
-    editPlaceholder.style.display = 'block';
+    editImg.style.display = 'none'; editPlaceholder.style.display = 'block';
     editArea.classList.remove('has-image');
     document.getElementById('editPrevImgBox').innerHTML = '🍬';
   }
-
-  // Color row
   document.querySelectorAll('#editColorRow .color-swatch').forEach(el =>
     el.classList.toggle('selected', el.style.background === editSelectedColor));
-  // Badge row
   document.querySelectorAll('#editBadgeRow .badge-opt').forEach(el =>
     el.classList.toggle('selected', el.dataset.val === editSelectedBadge));
-
   updateEditPreview();
   document.getElementById('editModal').classList.add('open');
 };
 
 window.closeEditModal = function() {
   document.getElementById('editModal').classList.remove('open');
-  editingId = null;
-  editPhotoFile = null;
+  editingId = null; editPhotoFile = null;
   document.getElementById('e_photo').value = '';
 };
 
 window.updateProduct = async function() {
   if (!editingId) return;
-  const name     = document.getElementById('e_name').value.trim();
-  const cat      = document.getElementById('e_cat').value;
-  const desc     = document.getElementById('e_desc').value.trim();
-  const price    = parseFloat(document.getElementById('e_price').value);
+  const name  = document.getElementById('e_name').value.trim();
+  const cat   = document.getElementById('e_cat').value;
+  const desc  = document.getElementById('e_desc').value.trim();
+  const price = parseFloat(document.getElementById('e_price').value);
   const oldPrice = parseFloat(document.getElementById('e_oldprice').value) || null;
-  const weight   = document.getElementById('e_weight').value.trim();
-  const stock    = parseInt(document.getElementById('e_stock').value) || 0;
+  const weight = document.getElementById('e_weight').value.trim();
+  const stock  = parseInt(document.getElementById('e_stock').value) || 0;
 
-  if (!name || !cat || !desc || !price) {
-    toast('⚠️ Please fill all required fields','error'); return;
-  }
+  if (!name || !cat || !desc || !price) { toast('⚠️ Please fill all required fields','error'); return; }
 
   setBtnLoading('updateBtn','updateBtnIcon','updateBtnText', true, 'Saving…');
   try {
     let photoUrl = editCurrentPhotoUrl;
-    // If a new photo was selected, upload it
-    if (editPhotoFile) {
-      photoUrl = await uploadPhoto(editPhotoFile, name, 'edit');
-    }
+    if (editPhotoFile) photoUrl = await uploadPhoto(editPhotoFile, name, 'edit');
     await updateDoc(doc(db, 'products', editingId), {
-      name, cat, desc, price,
-      oldPrice: oldPrice || null,
-      weight: weight || 'Per 250g pack',
-      stock, photoUrl,
-      bg: editSelectedColor,
-      badge: editSelectedBadge || null,
+      name, cat, desc, price, oldPrice: oldPrice||null,
+      weight: weight||'Per 250g pack', stock, photoUrl,
+      bg: editSelectedColor, badge: editSelectedBadge||null,
       updatedAt: serverTimestamp()
     });
-    toast('✅ Product updated!','success');
+    toast('✅ Product updated!', 'success');
     closeEditModal();
     await loadProducts();
   } catch(e) {
-    toast('❌ Update failed: ' + e.message,'error');
+    toast('❌ Update failed: ' + e.message, 'error');
   } finally {
     setBtnLoading('updateBtn','updateBtnIcon','updateBtnText', false, 'Save Changes');
   }
@@ -1341,7 +1247,7 @@ window.updateProduct = async function() {
 window.toggleProductStatus = async function(id, currentlyActive) {
   try {
     await updateDoc(doc(db,'products',id), { active:!currentlyActive, updatedAt:serverTimestamp() });
-    toast(currentlyActive ? '👁 Product hidden from store' : '✅ Product is now visible','success');
+    toast(currentlyActive ? '👁 Product hidden from store' : '✅ Product is now visible', 'success');
     await loadProducts();
   } catch(e) { toast('❌ Failed to update status','error'); }
 };
@@ -1359,19 +1265,11 @@ window.closeDeleteModal = function() {
 window.confirmDelete = async function() {
   if (!deleteTargetId) return;
   try {
-    // Also delete the image from Storage
-    const p = allProducts.find(x => x.id === deleteTargetId);
-    if (p && p.photoUrl) {
-      try {
-        const imgRef = ref(storage, p.photoUrl);
-        await deleteObject(imgRef);
-      } catch(e) { /* ignore if already deleted */ }
-    }
-    await deleteDoc(doc(db,'products',deleteTargetId));
-    toast('🗑️ Product deleted','success');
+    await deleteDoc(doc(db, 'products', deleteTargetId));
+    toast('🗑️ Product deleted', 'success');
     closeDeleteModal();
     await loadProducts();
-  } catch(e) { toast('❌ Delete failed: ' + e.message,'error'); }
+  } catch(e) { toast('❌ Delete failed: ' + e.message, 'error'); }
 };
 
 // ── ORDERS ──
@@ -1381,34 +1279,26 @@ async function loadOrdersSection() {
   try {
     const q = query(collection(db,'orders'), orderBy('date','desc'));
     const snap = await getDocs(q);
-    if (snap.empty) {
-      wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-text">No orders yet.</div></div>`;
-      return;
-    }
+    if (snap.empty) { wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-text">No orders yet.</div></div>`; return; }
     wrap.innerHTML = `
       <table class="product-table">
         <thead><tr><th>#</th><th>Customer</th><th>Items</th><th>Total</th><th>Address</th><th>Date</th><th>Status</th></tr></thead>
-        <tbody>
-          ${snap.docs.map((d,i) => {
-            const o = d.data();
-            const date = o.date?.toDate ? o.date.toDate().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : 'Recent';
-            const items = (o.items||[]).map(it => `${it.name} ×${it.qty}`).join('<br>');
-            const addr = o.shipping?.city ? `${o.shipping.house}, ${o.shipping.city} - ${o.shipping.pincode}` : '–';
-            return `
-              <tr>
-                <td style="font-size:0.72rem;color:var(--text-soft);">#${String(i+1).padStart(4,'0')}</td>
-                <td>
-                  <div style="font-weight:600;font-size:0.85rem;">${o.shipping?.name||o.userName||'Guest'}</div>
-                  <div style="font-size:0.7rem;color:var(--text-soft);">📞 ${o.shipping?.phone||'–'}</div>
-                </td>
-                <td style="font-size:0.78rem;max-width:160px;">${items}</td>
-                <td style="font-weight:700;color:var(--brand-dark);">₹${o.total}</td>
-                <td style="font-size:0.72rem;color:var(--text-soft);max-width:160px;">${addr}</td>
-                <td style="font-size:0.78rem;color:var(--text-soft);">${date}</td>
-                <td><span style="background:var(--success-bg);color:var(--success);font-size:0.65rem;font-weight:700;padding:3px 8px;border-radius:8px;">✅ Paid</span></td>
-              </tr>`;
-          }).join('')}
-        </tbody>
+        <tbody>${snap.docs.map((d,i) => {
+          const o = d.data();
+          const date = o.date?.toDate ? o.date.toDate().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : 'Recent';
+          const items = (o.items||[]).map(it => `${it.name} ×${it.qty}`).join('<br>');
+          const addr = o.shipping?.city ? `${o.shipping.house}, ${o.shipping.city} - ${o.shipping.pincode}` : '–';
+          return `<tr>
+            <td style="font-size:0.72rem;color:var(--text-soft);">#${String(i+1).padStart(4,'0')}</td>
+            <td><div style="font-weight:600;font-size:0.85rem;">${o.shipping?.name||o.userName||'Guest'}</div>
+            <div style="font-size:0.7rem;color:var(--text-soft);">📞 ${o.shipping?.phone||'–'}</div></td>
+            <td style="font-size:0.78rem;max-width:160px;">${items}</td>
+            <td style="font-weight:700;color:var(--brand-dark);">₹${o.total}</td>
+            <td style="font-size:0.72rem;color:var(--text-soft);max-width:160px;">${addr}</td>
+            <td style="font-size:0.78rem;color:var(--text-soft);">${date}</td>
+            <td><span style="background:var(--success-bg);color:var(--success);font-size:0.65rem;font-weight:700;padding:3px 8px;border-radius:8px;">✅ Paid</span></td>
+          </tr>`;
+        }).join('')}</tbody>
       </table>`;
   } catch(e) {
     wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Failed to load orders.<br><small>${e.message}</small></div></div>`;
@@ -1420,10 +1310,7 @@ const sections = ['dashboard','products','add','categories','orders'];
 const titles = {dashboard:'Dashboard',products:'All Products',add:'Add Product',categories:'Categories',orders:'Recent Orders'};
 
 window.showSection = function(name) {
-  sections.forEach(s => {
-    const el = document.getElementById('section-'+s);
-    if (el) el.style.display = s===name ? 'block' : 'none';
-  });
+  sections.forEach(s => { const el = document.getElementById('section-'+s); if(el) el.style.display = s===name?'block':'none'; });
   document.querySelectorAll('.nav-link').forEach(el =>
     el.classList.toggle('active', el.getAttribute('onclick')?.includes(`'${name}'`)));
   document.getElementById('topbarTitle').textContent = titles[name]||name;
@@ -1432,7 +1319,6 @@ window.showSection = function(name) {
   if (name==='categories') renderCategoryGrid(allProducts);
   closeSidebar();
 };
-
 window.toggleSidebar = function() {
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('sidebarOverlay').classList.toggle('open');
@@ -1447,15 +1333,12 @@ function highlight(id) {
   const el = document.getElementById(id);
   if (el) { el.classList.add('error'); el.focus(); setTimeout(()=>el.classList.remove('error'),2000); }
 }
-
 function setBtnLoading(btnId, iconId, textId, loading, text) {
-  const btn = document.getElementById(btnId);
-  if (!btn) return;
+  const btn = document.getElementById(btnId); if(!btn) return;
   btn.disabled = loading;
   if (iconId) document.getElementById(iconId).textContent = loading ? '⏳' : '✓';
   if (textId) document.getElementById(textId).textContent = text;
 }
-
 let toastTimer;
 function toast(msg, type='') {
   const el = document.getElementById('adminToast');
