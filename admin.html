@@ -810,46 +810,67 @@ window.onDrop = function(event, ctx) {
   setPhotoFile(ctx, file);
 };
 
+// Cache for pre-compressed blobs so uploadPhoto doesn't compress twice
+let addPhotoBlob = null;
+let editPhotoBlob = null;
+
 function setPhotoFile(ctx, file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    if (ctx === 'add') {
-      addPhotoFile = file;
-      const img = document.getElementById('uploadPreviewImg');
-      const area = document.getElementById('uploadArea');
-      const placeholder = document.getElementById('uploadPlaceholder');
-      img.src = e.target.result;
-      img.style.display = 'block';
-      placeholder.style.display = 'none';
-      area.classList.add('has-image');
-      // Update live preview
-      document.getElementById('prevImgBox').innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
-    } else {
-      editPhotoFile = file;
-      const img = document.getElementById('editUploadPreviewImg');
-      const area = document.getElementById('editUploadArea');
-      const placeholder = document.getElementById('editUploadPlaceholder');
-      img.src = e.target.result;
-      img.style.display = 'block';
-      placeholder.style.display = 'none';
-      area.classList.add('has-image');
-      document.getElementById('editPrevImgBox').innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
-    }
-  };
-  reader.readAsDataURL(file);
+  // Use ObjectURL for instant preview (no FileReader delay)
+  const previewUrl = URL.createObjectURL(file);
+
+  if (ctx === 'add') {
+    // Release any previous ObjectURL
+    if (addPhotoFile && addPhotoFile._previewUrl) URL.revokeObjectURL(addPhotoFile._previewUrl);
+    addPhotoFile = file;
+    addPhotoFile._previewUrl = previewUrl;
+    addPhotoBlob = null; // reset cache
+
+    const img = document.getElementById('uploadPreviewImg');
+    const area = document.getElementById('uploadArea');
+    const placeholder = document.getElementById('uploadPlaceholder');
+    img.src = previewUrl;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+    area.classList.add('has-image');
+    document.getElementById('prevImgBox').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
+  } else {
+    if (editPhotoFile && editPhotoFile._previewUrl) URL.revokeObjectURL(editPhotoFile._previewUrl);
+    editPhotoFile = file;
+    editPhotoFile._previewUrl = previewUrl;
+    editPhotoBlob = null; // reset cache
+
+    const img = document.getElementById('editUploadPreviewImg');
+    const area = document.getElementById('editUploadArea');
+    const placeholder = document.getElementById('editUploadPlaceholder');
+    img.src = previewUrl;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+    area.classList.add('has-image');
+    document.getElementById('editPrevImgBox').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
+  }
+
+  // Pre-compress in background so upload is instant when form is submitted
+  compressImageToBlob(file).then(blob => {
+    if (ctx === 'add') addPhotoBlob = blob;
+    else editPhotoBlob = blob;
+  }).catch(() => {}); // silent — uploadPhoto will compress on-demand if needed
 }
 
 window.clearPhoto = function(ctx, event) {
   if (event) event.stopPropagation();
   if (ctx === 'add') {
+    if (addPhotoFile && addPhotoFile._previewUrl) URL.revokeObjectURL(addPhotoFile._previewUrl);
     addPhotoFile = null;
+    addPhotoBlob = null;
     document.getElementById('f_photo').value = '';
     document.getElementById('uploadPreviewImg').style.display = 'none';
     document.getElementById('uploadPlaceholder').style.display = 'block';
     document.getElementById('uploadArea').classList.remove('has-image');
     document.getElementById('prevImgBox').innerHTML = '🍬';
   } else {
+    if (editPhotoFile && editPhotoFile._previewUrl) URL.revokeObjectURL(editPhotoFile._previewUrl);
     editPhotoFile = null;
+    editPhotoBlob = null;
     editCurrentPhotoUrl = '';
     document.getElementById('e_photo').value = '';
     document.getElementById('editUploadPreviewImg').style.display = 'none';
@@ -859,7 +880,33 @@ window.clearPhoto = function(ctx, event) {
   }
 };
 
-// Compress image to base64
+// Compress image to a Blob (faster for Firebase Storage upload — avoids base64 overhead)
+function compressImageToBlob(file, maxW, maxH, quality) {
+  maxW = maxW||900; maxH = maxH||900; quality = quality||0.82;
+  return new Promise(function(resolve, reject) {
+    var img = new Image();
+    var objUrl = URL.createObjectURL(file);
+    img.onload = function() {
+      URL.revokeObjectURL(objUrl);
+      var w = img.width, h = img.height;
+      if (w > maxW || h > maxH) {
+        var ratio = Math.min(maxW/w, maxH/h);
+        w = Math.round(w * ratio); h = Math.round(h * ratio);
+      }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(function(blob) {
+        if (blob) resolve(blob);
+        else reject(new Error('Canvas toBlob failed'));
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = function() { reject(new Error('Could not load image')); };
+    img.src = objUrl;
+  });
+}
+
+// Compress image to base64 (used only for Firestore fallback)
 function compressImageToBase64(file, maxW, maxH, quality) {
   maxW = maxW||900; maxH = maxH||900; quality = quality||0.82;
   return new Promise(function(resolve, reject) {
@@ -897,14 +944,19 @@ async function uploadPhoto(file, productName, ctx) {
     if (txt)  txt.textContent = msg;
   };
 
-  setProgress(10, 'Compressing image...');
+  setProgress(10, 'Preparing image...');
 
-  let base64DataUrl;
-  try {
-    base64DataUrl = await compressImageToBase64(file);
-  } catch(e) {
-    throw new Error('Image read failed: ' + e.message);
+  // Use pre-compressed blob if available (background compression already done), else compress now
+  let blob = ctx === 'add' ? addPhotoBlob : editPhotoBlob;
+  if (!blob) {
+    setProgress(20, 'Compressing image...');
+    try {
+      blob = await compressImageToBlob(file);
+    } catch(e) {
+      throw new Error('Image read failed: ' + e.message);
+    }
   }
+
   setProgress(35, 'Uploading to cloud...');
 
   // Try Firebase Storage upload
@@ -912,8 +964,6 @@ async function uploadPhoto(file, productName, ctx) {
     const sanitized = productName.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase();
     const storagePath = 'products/' + sanitized + '_' + Date.now() + '.jpg';
     const storageRef = ref(storage, storagePath);
-    const fetchRes = await fetch(base64DataUrl);
-    const blob = await fetchRes.blob();
     await new Promise((resolve, reject) => {
       const task = uploadBytesResumable(storageRef, blob, { contentType: 'image/jpeg' });
       task.on('state_changed',
@@ -936,10 +986,19 @@ async function uploadPhoto(file, productName, ctx) {
     const banner = document.getElementById('storageBanner');
     if (banner) banner.style.display = 'block';
     // Fallback: store compressed base64 directly in Firestore
-    const approxKB = Math.round(base64DataUrl.length * 0.75 / 1024);
-    if (approxKB > 800) {
-      base64DataUrl = await compressImageToBase64(file, 600, 600, 0.65);
-    }
+    // Convert blob to base64
+    const base64DataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      // Re-compress smaller for Firestore if blob is large
+      const fallbackBlob = blob.size > 800*1024 ? null : blob;
+      if (fallbackBlob) {
+        reader.readAsDataURL(fallbackBlob);
+      } else {
+        compressImageToBase64(file, 600, 600, 0.65).then(resolve).catch(reject);
+      }
+    });
     setProgress(100, 'Image saved (compressed)!');
     setTimeout(() => { const w = document.getElementById(progressWrapId); if(w) w.style.display='none'; }, 1500);
     return base64DataUrl;
