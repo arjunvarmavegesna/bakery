@@ -1744,10 +1744,12 @@ function toggleWishlist(id, btn) {
     wishlist.delete(id);
     if (btn) btn.textContent = '🤍';
     showToast(`Removed from wishlist`);
+    if (window.saveWishlistToFirebase) window.saveWishlistToFirebase(id, false);
   } else {
     wishlist.add(id);
     if (btn) btn.textContent = '❤️';
     showToast(`${p.emoji} Added to wishlist!`);
+    if (window.saveWishlistToFirebase) window.saveWishlistToFirebase(id, true);
   }
   updateWishlistBadge();
 }
@@ -2291,6 +2293,15 @@ function submitReview() {
 
   closeWriteReview();
   showToast('🎉 Thank you for your verified review!');
+
+  // Save to Firebase
+  if (window.saveReviewToFirebase) {
+    window.saveReviewToFirebase(id, {
+      name, text, rating: selectedRating,
+      loc: userCity, date: now, color: colors[Math.floor(Math.random() * colors.length)]
+    });
+  }
+
   setTimeout(() => {
     openReviewsPage();
     renderProductReviews(id);
@@ -2612,8 +2623,290 @@ function startPayment() {
 <!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, orderBy, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import {
+    getFirestore, collection, addDoc, getDocs, getDoc, setDoc, deleteDoc,
+    doc, orderBy, query, where, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyChB0J289Ihu8OxE60Vc-CHsWcKT28RtAU",
+    authDomain: "sree-ramu-sweets.firebaseapp.com",
+    projectId: "sree-ramu-sweets",
+    storageBucket: "sree-ramu-sweets.firebasestorage.app",
+    messagingSenderId: "217706015668",
+    appId: "1:217706015668:web:c03e8659136877b9a860e1"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const db   = getFirestore(app);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  // ── AUTH STATE ──
+  onAuthStateChanged(auth, async (user) => {
+    window.currentUser = user || null;
+    updateNavAvatar(user);
+    const drawer = document.getElementById('accountDrawer');
+    if (drawer && drawer.classList.contains('open')) renderAccountView(user);
+    if (user) {
+      // Load all persisted data on login
+      await Promise.all([
+        loadWishlistFromFirebase(user.uid),
+        loadPurchasesFromFirebase(user.uid),
+        loadReviewsFromFirebase()
+      ]);
+    } else {
+      // Clear in-memory data on logout
+      wishlist.clear();
+      purchasedProducts.clear();
+      updateWishlistBadge();
+      renderProducts();
+    }
+  });
+
+  // ── NAV AVATAR ──
+  function updateNavAvatar(user) {
+    const wrap = document.getElementById('navAccountIcon');
+    if (!wrap) return;
+    wrap.innerHTML = (user && user.photoURL)
+      ? `<img src="${user.photoURL}" class="nav-avatar" alt="avatar" referrerpolicy="no-referrer"/>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+  }
+
+  function renderAccountView(user) {
+    const loginView   = document.getElementById('loginView');
+    const profileView = document.getElementById('profileView');
+    if (!loginView || !profileView) return;
+    if (user) {
+      loginView.style.display   = 'none';
+      profileView.style.display = 'block';
+      document.getElementById('profileName').textContent  = user.displayName || 'Sweet Customer';
+      document.getElementById('profileEmail').textContent = user.email || '';
+      const wrap = document.getElementById('profileAvatarWrap');
+      wrap.innerHTML = user.photoURL
+        ? `<img src="${user.photoURL}" class="profile-avatar" referrerpolicy="no-referrer"/>`
+        : `<div class="profile-avatar-placeholder">${(user.displayName||'U')[0].toUpperCase()}</div>`;
+    } else {
+      loginView.style.display   = 'block';
+      profileView.style.display = 'none';
+    }
+  }
+
+  // ── SIGN IN / OUT ──
+  window.signInWithGoogle = async function() {
+    try {
+      showToast('⏳ Opening Google login...');
+      await signInWithPopup(auth, provider);
+      showToast('✅ Signed in successfully!');
+    } catch(e) { showToast('❌ Login failed. Try again.'); console.error(e); }
+  };
+
+  window.signOutUser = async function() {
+    try {
+      await signOut(auth);
+      window.currentUser = null;
+      wishlist.clear();
+      purchasedProducts.clear();
+      updateWishlistBadge();
+      renderAccountView(null);
+      showToast('👋 Signed out successfully');
+    } catch(e) { showToast('❌ Sign out failed'); }
+  };
+
+  window.openAccount = function() {
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('accountDrawer').classList.add('open');
+    renderAccountView(auth.currentUser);
+  };
+
+  // ══════════════════════════════════════
+  // ── WISHLIST PERSISTENCE ──
+  // ══════════════════════════════════════
+
+  async function loadWishlistFromFirebase(uid) {
+    try {
+      const snap = await getDocs(query(collection(db, 'wishlist'), where('uid', '==', uid)));
+      wishlist.clear();
+      snap.forEach(d => wishlist.add(d.data().productId));
+      updateWishlistBadge();
+      renderProducts(); // re-render to show correct heart icons
+    } catch(e) { console.error('Wishlist load failed:', e); }
+  }
+
+  window.saveWishlistToFirebase = async function(productId, add) {
+    const user = auth.currentUser;
+    if (!user) return;
+    const docId = `${user.uid}_${productId}`;
+    const ref = doc(db, 'wishlist', docId);
+    try {
+      if (add) {
+        await setDoc(ref, { uid: user.uid, productId, savedAt: serverTimestamp() });
+      } else {
+        await deleteDoc(ref);
+      }
+    } catch(e) { console.error('Wishlist save failed:', e); }
+  };
+
+  // ══════════════════════════════════════
+  // ── PURCHASES PERSISTENCE ──
+  // ══════════════════════════════════════
+
+  async function loadPurchasesFromFirebase(uid) {
+    try {
+      const snap = await getDocs(query(collection(db, 'purchases'), where('uid', '==', uid)));
+      purchasedProducts.clear();
+      snap.forEach(d => purchasedProducts.add(d.data().productId));
+    } catch(e) { console.error('Purchases load failed:', e); }
+  }
+
+  window.savePurchasesToFirebase = async function(productIds) {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+      await Promise.all(productIds.map(pid => {
+        const docId = `${user.uid}_${pid}`;
+        return setDoc(doc(db, 'purchases', docId), {
+          uid: user.uid, productId: pid, boughtAt: serverTimestamp()
+        }, { merge: true });
+      }));
+    } catch(e) { console.error('Purchases save failed:', e); }
+  };
+
+  // ══════════════════════════════════════
+  // ── REVIEWS PERSISTENCE ──
+  // ══════════════════════════════════════
+
+  async function loadReviewsFromFirebase() {
+    try {
+      const snap = await getDocs(query(collection(db, 'reviews'), orderBy('createdAt', 'desc')));
+      snap.forEach(d => {
+        const r = d.data();
+        if (!userReviews[r.productId]) userReviews[r.productId] = [];
+        // avoid duplicates on re-load
+        const exists = userReviews[r.productId].some(x => x.firestoreId === d.id);
+        if (!exists) {
+          userReviews[r.productId].unshift({ ...r, firestoreId: d.id, verified: true });
+          // update reviewsData avg
+          if (reviewsData[r.productId]) {
+            reviewsData[r.productId].total += 1;
+            reviewsData[r.productId].dist[r.rating - 1] += 1;
+          }
+        }
+      });
+      // recalculate averages
+      Object.keys(userReviews).forEach(pid => {
+        const id = parseInt(pid);
+        if (reviewsData[id]) {
+          const all = [...reviewsData[id].reviews, ...userReviews[id]];
+          if (all.length) reviewsData[id].avg = +(all.reduce((s,r) => s + r.rating, 0) / all.length).toFixed(1);
+        }
+      });
+    } catch(e) { console.error('Reviews load failed:', e); }
+  }
+
+  window.saveReviewToFirebase = async function(productId, reviewObj) {
+    const user = auth.currentUser;
+    if (!user) return null;
+    try {
+      const docRef = await addDoc(collection(db, 'reviews'), {
+        ...reviewObj,
+        productId,
+        uid: user.uid,
+        createdAt: serverTimestamp()
+      });
+      return docRef.id;
+    } catch(e) { console.error('Review save failed:', e); return null; }
+  };
+
+  // ══════════════════════════════════════
+  // ── ORDERS ──
+  // ══════════════════════════════════════
+
+  window.saveOrderToFirebase = async function(items, total, shipping) {
+    const uid = auth.currentUser ? auth.currentUser.uid : 'guest';
+    const userName = auth.currentUser ? auth.currentUser.displayName : (shipping?.name || 'Guest');
+    await addDoc(collection(db, 'orders'), {
+      items, total, shipping: shipping || {}, uid, userName,
+      date: serverTimestamp(), status: 'paid'
+    });
+    // Also persist purchased product IDs
+    if (auth.currentUser) {
+      await window.savePurchasesToFirebase(items.map(i => i.id));
+    }
+  };
+
+  window.loadOrders = async function(listEl) {
+    try {
+      listEl.innerHTML = '<div class="orders-loading">⏳ Loading your orders...</div>';
+      const user = auth.currentUser;
+      if (!user) {
+        listEl.innerHTML = `
+          <div class="orders-empty">
+            <div>🔐</div>
+            <p>Please sign in to view your orders<br><small>Tap the Account tab to login</small></p>
+            <button onclick="window.openAccount()" style="margin-top:1rem;padding:0.6rem 1.4rem;background:#E8650A;color:white;border:none;border-radius:20px;font-family:Poppins,sans-serif;font-weight:600;cursor:pointer;font-size:0.82rem;">
+              Sign In with Google
+            </button>
+          </div>`;
+        return;
+      }
+      const q = query(collection(db, 'orders'), where('uid', '==', user.uid), orderBy('date', 'desc'));
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) {
+        listEl.innerHTML = `
+          <div class="orders-empty">
+            <div>🛍️</div>
+            <p style="font-weight:600;color:#5C2B00;font-size:0.95rem;margin-bottom:0.4rem;">No orders yet!</p>
+            <p style="font-size:0.78rem;color:#aaa;line-height:1.6;">Looks like you haven't ordered anything yet.<br>Go pick some delicious sweets! 😋</p>
+            <button onclick="closeAll()" style="margin-top:1.2rem;padding:0.65rem 1.6rem;background:#E8650A;color:white;border:none;border-radius:20px;font-family:Poppins,sans-serif;font-weight:600;cursor:pointer;font-size:0.82rem;box-shadow:0 4px 12px rgba(232,101,10,0.3);">
+              🍬 Shop Now
+            </button>
+          </div>`;
+        return;
+      }
+      listEl.innerHTML = snapshot.docs.map((d, i) => {
+        const o = d.data();
+        const date = o.date?.toDate
+          ? o.date.toDate().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+          : 'Recent';
+        const itemNames = (o.items || []).map(it => `${it.emoji || '🍬'} ${it.name} x${it.qty}`).join('<br>');
+        const orderId = '#' + String(i + 1).padStart(4, '0');
+        const addr = o.shipping?.city ? `📍 ${o.shipping.house}, ${o.shipping.city} - ${o.shipping.pincode}` : '';
+        return `
+          <div class="order-card">
+            <div class="order-header">
+              <span class="order-id">Order ${orderId}</span>
+              <span class="order-status">✅ Paid</span>
+            </div>
+            <div class="order-items">${itemNames}</div>
+            ${addr ? `<div style="font-size:0.7rem;color:#888;margin:0.4rem 0 0;">${addr}</div>` : ''}
+            <div class="order-footer" style="margin-top:0.6rem">
+              <span class="order-total">₹${o.total}</span>
+              <span class="order-date">🕐 ${date}</span>
+            </div>
+          </div>`;
+      }).join('');
+    } catch(e) {
+      listEl.innerHTML = `<div class="orders-empty"><div>⚠️</div><p>Could not load orders.<br><small>${e.message}</small></p></div>`;
+      console.error(e);
+    }
+  };
+
+  window.openMyOrders = function() {
+    document.getElementById('accountDrawer').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+    setTimeout(() => {
+      document.getElementById('overlay').classList.add('open');
+      document.getElementById('ordersDrawer').classList.add('open');
+      const list = document.getElementById('ordersList');
+      window.loadOrders(list);
+    }, 300);
+  };
+</script>
+
+</body>
+</html>
 
   const firebaseConfig = {
     apiKey: "AIzaSyChB0J289Ihu8OxE60Vc-CHsWcKT28RtAU",
@@ -2675,101 +2968,6 @@ function startPayment() {
       showToast('✅ Signed in successfully!');
     } catch(e) {
       showToast('❌ Login failed. Try again.');
-      console.error(e);
-    }
-  };
-
-  window.signOutUser = async function() {
-    try {
-      await signOut(auth);
-      window.currentUser = null;
-      renderAccountView(null);
-      showToast('👋 Signed out successfully');
-    } catch(e) { showToast('❌ Sign out failed'); }
-  };
-
-  window.openAccount = function() {
-    document.getElementById('overlay').classList.add('open');
-    document.getElementById('accountDrawer').classList.add('open');
-    renderAccountView(auth.currentUser);
-  };
-
-  window.openMyOrders = function() {
-    document.getElementById('accountDrawer').classList.remove('open');
-    document.getElementById('overlay').classList.remove('open');
-    setTimeout(() => {
-      document.getElementById('overlay').classList.add('open');
-      document.getElementById('ordersDrawer').classList.add('open');
-      const list = document.getElementById('ordersList');
-      window.loadOrders(list);
-    }, 300);
-  };
-
-  window.saveOrderToFirebase = async function(items, total, shipping) {
-    const uid = auth.currentUser ? auth.currentUser.uid : 'guest';
-    const userName = auth.currentUser ? auth.currentUser.displayName : (shipping?.name || 'Guest');
-    await addDoc(collection(db, 'orders'), {
-      items, total, shipping: shipping || {}, uid, userName, date: new Date(), status: 'paid'
-    });
-  };
-
-  window.loadOrders = async function(listEl) {
-    try {
-      listEl.innerHTML = '<div class="orders-loading">⏳ Loading your orders...</div>';
-      const user = auth.currentUser;
-      if (!user) {
-        listEl.innerHTML = `
-          <div class="orders-empty">
-            <div>🔐</div>
-            <p>Please sign in to view your orders<br><small>Tap the Account tab to login</small></p>
-            <button onclick="window.openAccount()" style="margin-top:1rem;padding:0.6rem 1.4rem;background:#E8650A;color:white;border:none;border-radius:20px;font-family:Poppins,sans-serif;font-weight:600;cursor:pointer;font-size:0.82rem;">
-              Sign In with Google
-            </button>
-          </div>`;
-        return;
-      }
-
-      const q = query(collection(db, 'orders'), where('uid', '==', user.uid), orderBy('date', 'desc'));
-      const snapshot = await getDocs(q);
-
-      if (snapshot.empty) {
-        listEl.innerHTML = `
-          <div class="orders-empty">
-            <div>🛍️</div>
-            <p style="font-weight:600;color:#5C2B00;font-size:0.95rem;margin-bottom:0.4rem;">No orders yet!</p>
-            <p style="font-size:0.78rem;color:#aaa;line-height:1.6;">Looks like you haven't ordered anything yet.<br>Go pick some delicious sweets! 😋</p>
-            <button onclick="closeAll()" style="margin-top:1.2rem;padding:0.65rem 1.6rem;background:#E8650A;color:white;border:none;border-radius:20px;font-family:Poppins,sans-serif;font-weight:600;cursor:pointer;font-size:0.82rem;box-shadow:0 4px 12px rgba(232,101,10,0.3);">
-              🍬 Shop Now
-            </button>
-          </div>`;
-        return;
-      }
-
-      listEl.innerHTML = snapshot.docs.map((doc, i) => {
-        const o = doc.data();
-        const date = o.date?.toDate
-          ? o.date.toDate().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
-          : 'Recent';
-        const itemNames = (o.items || []).map(it => `${it.emoji || '🍬'} ${it.name} x${it.qty}`).join('<br>');
-        const orderId = '#' + String(i + 1).padStart(4, '0');
-        const addr = o.shipping?.city ? `📍 ${o.shipping.house}, ${o.shipping.city} - ${o.shipping.pincode}` : '';
-        return `
-          <div class="order-card">
-            <div class="order-header">
-              <span class="order-id">Order ${orderId}</span>
-              <span class="order-status">✅ Paid</span>
-            </div>
-            <div class="order-items">${itemNames}</div>
-            ${addr ? `<div style="font-size:0.7rem;color:#888;margin:0.4rem 0 0;">${addr}</div>` : ''}
-            <div class="order-footer" style="margin-top:0.6rem">
-              <span class="order-total">₹${o.total}</span>
-              <span class="order-date">🕐 ${date}</span>
-            </div>
-          </div>`;
-      }).join('');
-
-    } catch(e) {
-      listEl.innerHTML = `<div class="orders-empty"><div>⚠️</div><p>Could not load orders.<br><small>${e.message}</small></p></div>`;
       console.error(e);
     }
   };
