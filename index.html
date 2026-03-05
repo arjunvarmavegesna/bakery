@@ -90,7 +90,7 @@
   .hero::before {
     content: '';
     position: absolute; inset: 0;
-    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
     pointer-events: none;
   }
   .hero-tag {
@@ -770,7 +770,7 @@
 <div class="promo-banner">
   <div class="promo-text">
     <h3>Festival Gift Boxes</h3>
-    <p>Premium assorted boxes from ₹299. Perfect for Diwali, Ugadi &amp; weddings!</p>
+    <p>Premium assorted boxes from ₹299. Perfect for Diwali, Ugadi & weddings!</p>
   </div>
   <button class="promo-btn" onclick="showToast('🎁 Added to cart!')">Shop Now</button>
 </div>
@@ -858,7 +858,7 @@
 <!-- FOOTER -->
 <footer class="footer">
   <div class="footer-logo">Sree Ramu Sweets</div>
-  <p>Crafting authentic Indian sweets with<br>love &amp; tradition since 1975.</p>
+  <p>Crafting authentic Indian sweets with<br>love & tradition since 1975.</p>
   <div class="footer-links">
     <a href="#">About Us</a>
     <a href="#">Contact</a>
@@ -962,7 +962,7 @@
 
   <!-- PAGE 2: Review & Confirm -->
   <div id="shippingPage2" style="display:none">
-    <div class="drawer-title">Review &amp; Pay 💳</div>
+    <div class="drawer-title">Review & Pay 💳</div>
 
     <div class="address-confirm-card">
       <div class="addr-name" id="confirm_name"></div>
@@ -1051,7 +1051,7 @@
       <div class="account-menu-item" onclick="showToast('🚧 Coming soon!')">
         <div class="menu-icon" style="background:#FFF3CD;">🎁</div>
         <div class="menu-text">
-          <div class="menu-title">Offers &amp; Coupons</div>
+          <div class="menu-title">Offers & Coupons</div>
           <div class="menu-sub">Your exclusive member deals</div>
         </div>
         <span class="menu-arrow">›</span>
@@ -1059,7 +1059,7 @@
       <div class="account-menu-item" onclick="showToast('🚧 Coming soon!')">
         <div class="menu-icon" style="background:#E3F2FD;">💬</div>
         <div class="menu-text">
-          <div class="menu-title">Help &amp; Support</div>
+          <div class="menu-title">Help & Support</div>
           <div class="menu-sub">Chat with us · +91 xxxxxxxxxx</div>
         </div>
         <span class="menu-arrow">›</span>
@@ -1122,42 +1122,41 @@ const products = [
 let cart = {};
 let searchVisible = false;
 
-function renderProducts(list) {
-  list = list || products;
+function renderProducts(list = products) {
   const grid = document.getElementById('productsGrid');
-  grid.innerHTML = list.map(function(p) {
-    return '<div class="product-card">' +
-      '<div class="product-img" style="background:' + p.bg + '">' +
-        '<span style="font-size:3.2rem">' + p.emoji + '</span>' +
-        (p.badge ? '<div class="product-badge">' + p.badge + '</div>' : '') +
-        '<div class="product-fav">🤍</div>' +
-      '</div>' +
-      '<div class="product-info">' +
-        '<div class="product-name">' + p.name + '</div>' +
-        '<div class="product-desc">' + p.desc + '</div>' +
-        '<div class="product-weight">Per 250g pack</div>' +
-        '<div class="product-footer">' +
-          '<div class="product-price">' +
-            (p.oldPrice ? '<span>₹' + p.oldPrice + '</span>' : '') +
-            '₹' + p.price +
-          '</div>' +
-          '<button class="add-btn" onclick="addToCart(' + p.id + ')">+</button>' +
-        '</div>' +
-      '</div>' +
-    '</div>';
-  }).join('');
+  grid.innerHTML = list.map(p => `
+    <div class="product-card">
+      <div class="product-img" style="background:${p.bg}">
+        <span style="font-size:3.2rem">${p.emoji}</span>
+        ${p.badge ? `<div class="product-badge">${p.badge}</div>` : ''}
+        <div class="product-fav">🤍</div>
+      </div>
+      <div class="product-info">
+        <div class="product-name">${p.name}</div>
+        <div class="product-desc">${p.desc}</div>
+        <div class="product-weight">Per 250g pack</div>
+        <div class="product-footer">
+          <div class="product-price">
+            ${p.oldPrice ? `<span>₹${p.oldPrice}</span>` : ''}
+            ₹${p.price}
+          </div>
+          <button class="add-btn" onclick="addToCart(${p.id})">+</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
 }
 
 function addToCart(id) {
-  const p = products.find(function(x) { return x.id === id; });
-  if (!cart[id]) cart[id] = { id: p.id, name: p.name, price: p.price, emoji: p.emoji, qty: 0 };
+  const p = products.find(x => x.id === id);
+  if (!cart[id]) cart[id] = { ...p, qty: 0 };
   cart[id].qty++;
   updateCartBadge();
-  showToast(p.emoji + ' ' + p.name + ' added to cart!');
+  showToast(`${p.emoji} ${p.name} added to cart!`);
 }
 
 function updateCartBadge() {
-  const total = Object.values(cart).reduce(function(s, i) { return s + i.qty; }, 0);
+  const total = Object.values(cart).reduce((s, i) => s + i.qty, 0);
   document.getElementById('cartCount').textContent = total;
 }
 
@@ -1167,33 +1166,34 @@ function openCart() {
   const cartTotalEl = document.getElementById('cartTotal');
 
   if (items.length === 0) {
-    cartItemsEl.innerHTML = '<div class="empty-cart"><div>🛒</div><p>Your cart is empty!<br><small>Add some delicious sweets 😋</small></p></div>';
+    cartItemsEl.innerHTML = `<div class="empty-cart"><div>🛒</div><p>Your cart is empty!<br><small>Add some delicious sweets 😋</small></p></div>`;
     cartTotalEl.innerHTML = '';
   } else {
-    cartItemsEl.innerHTML = items.map(function(item) {
-      return '<div class="cart-item">' +
-        '<div class="cart-item-img">' + item.emoji + '</div>' +
-        '<div class="cart-item-info">' +
-          '<div class="cart-item-name">' + item.name + '</div>' +
-          '<div class="cart-item-price">₹' + (item.price * item.qty) + '</div>' +
-        '</div>' +
-        '<div class="qty-ctrl">' +
-          '<button class="qty-btn" onclick="changeQty(' + item.id + ',-1)">−</button>' +
-          '<span class="qty-val">' + item.qty + '</span>' +
-          '<button class="qty-btn" onclick="changeQty(' + item.id + ',1)">+</button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
+    cartItemsEl.innerHTML = items.map(item => `
+      <div class="cart-item">
+        <div class="cart-item-img">${item.emoji}</div>
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-price">₹${item.price * item.qty}</div>
+        </div>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+          <span class="qty-val">${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+        </div>
+      </div>
+    `).join('');
 
-    const subtotal = items.reduce(function(s, i) { return s + i.price * i.qty; }, 0);
+    const subtotal = items.reduce((s,i) => s + i.price*i.qty, 0);
     const delivery = subtotal >= 499 ? 0 : 40;
-    cartTotalEl.innerHTML =
-      '<div class="cart-total">' +
-        '<div class="total-row"><span>Subtotal</span><span>₹' + subtotal + '</span></div>' +
-        '<div class="total-row"><span>Delivery</span><span>' + (delivery === 0 ? '<span style="color:green">FREE</span>' : '₹' + delivery) + '</span></div>' +
-        '<div class="total-row grand"><span>Total</span><span>₹' + (subtotal + delivery) + '</span></div>' +
-        '<button class="checkout-btn" onclick="openShipping()">Proceed to Checkout 📍</button>' +
-      '</div>';
+    cartTotalEl.innerHTML = `
+      <div class="cart-total">
+        <div class="total-row"><span>Subtotal</span><span>₹${subtotal}</span></div>
+        <div class="total-row"><span>Delivery</span><span>${delivery === 0 ? '<span style="color:green">FREE</span>' : '₹' + delivery}</span></div>
+        <div class="total-row grand"><span>Total</span><span>₹${subtotal + delivery}</span></div>
+        <button class="checkout-btn" onclick="openShipping()">Proceed to Checkout 📍</button>
+      </div>
+    `;
   }
 
   document.getElementById('overlay').classList.add('open');
@@ -1226,9 +1226,9 @@ function openOrders() {
   if (window.loadOrders) {
     window.loadOrders(list);
   } else {
-    setTimeout(function() {
+    setTimeout(() => {
       if (window.loadOrders) window.loadOrders(list);
-      else list.innerHTML = '<div class="orders-empty"><div>📶</div><p>Could not connect.<br>Check internet and try again.</p></div>';
+      else list.innerHTML = '<div class="orders-empty"><div>📶</div><p>Could not connect.<br><small>Check internet and try again.</small></p></div>';
     }, 3000);
   }
 }
@@ -1241,15 +1241,15 @@ function toggleSearch() {
 
 document.getElementById('searchInput').addEventListener('input', function() {
   const q = this.value.toLowerCase();
-  const filtered = q ? products.filter(function(p) { return p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q); }) : products;
+  const filtered = q ? products.filter(p => p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)) : products;
   renderProducts(filtered);
   document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
 });
 
 function filterCategory(cat) {
-  document.querySelectorAll('.cat-pill').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.cat-pill').forEach(el => el.classList.remove('active'));
   event.currentTarget.classList.add('active');
-  const filtered = cat === 'all' ? products : products.filter(function(p) { return p.cat === cat; });
+  const filtered = cat === 'all' ? products : products.filter(p => p.cat === cat);
   renderProducts(filtered);
   document.getElementById('products').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -1264,7 +1264,7 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(function() { t.classList.remove('show'); }, 2500);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 renderProducts();
@@ -1277,7 +1277,7 @@ function openShipping() {
     document.getElementById('cartDrawer').classList.remove('open');
     document.getElementById('overlay').classList.remove('open');
     showToast('🔐 Please sign in to place your order!');
-    setTimeout(function() { if (window.openAccount) window.openAccount(); }, 800);
+    setTimeout(() => { if (window.openAccount) window.openAccount(); }, 800);
     return;
   }
 
@@ -1319,7 +1319,7 @@ document.addEventListener('DOMContentLoaded', function() {
       hideErr('err_pincode');
       document.getElementById('locationTag').classList.remove('show');
       if (val.length === 6) {
-        pincodeTimer = setTimeout(function() { lookupPincode(val); }, 400);
+        pincodeTimer = setTimeout(() => lookupPincode(val), 400);
       } else if (val.length < 6) {
         document.getElementById('ship_city').value = '';
         document.getElementById('ship_state').value = '';
@@ -1343,11 +1343,11 @@ async function lookupPincode(pin) {
   pincodeInput.classList.remove('error', 'success');
 
   try {
-    const res = await fetch('https://api.postalpincode.in/pincode/' + pin);
+    const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
     const data = await res.json();
     spinner.classList.remove('show');
 
-    if (data[0].Status === 'Success' && data[0].PostOffice && data[0].PostOffice.length > 0) {
+    if (data[0].Status === 'Success' && data[0].PostOffice?.length > 0) {
       const po = data[0].PostOffice[0];
       const city = po.District || po.Block || po.Name;
       const state = po.State;
@@ -1361,7 +1361,7 @@ async function lookupPincode(pin) {
       stateInput.classList.add('success');
       pincodeInput.classList.add('success');
 
-      document.getElementById('locationText').textContent = region + ', ' + city + ', ' + state;
+      document.getElementById('locationText').textContent = `${region}, ${city}, ${state}`;
       locationTag.classList.add('show');
       hideErr('err_pincode');
     } else {
@@ -1382,7 +1382,7 @@ async function lookupPincode(pin) {
 // ── VALIDATION HELPERS ──
 function showErr(id, msg) {
   const el = document.getElementById(id);
-  if (el) { if (msg) el.textContent = msg; el.classList.add('show'); }
+  if (el) { el.textContent = msg || el.textContent; el.classList.add('show'); }
 }
 function hideErr(id) {
   const el = document.getElementById(id);
@@ -1430,6 +1430,7 @@ function validateShippingForm() {
 }
 
 function goToReview() {
+
   if (!validateShippingForm()) {
     const firstErr = document.querySelector('.form-input.error');
     if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1455,13 +1456,13 @@ function goToReview() {
     (shippingData.note ? '<br>📝 ' + shippingData.note : '');
 
   const items = Object.values(cart);
-  const subtotal = items.reduce(function(s, i) { return s + i.price * i.qty; }, 0);
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
   const delivery = subtotal >= 499 ? 0 : 40;
   const total = subtotal + delivery;
 
   document.getElementById('confirm_items').innerHTML =
-    items.map(function(i) { return '<div class="shipping-summary-row"><span>' + i.emoji + ' ' + i.name + ' x' + i.qty + '</span><span>₹' + (i.price * i.qty) + '</span></div>'; }).join('') +
-    '<div class="shipping-summary-row"><span>Delivery</span><span>' + (delivery === 0 ? '<span style="color:green">FREE</span>' : '₹' + delivery) + '</span></div>';
+    items.map(i => `<div class="shipping-summary-row"><span>${i.emoji} ${i.name} x${i.qty}</span><span>₹${i.price * i.qty}</span></div>`).join('') +
+    `<div class="shipping-summary-row"><span>Delivery</span><span>${delivery === 0 ? '<span style="color:green">FREE</span>' : '₹' + delivery}</span></div>`;
   document.getElementById('confirm_total').textContent = '₹' + total;
 
   document.getElementById('shippingPage1').style.display = 'none';
@@ -1474,7 +1475,7 @@ function goToReview() {
 function proceedToPayment() {
   if (proceedToPayment._busy) return;
   proceedToPayment._busy = true;
-  setTimeout(function() { proceedToPayment._busy = false; }, 2000);
+  setTimeout(() => proceedToPayment._busy = false, 2000);
   document.getElementById('shippingDrawer').classList.remove('open');
   document.getElementById('overlay').classList.remove('open');
   startPayment();
@@ -1484,25 +1485,25 @@ function proceedToPayment() {
 emailjs.init('CmgzshDIJLAWVwlW8');
 
 function sendOrderEmail(items, total, shipping, paymentId) {
-  const subtotal = items.reduce(function(s, i) { return s + i.price * i.qty; }, 0);
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
   const delivery = subtotal >= 499 ? 0 : 40;
-  const itemLines = items.map(function(i) { return i.name + ' x' + i.qty + ' = Rs.' + (i.price * i.qty); }).join('\n');
+  const itemLines = items.map(i => i.name + ' x' + i.qty + ' = Rs.' + (i.price * i.qty)).join('\n');
   const address = shipping ? [shipping.house + ', ' + shipping.street, shipping.city + ', ' + shipping.state + ' - ' + shipping.pincode].join(', ') : 'Not provided';
   const now = new Date().toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
 
   emailjs.send('service_1hzy94j', 'template_wclu0uv', {
     date: now, payment_id: paymentId || 'N/A',
-    items: itemLines, subtotal: subtotal, delivery: delivery === 0 ? 'FREE' : delivery,
-    total: total, customer_name: shipping ? shipping.name : 'Guest', phone: shipping ? shipping.phone : 'N/A', address: address
-  }).then(function() { console.log('Order email sent!'); }).catch(function(err) { console.error('Email failed:', err); });
+    items: itemLines, subtotal, delivery: delivery === 0 ? 'FREE' : delivery,
+    total, customer_name: shipping?.name || 'Guest', phone: shipping?.phone || 'N/A', address
+  }).then(() => console.log('Order email sent!')).catch(err => console.error('Email failed:', err));
 }
 
 // ── WHATSAPP ──
 function sendOrderWhatsApp(items, total, shipping, paymentId) {
-  const OWNER_NUMBER = '919876543210';
-  const subtotal = items.reduce(function(s, i) { return s + i.price * i.qty; }, 0);
+  const OWNER_NUMBER = '919876543210'; // ← CHANGE THIS
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
   const delivery = subtotal >= 499 ? 0 : 40;
-  const itemLines = items.map(function(i) { return '• ' + i.name + ' x' + i.qty + ' = Rs.' + (i.price * i.qty); }).join('\n');
+  const itemLines = items.map(i => `• ${i.name} x${i.qty} = Rs.${i.price * i.qty}`).join('\n');
   const address = shipping
     ? [shipping.name, 'Phone: ' + shipping.phone, shipping.house + ', ' + shipping.street, shipping.city + ', ' + shipping.state + ' - ' + shipping.pincode, shipping.note ? 'Note: ' + shipping.note : ''].filter(Boolean).join('\n')
     : 'Address not provided';
@@ -1520,7 +1521,7 @@ function sendOrderWhatsApp(items, total, shipping, paymentId) {
 function startPayment() {
   const items = Object.values(cart);
   if (items.length === 0) return;
-  const subtotal = items.reduce(function(s, i) { return s + i.price * i.qty; }, 0);
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
   const delivery = subtotal >= 499 ? 0 : 40;
   const total = subtotal + delivery;
 
@@ -1548,7 +1549,7 @@ function startPayment() {
 }
 </script>
 
-<!-- Firebase — NOTE: all </tag> inside JS strings are escaped as <\/tag> to prevent HTML parser issues -->
+<!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, orderBy, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -1579,9 +1580,9 @@ function startPayment() {
     const wrap = document.getElementById('navAccountIcon');
     if (!wrap) return;
     if (user && user.photoURL) {
-      wrap.innerHTML = '<img src="' + user.photoURL + '" class="nav-avatar" alt="avatar" referrerpolicy="no-referrer"\/>';
+      wrap.innerHTML = `<img src="${user.photoURL}" class="nav-avatar" alt="avatar" referrerpolicy="no-referrer"/>`;
     } else {
-      wrap.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"><\/path><circle cx="12" cy="7" r="4"><\/circle><\/svg>';
+      wrap.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
     }
   }
 
@@ -1596,10 +1597,10 @@ function startPayment() {
       document.getElementById('profileEmail').textContent = user.email || '';
       const wrap = document.getElementById('profileAvatarWrap');
       if (user.photoURL) {
-        wrap.innerHTML = '<img src="' + user.photoURL + '" class="profile-avatar" referrerpolicy="no-referrer"\/>';
+        wrap.innerHTML = `<img src="${user.photoURL}" class="profile-avatar" referrerpolicy="no-referrer"/>`;
       } else {
         const initial = (user.displayName || 'U')[0].toUpperCase();
-        wrap.innerHTML = '<div class="profile-avatar-placeholder">' + initial + '<\/div>';
+        wrap.innerHTML = `<div class="profile-avatar-placeholder">${initial}</div>`;
       }
     } else {
       loginView.style.display   = 'block';
@@ -1646,7 +1647,7 @@ function startPayment() {
 
   window.saveOrderToFirebase = async function(items, total, shipping) {
     const uid = auth.currentUser ? auth.currentUser.uid : 'guest';
-    const userName = auth.currentUser ? auth.currentUser.displayName : (shipping ? shipping.name : 'Guest');
+    const userName = auth.currentUser ? auth.currentUser.displayName : (shipping?.name || 'Guest');
     await addDoc(collection(db, 'orders'), {
       items, total, shipping: shipping || {}, uid, userName, date: new Date(), status: 'paid'
     });
@@ -1654,15 +1655,17 @@ function startPayment() {
 
   window.loadOrders = async function(listEl) {
     try {
-      listEl.innerHTML = '<div class="orders-loading">⏳ Loading your orders...<\/div>';
+      listEl.innerHTML = '<div class="orders-loading">⏳ Loading your orders...</div>';
       const user = auth.currentUser;
       if (!user) {
-        listEl.innerHTML =
-          '<div class="orders-empty">' +
-            '<div>🔐<\/div>' +
-            '<p>Please sign in to view your orders<br>Tap the Account tab to login<\/p>' +
-            '<button onclick="window.openAccount()" style="margin-top:1rem;padding:0.6rem 1.4rem;background:#9B1C1C;color:white;border:none;border-radius:20px;font-family:Poppins,sans-serif;font-weight:600;cursor:pointer;font-size:0.82rem;">Sign In with Google<\/button>' +
-          '<\/div>';
+        listEl.innerHTML = `
+          <div class="orders-empty">
+            <div>🔐</div>
+            <p>Please sign in to view your orders<br><small>Tap the Account tab to login</small></p>
+            <button onclick="window.openAccount()" style="margin-top:1rem;padding:0.6rem 1.4rem;background:#9B1C1C;color:white;border:none;border-radius:20px;font-family:Poppins,sans-serif;font-weight:600;cursor:pointer;font-size:0.82rem;">
+              Sign In with Google
+            </button>
+          </div>`;
         return;
       }
 
@@ -1670,42 +1673,43 @@ function startPayment() {
       const snapshot = await getDocs(q);
 
       if (snapshot.empty) {
-        listEl.innerHTML =
-          '<div class="orders-empty">' +
-            '<div>🛍️<\/div>' +
-            '<p style="font-weight:600;color:#5C2B00;font-size:0.95rem;margin-bottom:0.4rem;">No orders yet!<\/p>' +
-            '<p style="font-size:0.78rem;color:#aaa;line-height:1.6;">Looks like you have not ordered anything yet. Go pick some delicious sweets! 😋<\/p>' +
-            '<button onclick="closeAll()" style="margin-top:1.2rem;padding:0.65rem 1.6rem;background:#9B1C1C;color:white;border:none;border-radius:20px;font-family:Poppins,sans-serif;font-weight:600;cursor:pointer;font-size:0.82rem;box-shadow:0 4px 12px rgba(155,28,28,0.3);">🍬 Shop Now<\/button>' +
-          '<\/div>';
+        listEl.innerHTML = `
+          <div class="orders-empty">
+            <div>🛍️</div>
+            <p style="font-weight:600;color:#5C2B00;font-size:0.95rem;margin-bottom:0.4rem;">No orders yet!</p>
+            <p style="font-size:0.78rem;color:#aaa;line-height:1.6;">Looks like you haven't ordered anything yet.<br>Go pick some delicious sweets! 😋</p>
+            <button onclick="closeAll()" style="margin-top:1.2rem;padding:0.65rem 1.6rem;background:#9B1C1C;color:white;border:none;border-radius:20px;font-family:Poppins,sans-serif;font-weight:600;cursor:pointer;font-size:0.82rem;box-shadow:0 4px 12px rgba(155,28,28,0.3);">
+              🍬 Shop Now
+            </button>
+          </div>`;
         return;
       }
 
       listEl.innerHTML = snapshot.docs.map((doc, i) => {
         const o = doc.data();
-        const date = o.date && o.date.toDate
+        const date = o.date?.toDate
           ? o.date.toDate().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
           : 'Recent';
-        const itemNames = (o.items || []).map(it => (it.emoji || '🍬') + ' ' + it.name + ' x' + it.qty).join('<br>');
+        const itemNames = (o.items || []).map(it => `${it.emoji || '🍬'} ${it.name} x${it.qty}`).join('<br>');
         const orderId = '#' + String(i + 1).padStart(4, '0');
-        const addr = o.shipping && o.shipping.city ? '📍 ' + o.shipping.house + ', ' + o.shipping.city + ' - ' + o.shipping.pincode : '';
-        return (
-          '<div class="order-card">' +
-            '<div class="order-header">' +
-              '<span class="order-id">Order ' + orderId + '<\/span>' +
-              '<span class="order-status">✅ Paid<\/span>' +
-            '<\/div>' +
-            '<div class="order-items">' + itemNames + '<\/div>' +
-            (addr ? '<div style="font-size:0.7rem;color:#888;margin:0.4rem 0 0;">' + addr + '<\/div>' : '') +
-            '<div class="order-footer" style="margin-top:0.6rem">' +
-              '<span class="order-total">₹' + o.total + '<\/span>' +
-              '<span class="order-date">🕐 ' + date + '<\/span>' +
-            '<\/div>' +
-          '<\/div>'
-        );
+        const addr = o.shipping?.city ? `📍 ${o.shipping.house}, ${o.shipping.city} - ${o.shipping.pincode}` : '';
+        return `
+          <div class="order-card">
+            <div class="order-header">
+              <span class="order-id">Order ${orderId}</span>
+              <span class="order-status">✅ Paid</span>
+            </div>
+            <div class="order-items">${itemNames}</div>
+            ${addr ? `<div style="font-size:0.7rem;color:#888;margin:0.4rem 0 0;">${addr}</div>` : ''}
+            <div class="order-footer" style="margin-top:0.6rem">
+              <span class="order-total">₹${o.total}</span>
+              <span class="order-date">🕐 ${date}</span>
+            </div>
+          </div>`;
       }).join('');
 
     } catch(e) {
-      listEl.innerHTML = '<div class="orders-empty"><div>⚠️<\/div><p>Could not load orders.<br>' + e.message + '<\/p><\/div>';
+      listEl.innerHTML = `<div class="orders-empty"><div>⚠️</div><p>Could not load orders.<br><small>${e.message}</small></p></div>`;
       console.error(e);
     }
   };
