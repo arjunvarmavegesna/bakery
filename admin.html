@@ -697,10 +697,6 @@ const firebaseConfig = {
 };
 const ADMIN_EMAIL = "arjunvarmavegesna@gmail.com";
 
-// ── CLOUDINARY CONFIG ──
-const CLOUDINARY_CLOUD  = 'dbbxybt5j';
-const CLOUDINARY_PRESET = 'sree-ramu-sweets';
-
 const app  = initializeApp(firebaseConfig);
 const db   = getFirestore(app);
 const auth = getAuth(app);
@@ -937,7 +933,7 @@ function compressToBlob(file, maxW=900, maxH=900, quality=0.82) {
   });
 }
 
-// Upload to Cloudinary with real progress bar
+// Upload photo: ImgBB (free, no setup needed) with base64 Firestore fallback
 async function uploadPhoto(file, productName, ctx) {
   const fillId = ctx==='add' ? 'uploadProgressFill'  : 'editUploadProgressFill';
   const textId = ctx==='add' ? 'uploadProgressText'  : 'editUploadProgressText';
@@ -946,10 +942,8 @@ async function uploadPhoto(file, productName, ctx) {
   const setProgress = (pct, msg) => {
     const wrap = document.getElementById(wrapId);
     if (wrap) wrap.style.display = 'block';
-    const bar = document.getElementById(fillId);
-    if (bar) bar.style.width = pct + '%';
-    const txt = document.getElementById(textId);
-    if (txt) txt.textContent = msg;
+    const bar = document.getElementById(fillId); if (bar) bar.style.width = pct + '%';
+    const txt = document.getElementById(textId);  if (txt) txt.textContent = msg;
   };
   const hideProgress = () => setTimeout(() => {
     const w = document.getElementById(wrapId); if (w) w.style.display = 'none';
@@ -964,36 +958,47 @@ async function uploadPhoto(file, productName, ctx) {
     blob = await compressToBlob(file);
   }
 
+  // Convert blob to base64
+  const base64 = await new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result.split(',')[1]);
+    reader.onerror = rej;
+    reader.readAsDataURL(blob);
+  });
+
   setProgress(35, 'Uploading...');
 
-  return new Promise((resolve, reject) => {
+  // Try ImgBB (free image hosting, no account needed for basic use)
+  try {
     const fd = new FormData();
-    fd.append('file', blob, 'photo.jpg');
-    fd.append('upload_preset', CLOUDINARY_PRESET);
-    fd.append('folder', 'sree-ramu-sweets');
+    fd.append('image', base64);
 
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`);
-
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        const pct = 35 + Math.round(e.loaded / e.total * 60);
-        setProgress(pct, `Uploading... ${Math.round(e.loaded/e.total*100)}%`);
-      }
-    };
-    xhr.onload = () => {
-      if (xhr.status === 200) {
-        const res = JSON.parse(xhr.responseText);
-        setProgress(100, '✅ Upload complete!');
-        hideProgress();
-        resolve(res.secure_url);
-      } else {
-        reject(new Error('Cloudinary error ' + xhr.status + ': ' + xhr.statusText));
-      }
-    };
-    xhr.onerror = () => reject(new Error('Network error during upload'));
-    xhr.send(fd);
-  });
+    const res = await fetch('https://api.imgbb.com/1/upload?key=2e46571c8c3a6e0e5aeb13bb785a3c2e', {
+      method: 'POST', body: fd
+    });
+    setProgress(80, 'Processing...');
+    const data = await res.json();
+    if (data.success) {
+      setProgress(100, '✅ Upload complete!');
+      hideProgress();
+      return data.data.url;
+    }
+    throw new Error(data.error?.message || 'ImgBB upload failed');
+  } catch(uploadErr) {
+    console.warn('ImgBB failed, storing compressed image directly:', uploadErr.message);
+    // Fallback: store compressed base64 directly in Firestore
+    // Shrink further to stay under Firestore 1MB doc limit
+    const smallBlob = await compressToBlob(file, 600, 600, 0.65);
+    const smallBase64 = await new Promise((res, rej) => {
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.onerror = rej;
+      reader.readAsDataURL(smallBlob);
+    });
+    setProgress(100, '✅ Saved (compressed)!');
+    hideProgress();
+    return smallBase64;
+  }
 }
 
 // ── LIVE PREVIEW ──
@@ -1069,7 +1074,7 @@ function renderProductsTable(products) {
           <td><div class="action-btns">
             <button class="btn-edit" onclick="openEditModal('${p.id}')">✏️ Edit</button>
             <button class="btn-toggle ${p.active!==false?'':'inactive'}" onclick="toggleProductStatus('${p.id}',${p.active!==false})">${p.active!==false?'👁 Hide':'👁 Show'}</button>
-            <button class="btn-delete" onclick="openDeleteModal('${p.id}','${p.name.replace(/'/g,"\\'")}')">🗑</button>
+            <button class="btn-delete" data-id="${p.id}" data-name="${p.name.replace(/"/g,'&quot;')}" onclick="openDeleteModal(this.dataset.id,this.dataset.name)">🗑</button>
           </div></td>
         </tr>`).join('')}
       </tbody>
@@ -1148,7 +1153,8 @@ window.saveProduct = async function() {
     await loadProducts();
     showSection('products');
   } catch(e) {
-    toast('❌ Failed to save: ' + e.message, 'error');
+    console.error('SAVE ERROR:', e);
+    toast('❌ ' + (e.message || JSON.stringify(e)), 'error');
   } finally {
     setBtnLoading('saveBtn','saveBtnIcon','saveBtnText', false, 'Save Product');
   }
@@ -1269,7 +1275,7 @@ window.confirmDelete = async function() {
     toast('🗑️ Product deleted', 'success');
     closeDeleteModal();
     await loadProducts();
-  } catch(e) { toast('❌ Delete failed: ' + e.message, 'error'); }
+  } catch(e) { console.error('DELETE ERROR:', e); toast('❌ Delete: ' + (e.message || JSON.stringify(e)), 'error'); }
 };
 
 // ── ORDERS ──
