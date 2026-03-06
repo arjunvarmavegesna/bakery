@@ -472,8 +472,8 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
                 <div class="weight-pricing-title">⚖️ Weight-based Pricing</div>
                 <div class="form-grid">
                   <div class="form-group">
-                    <label class="form-label">250g — Selling Price (₹) *</label>
-                    <input class="form-input" id="f_price250" type="number" placeholder="e.g. 150" oninput="updatePreview()">
+                    <label class="form-label">250g — Selling Price (₹)</label>
+                    <input class="form-input" id="f_price250" type="number" placeholder="e.g. 150 (optional)" oninput="updatePreview()">
                   </div>
                   <div class="form-group">
                     <label class="form-label">250g — MRP (₹)</label>
@@ -481,7 +481,7 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
                   </div>
                   <div class="form-group">
                     <label class="form-label">500g — Selling Price (₹)</label>
-                    <input class="form-input" id="f_price500" type="number" placeholder="e.g. 280 (leave blank to hide)">
+                    <input class="form-input" id="f_price500" type="number" placeholder="e.g. 280 (optional)" oninput="updatePreview()">
                   </div>
                   <div class="form-group">
                     <label class="form-label">500g — MRP (₹)</label>
@@ -489,14 +489,14 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
                   </div>
                   <div class="form-group">
                     <label class="form-label">1 kg — Selling Price (₹)</label>
-                    <input class="form-input" id="f_price1kg" type="number" placeholder="e.g. 520 (leave blank to hide)">
+                    <input class="form-input" id="f_price1kg" type="number" placeholder="e.g. 520 (optional)" oninput="updatePreview()">
                   </div>
                   <div class="form-group">
                     <label class="form-label">1 kg — MRP (₹)</label>
                     <input class="form-input" id="f_oldprice1kg" type="number" placeholder="e.g. 620 (optional)">
                   </div>
                 </div>
-                <div class="weight-pricing-hint">💡 Only 250g price is required. 500g and 1 kg are optional — they appear as selectable weight options on the product page. Leave blank to hide.</div>
+                <div class="weight-pricing-hint">💡 Add prices for the weights you sell. At least one weight is required. Leave others blank to hide them from the product page.</div>
               </div>
             </div>
 
@@ -624,8 +624,8 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
           <div class="weight-pricing-title">⚖️ Weight-based Pricing</div>
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">250g — Selling Price (₹) *</label>
-              <input class="form-input" id="e_price250" type="number" oninput="updateEditPreview()">
+              <label class="form-label">250g — Selling Price (₹)</label>
+              <input class="form-input" id="e_price250" type="number" placeholder="optional" oninput="updateEditPreview()">
             </div>
             <div class="form-group">
               <label class="form-label">250g — MRP (₹)</label>
@@ -633,7 +633,7 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
             </div>
             <div class="form-group">
               <label class="form-label">500g — Selling Price (₹)</label>
-              <input class="form-input" id="e_price500" type="number" placeholder="leave blank to hide">
+              <input class="form-input" id="e_price500" type="number" placeholder="optional" oninput="updateEditPreview()">
             </div>
             <div class="form-group">
               <label class="form-label">500g — MRP (₹)</label>
@@ -641,14 +641,14 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
             </div>
             <div class="form-group">
               <label class="form-label">1 kg — Selling Price (₹)</label>
-              <input class="form-input" id="e_price1kg" type="number" placeholder="leave blank to hide">
+              <input class="form-input" id="e_price1kg" type="number" placeholder="optional" oninput="updateEditPreview()">
             </div>
             <div class="form-group">
               <label class="form-label">1 kg — MRP (₹)</label>
               <input class="form-input" id="e_oldprice1kg" type="number" placeholder="optional">
             </div>
           </div>
-          <div class="weight-pricing-hint">💡 250g is required. 500g and 1 kg are optional — leave blank to hide them from the product page.</div>
+          <div class="weight-pricing-hint">💡 Add prices for the weights you sell. At least one weight is required. Leave others blank to hide them from the product page.</div>
         </div>
       </div>
 
@@ -982,18 +982,27 @@ function assignFileToSlot(ctx, idx, file) {
 
 // Upload one file to ImgBB — no compression
 async function uploadOnePhoto(file) {
-  const base64 = await new Promise((res, rej) => {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => res(reader.result.split(',')[1]);
-    reader.onerror = rej;
+    reader.onerror = () => reject(new Error('Could not read file'));
+    reader.onload = async () => {
+      try {
+        const base64 = reader.result.split(',')[1];
+        const fd = new FormData();
+        fd.append('image', base64);
+        const res = await fetch('https://api.imgbb.com/1/upload?key=b47b2287a765f31d7e28d31bcd63ecaf', {
+          method: 'POST', body: fd
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const data = await res.json();
+        if (data.success) { resolve(data.data.url); return; }
+        throw new Error(data.error?.message || `ImgBB error code ${data.status}`);
+      } catch(e) {
+        reject(e);
+      }
+    };
     reader.readAsDataURL(file);
   });
-  const fd = new FormData();
-  fd.append('image', base64);
-  const res = await fetch('https://api.imgbb.com/1/upload?key=2e46571c8c3a6e0e5aeb13bb785a3c2e', { method: 'POST', body: fd });
-  const data = await res.json();
-  if (data.success) return data.data.url;
-  throw new Error(data.error?.message || 'ImgBB upload failed');
 }
 
 // Upload all pending slots, return array of URLs
@@ -1003,8 +1012,9 @@ async function uploadAllPhotos(ctx) {
   const textId = ctx === 'add' ? 'uploadProgressText'  : 'editUploadProgressText';
   const wrapId = ctx === 'add' ? 'uploadProgress'      : 'editUploadProgress';
 
-  const pending = slots.filter((s, i) => s.file || s.cloudUrl);
-  if (!pending.length) return [];
+  console.log('[uploadAllPhotos] ctx:', ctx, 'slots:', JSON.stringify(slots.map(s => ({
+    hasFile: !!s.file, fileName: s.file?.name, previewUrl: !!s.previewUrl, cloudUrl: s.cloudUrl
+  }))));
 
   const setProgress = (pct, msg) => {
     const wrap = document.getElementById(wrapId);
@@ -1022,13 +1032,23 @@ async function uploadAllPhotos(ctx) {
     if (!s.file && !s.cloudUrl) continue;
     if (!s.file && s.cloudUrl) { urls.push(s.cloudUrl); continue; }
     const pct = Math.round(((i + 0.5) / MAX_PHOTOS) * 100);
-    setProgress(pct, `Uploading photo ${urls.length + 1}…`);
+    setProgress(pct, `Uploading photo ${urls.length + 1} of ${slots.filter(x=>x.file||x.cloudUrl).length}…`);
     try {
       const url = await uploadOnePhoto(s.file);
       urls.push(url);
     } catch(e) {
-      console.warn(`Photo ${i+1} upload failed:`, e.message);
-      toast(`⚠️ Photo ${i+1} upload failed, skipping`, 'error');
+      console.warn(`Photo ${i+1} ImgBB upload failed:`, e.message);
+      // Fallback: store as data URL so save still works
+      try {
+        const dataUrl = await new Promise((res, rej) => {
+          const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej;
+          r.readAsDataURL(s.file);
+        });
+        urls.push(dataUrl);
+        toast(`⚠️ Photo ${i+1}: ImgBB failed, saved locally (${e.message})`, 'error');
+      } catch(e2) {
+        toast(`❌ Photo ${i+1} failed completely: ${e2.message}`, 'error');
+      }
     }
   }
   setProgress(100, `✅ ${urls.length} photo${urls.length!==1?'s':''} uploaded!`);
@@ -1050,16 +1070,22 @@ window.triggerFileInput = function(id, event) { if(event) event.stopPropagation(
 window.clearPhoto = function(ctx, event) { if(event) event.stopPropagation(); resetPhotoSlots(ctx); };
 
 window.updatePreview = function() {
-  const p250 = document.getElementById('f_price250').value;
+  const firstPrice = parseFloat(document.getElementById('f_price250').value)
+    || parseFloat(document.getElementById('f_price500').value)
+    || parseFloat(document.getElementById('f_price1kg').value)
+    || 0;
   document.getElementById('prevName').textContent = document.getElementById('f_name').value || 'Product Name';
-  document.getElementById('prevPrice').textContent = '₹' + (p250 || '0');
+  document.getElementById('prevPrice').textContent = '₹' + (firstPrice || '–');
   document.getElementById('prevBadge').innerHTML = selectedBadge
     ? `<span style="background:var(--brand);color:white;font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:6px;">${selectedBadge}</span>` : '';
 };
 window.updateEditPreview = function() {
-  const p250 = document.getElementById('e_price250').value;
+  const firstPrice = parseFloat(document.getElementById('e_price250').value)
+    || parseFloat(document.getElementById('e_price500').value)
+    || parseFloat(document.getElementById('e_price1kg').value)
+    || 0;
   document.getElementById('editPrevName').textContent = document.getElementById('e_name').value || 'Product Name';
-  document.getElementById('editPrevPrice').textContent = '₹' + (p250 || '0');
+  document.getElementById('editPrevPrice').textContent = '₹' + (firstPrice || '–');
   document.getElementById('editPrevBadge').innerHTML = editSelectedBadge
     ? `<span style="background:var(--brand);color:white;font-size:0.6rem;font-weight:700;padding:2px 7px;border-radius:6px;">${editSelectedBadge}</span>` : '';
 };
@@ -1100,19 +1126,21 @@ function imgCell(p) {
   return `<div class="product-img-cell" style="background:${p.bg||'#FFF0E0'};">📷</div>`;
 }
 
-// Show price with weight variants
 function priceDisplay(p) {
   const p250 = p.price250 || p.price;
   const has500 = !!p.price500;
   const has1kg = !!p.price1kg;
-  let html = `<div class="product-price-cell">₹${p250}</div>`;
-  if (p.oldPrice250 || p.oldPrice) html += `<div class="product-old-price">₹${p.oldPrice250||p.oldPrice}</div>`;
-  if (has500 || has1kg) {
-    html += `<div style="font-size:0.62rem;color:var(--brand);margin-top:2px;">`;
-    if (has500) html += `500g: ₹${p.price500}  `;
-    if (has1kg) html += `1kg: ₹${p.price1kg}`;
-    html += `</div>`;
-  }
+  // Show lowest/first available price as primary
+  const primary = p250 || p.price500 || p.price1kg;
+  const primaryLabel = p250 ? '250g' : has500 ? '500g' : '1kg';
+  const primaryOld = p250 ? (p.oldPrice250 || p.oldPrice) : has500 ? p.oldPrice500 : p.oldPrice1kg;
+  let html = `<div class="product-price-cell">₹${primary} <span style="font-size:0.62rem;color:var(--text-soft);font-weight:400;">(${primaryLabel})</span></div>`;
+  if (primaryOld) html += `<div class="product-old-price">₹${primaryOld}</div>`;
+  const extras = [];
+  if (p250 && has500) extras.push(`500g: ₹${p.price500}`);
+  if (p250 && has1kg) extras.push(`1kg: ₹${p.price1kg}`);
+  if (!p250 && has500 && has1kg) extras.push(`1kg: ₹${p.price1kg}`);
+  if (extras.length) html += `<div style="font-size:0.62rem;color:var(--brand);margin-top:2px;">${extras.join('  ')}</div>`;
   return html;
 }
 
@@ -1150,12 +1178,12 @@ function renderDashboardPreview(products) {
   if (!products.length) { wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-text">No products yet.</div></div>`; return; }
   wrap.innerHTML = `
     <table class="product-table">
-      <thead><tr><th>Product</th><th>Category</th><th>Price (250g)</th><th>Status</th></tr></thead>
+      <thead><tr><th>Product</th><th>Category</th><th>Starting Price</th><th>Status</th></tr></thead>
       <tbody>${products.slice(0,5).map(p => `
         <tr>
           <td><div style="display:flex;align-items:center;gap:0.7rem;">${imgCell(p)}<div class="product-name-cell">${p.name}</div></div></td>
           <td><span class="product-cat-tag">${p.cat||'–'}</span></td>
-          <td class="product-price-cell">₹${p.price250||p.price||'–'}</td>
+          <td class="product-price-cell">₹${p.price250||p.price500||p.price1kg||p.price||'–'}</td>
           <td><span class="status-dot ${p.active!==false?'active':'inactive'}"></span>${p.active!==false?'Active':'Hidden'}</td>
         </tr>`).join('')}
       </tbody>
@@ -1195,9 +1223,11 @@ function getWeightPricingFromForm(prefix) {
   const op500   = parseFloat(document.getElementById(`${prefix}_oldprice500`).value) || null;
   const p1kg    = parseFloat(document.getElementById(`${prefix}_price1kg`).value)    || null;
   const op1kg   = parseFloat(document.getElementById(`${prefix}_oldprice1kg`).value) || null;
+  // Legacy price field = first available price for backward compat
+  const firstPrice    = p250 || p500 || p1kg;
+  const firstOldPrice = p250 ? op250 : (p500 ? op500 : op1kg);
   return { price250:p250, oldPrice250:op250, price500:p500, oldPrice500:op500, price1kg:p1kg, oldPrice1kg:op1kg,
-    // Legacy price field = 250g price for backward compat
-    price: p250, oldPrice: op250 };
+    price: firstPrice, oldPrice: firstOldPrice };
 }
 
 function setWeightPricingToForm(prefix, p) {
@@ -1217,18 +1247,26 @@ window.saveProduct = async function() {
   const stock  = parseInt(document.getElementById('f_stock').value) || 0;
   const pricing = getWeightPricingFromForm('f');
 
-  if (!name)             { highlight('f_name');     toast('⚠️ Product name is required','error'); return; }
-  if (!cat)              { highlight('f_cat');       toast('⚠️ Please select a category','error'); return; }
-  if (!desc)             { highlight('f_desc');      toast('⚠️ Description is required','error'); return; }
-  if (!pricing.price250) { highlight('f_price250');  toast('⚠️ 250g price is required','error'); return; }
-  if (!addPhotoSlots[0].file) { toast('⚠️ Please upload at least one product photo','error'); return; }
+  if (!name)             { highlight('f_name');    toast('⚠️ Product name is required','error'); return; }
+  if (!cat)              { highlight('f_cat');      toast('⚠️ Please select a category','error'); return; }
+  if (!desc)             { highlight('f_desc');     toast('⚠️ Description is required','error'); return; }
+  if (!pricing.price250 && !pricing.price500 && !pricing.price1kg) {
+    highlight('f_price250');
+    highlight('f_price500');
+    highlight('f_price1kg');
+    toast('⚠️ At least one weight price is required','error'); return;
+  }
+  if (!addPhotoSlots[0].file && !addPhotoSlots[0].previewUrl && !addPhotoSlots[0].cloudUrl) {
+    toast('⚠️ Please upload at least one product photo','error'); return;
+  }
 
   setBtnLoading('saveBtn','saveBtnIcon','saveBtnText', true, 'Saving…');
   try {
     const photoUrls = await uploadAllPhotos('add');
     if (!photoUrls.length) throw new Error('Photo upload failed — no images uploaded');
+    const defaultWeightLabel = pricing.price250 ? 'Per 250g pack' : pricing.price500 ? 'Per 500g pack' : 'Per 1kg pack';
     await addDoc(collection(db, 'products'), {
-      name, cat, desc, weight: weight||'Per 250g pack', stock,
+      name, cat, desc, weight: weight || defaultWeightLabel, stock,
       photoUrl: photoUrls[0],         // legacy compat: primary photo
       photoUrls,                       // all up to 4 photos
       bg: selectedColor, badge: selectedBadge||null,
@@ -1308,15 +1346,19 @@ window.updateProduct = async function() {
   const stock  = parseInt(document.getElementById('e_stock').value) || 0;
   const pricing = getWeightPricingFromForm('e');
 
-  if (!name || !cat || !desc || !pricing.price250) { toast('⚠️ Please fill all required fields (including 250g price)','error'); return; }
+  if (!name || !cat || !desc) { toast('⚠️ Please fill all required fields','error'); return; }
+  if (!pricing.price250 && !pricing.price500 && !pricing.price1kg) {
+    toast('⚠️ At least one weight price is required','error'); return;
+  }
   if (!editPhotoSlots[0].file && !editPhotoSlots[0].cloudUrl) { toast('⚠️ At least one product photo is required','error'); return; }
 
   setBtnLoading('updateBtn','updateBtnIcon','updateBtnText', true, 'Saving…');
   try {
     const photoUrls = await uploadAllPhotos('edit');
     if (!photoUrls.length) throw new Error('No photos — please keep at least one');
+    const defaultWeightLabel = pricing.price250 ? 'Per 250g pack' : pricing.price500 ? 'Per 500g pack' : 'Per 1kg pack';
     await updateDoc(doc(db, 'products', editingId), {
-      name, cat, desc, weight: weight||'Per 250g pack', stock,
+      name, cat, desc, weight: weight || defaultWeightLabel, stock,
       photoUrl: photoUrls[0],   // legacy compat
       photoUrls,
       bg: editSelectedColor, badge: editSelectedBadge||null,
