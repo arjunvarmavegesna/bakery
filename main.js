@@ -143,6 +143,7 @@ function updateWishlistBadge() {
 function openWishlistPage() {
   updateWishlistBadge();
   renderWishlist();
+  history.pushState({ page: 'wishlist' }, '', '');
   document.getElementById('wishlistPage').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -234,6 +235,7 @@ function quickAddSpecial(id) {
 // ── CATEGORIES PAGE ──
 function openCategoriesPage() {
   backToCatGrid();
+  history.pushState({ page: 'categories' }, '', '');
   document.getElementById('categoriesPage').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -349,6 +351,7 @@ function openCart() {
     `;
   }
 
+  history.pushState({ page: 'cart' }, '', '');
   document.getElementById('overlay').classList.add('open');
   document.getElementById('cartDrawer').classList.add('open');
 }
@@ -732,6 +735,7 @@ function openShipping() {
   const user = window.currentUser;
   const nameField = document.getElementById('ship_name');
   if (nameField && !nameField.value) nameField.value = user.displayName || '';
+  history.pushState({ page: 'shipping' }, '', '');
   document.getElementById('overlay').classList.add('open');
   document.getElementById('shippingDrawer').classList.add('open');
 }
@@ -992,10 +996,3 @@ window.addEventListener('popstate', function (e) {
   // Always keep a state in the stack so next back press is also caught
   history.pushState({ page: 'home' }, '', '');
 });
-
-// Push history when opening other major drawers/pages too
-const _origOpenCart = window.openCart;
-window.openCart = function() {
-  history.pushState({ page: 'cart' }, '', '');
-  if (_origOpenCart) _origOpenCart();
-};
