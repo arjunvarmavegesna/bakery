@@ -400,6 +400,27 @@
     }
     .pp-actions-inline .pp-buy-now:hover { background: var(--brown); }
   }
+
+  /* Weight selector */
+  .pp-weight-section { margin-bottom: 1.2rem; }
+  .pp-weight-options { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.5rem; }
+  .pp-weight-btn {
+    padding: 0.5rem 1.2rem;
+    border: 2px solid #E8E0D8;
+    border-radius: 10px;
+    background: #FAFAF8;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.82rem; font-weight: 600;
+    color: var(--text-dark); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .pp-weight-btn:hover { border-color: var(--deep-red); color: var(--deep-red); }
+  .pp-weight-btn.selected {
+    border-color: var(--deep-red);
+    background: var(--deep-red);
+    color: white;
+    box-shadow: 0 3px 10px rgba(232,101,10,0.25);
+  }
   .pp-badge {
     position: absolute; top: 16px; left: 16px;
     background: var(--deep-red); color: white;
@@ -577,6 +598,10 @@
   .empty-cart div { font-size: 3rem; margin-bottom: 0.5rem; }
 
   /* ── BOTTOM NAV ── */
+  .product-page.open ~ .bottom-nav,
+  .product-page.open ~ * .bottom-nav {
+    display: none !important;
+  }
   .bottom-nav {
     position: fixed; bottom: 0; left: 0; right: 0;
     background: white; z-index: 150;
@@ -1721,6 +1746,10 @@
       <div class="pp-highlight-item"><span class="pp-hi-icon">📦</span><span class="pp-hi-text">Hygienically packed & sealed</span></div>
       <div class="pp-highlight-item"><span class="pp-hi-icon">⭐</span><span class="pp-hi-text">50 years of trusted taste</span></div>
     </div>
+    <div class="pp-weight-section" id="ppWeightSection" style="display:none;">
+      <div class="pp-section-title">Weight</div>
+      <div class="pp-weight-options" id="ppWeightOptions"></div>
+    </div>
     <div class="pp-section-title">Quantity</div>
     <div class="pp-qty-row">
       <div class="pp-qty-label">How many packs?</div>
@@ -1992,13 +2021,13 @@ function openCart() {
       <div class="cart-item">
         <div class="cart-item-img" style="background:${item.bg||'#FFF0E0'};overflow:hidden;">${item.photoUrl ? `<img src="${item.photoUrl}" style="width:100%;height:100%;object-fit:cover;" alt="${item.name}">` : '🍬'}</div>
         <div class="cart-item-info">
-          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-name">${item.name}${item.weight ? ` <span style="font-size:0.65rem;color:#aaa;font-weight:400;">(${item.weight})</span>` : ''}</div>
           <div class="cart-item-price">₹${item.price * item.qty}</div>
         </div>
         <div class="qty-ctrl">
-          <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
+          <button class="qty-btn" onclick="changeQty('${item.cartKey||item.id}',-1)">−</button>
           <span class="qty-val">${item.qty}</span>
-          <button class="qty-btn" onclick="changeQty('${item.id}',1)">+</button>
+          <button class="qty-btn" onclick="changeQty('${item.cartKey||item.id}',1)">+</button>
         </div>
       </div>
     `).join('');
@@ -2136,16 +2165,57 @@ function openProductPage(id) {
     savingEl.style.display = 'none';
   }
 
+  // Weight selector
+  const weightSection = document.getElementById('ppWeightSection');
+  const weightOptions = document.getElementById('ppWeightOptions');
+  if (p.variants && p.variants.length > 0) {
+    weightSection.style.display = 'block';
+    weightOptions.innerHTML = p.variants.map((v, i) => `
+      <button class="pp-weight-btn ${i===0?'selected':''}"
+        onclick="selectWeight(this, ${v.price}, ${v.mrp||'null'}, '${v.label}')"
+        data-price="${v.price}" data-mrp="${v.mrp||''}">
+        ${v.label}
+      </button>
+    `).join('');
+  } else {
+    weightSection.style.display = 'none';
+  }
+
   document.getElementById('productPage').classList.add('open');
   document.getElementById('ppActions').classList.add('open');
   document.body.style.overflow = 'hidden';
+  const bnav = document.querySelector('.bottom-nav');
+  if (bnav) bnav.style.display = 'none';
   renderProductReviews(id);
+}
+
+function selectWeight(btn, price, mrp, label) {
+  document.querySelectorAll('.pp-weight-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  // Update price display
+  document.getElementById('ppPrice').textContent = '₹' + price;
+  const oldPriceEl = document.getElementById('ppOldPrice');
+  const savingEl   = document.getElementById('ppSaving');
+  if (mrp && mrp > price) {
+    oldPriceEl.textContent  = '₹' + mrp;
+    oldPriceEl.style.display = 'block';
+    savingEl.textContent   = Math.round((mrp - price) / mrp * 100) + '% OFF';
+    savingEl.style.display  = 'block';
+  } else {
+    oldPriceEl.style.display = 'none';
+    savingEl.style.display   = 'none';
+  }
+  // Update current product price for cart
+  const p = products.find(x => x.id === currentProductId);
+  if (p) { p._selectedPrice = price; p._selectedWeight = label; }
 }
 
 function closeProductPage() {
   document.getElementById('productPage').classList.remove('open');
   document.getElementById('ppActions').classList.remove('open');
   document.body.style.overflow = '';
+  const bnav = document.querySelector('.bottom-nav');
+  if (bnav) bnav.style.display = '';
 }
 
 function changePPQty(delta) {
@@ -2156,18 +2226,26 @@ function changePPQty(delta) {
 function ppAddToCart() {
   const p = products.find(x => x.id === currentProductId);
   if (!p) return;
-  if (!cart[p.id]) cart[p.id] = { ...p, qty: 0 };
-  cart[p.id].qty += ppQty;
+  const selectedBtn = document.querySelector('.pp-weight-btn.selected');
+  const price  = selectedBtn ? parseFloat(selectedBtn.dataset.price) : p.price;
+  const weight = selectedBtn ? selectedBtn.textContent.trim() : (p.weight || '');
+  const cartKey = p.id + '_' + (weight || 'default');
+  if (!cart[cartKey]) cart[cartKey] = { ...p, price, weight, qty: 0, cartKey };
+  cart[cartKey].qty += ppQty;
   updateCartBadge();
-  showToast(`${p.name} x${ppQty} added to cart!`);
+  showToast(`${p.name} (${weight}) x${ppQty} added to cart!`);
   closeProductPage();
 }
 
 function ppBuyNow() {
   const p = products.find(x => x.id === currentProductId);
   if (!p) return;
-  if (!cart[p.id]) cart[p.id] = { ...p, qty: 0 };
-  cart[p.id].qty += ppQty;
+  const selectedBtn = document.querySelector('.pp-weight-btn.selected');
+  const price  = selectedBtn ? parseFloat(selectedBtn.dataset.price) : p.price;
+  const weight = selectedBtn ? selectedBtn.textContent.trim() : (p.weight || '');
+  const cartKey = p.id + '_' + (weight || 'default');
+  if (!cart[cartKey]) cart[cartKey] = { ...p, price, weight, qty: 0, cartKey };
+  cart[cartKey].qty += ppQty;
   updateCartBadge();
   closeProductPage();
   setTimeout(() => openShipping(), 300);
