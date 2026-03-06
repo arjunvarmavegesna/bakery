@@ -2473,6 +2473,12 @@ function markHelpful(i, btnId) {
 
 // Write Review
 function openWriteReview() {
+  // Reset button style in case it was locked before
+  const writeBtn = document.getElementById('writeReviewBtn');
+  if (writeBtn) {
+    const btn = writeBtn.querySelector('button');
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.background = ''; }
+  }
   if (!purchasedProducts.has(currentReviewProductId)) {
     showToast('🔒 Only verified buyers can review!');
     return;
@@ -2549,25 +2555,34 @@ function submitReview() {
 
 // ── POST-PURCHASE REVIEW PROMPT ──
 function showReviewPrompt(productIds) {
-  const items = productIds.map(id => products.find(p => p.id === id)).filter(Boolean);
+  // Deduplicate product IDs (cart may have same product with different weights)
+  const uniqueIds = [...new Set(productIds)];
+  const items = uniqueIds.map(id => products.find(p => p.id === id)).filter(Boolean);
   if (!items.length) return;
 
   document.getElementById('reviewPromptItems').innerHTML = items.map(p => `
     <div class="review-prompt-item">
       <div class="review-prompt-item-left">
-        <span class="review-prompt-item-emoji">${p.emoji}</span>
+        ${p.photoUrl
+          ? `<img src="${p.photoUrl}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;" alt="${p.name}">`
+          : `<span class="review-prompt-item-emoji">🍬</span>`}
         <span class="review-prompt-item-name">${p.name}</span>
       </div>
-      <button class="review-prompt-item-btn" onclick="
-        document.getElementById('reviewPromptOverlay').classList.remove('open');
-        currentProductId = ${p.id};
-        currentReviewProductId = ${p.id};
-        setTimeout(() => { openReviewsPage(); setTimeout(openWriteReview, 400); }, 300);
-      ">Rate ★</button>
+      <button class="review-prompt-item-btn" onclick="rateProduct('${p.id}')">Rate ★</button>
     </div>
   `).join('');
 
   document.getElementById('reviewPromptOverlay').classList.add('open');
+}
+
+function rateProduct(productId) {
+  document.getElementById('reviewPromptOverlay').classList.remove('open');
+  currentProductId = productId;
+  currentReviewProductId = productId;
+  setTimeout(() => {
+    openReviewsPage();
+    setTimeout(openWriteReview, 400);
+  }, 300);
 }
 
 // ── SHIPPING FLOW ──
@@ -2838,7 +2853,8 @@ function startPayment() {
     theme: { color: '#E8650A' },
     handler: async function(response) {
       // Track purchased product IDs for verified reviews
-      const purchasedIds = items.map(i => i.id);
+      // Extract base product IDs (cartKey format is "productId_weight")
+      const purchasedIds = [...new Set(items.map(i => i.id))];
       purchasedIds.forEach(pid => purchasedProducts.add(pid));
 
       try {
@@ -3095,7 +3111,9 @@ function startPayment() {
     });
     // Also persist purchased product IDs
     if (auth.currentUser) {
-      await window.savePurchasesToFirebase(items.map(i => i.id));
+      // Deduplicate base product IDs (ignore weight suffix in cartKey)
+      const uniqueProductIds = [...new Set(items.map(i => i.id))];
+      await window.savePurchasesToFirebase(uniqueProductIds);
     }
   };
 
