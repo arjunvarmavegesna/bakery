@@ -724,7 +724,7 @@
   .footer-bottom { font-size: 0.65rem; color: rgba(255,255,255,0.4); border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; }
 
   /* ── ORDERS DRAWER ── */
-  .orders-drawer { position: fixed; bottom: 0; left: 0; right: 0; background: white; z-index: 210; border-radius: 20px 20px 0 0; padding: 1.2rem; transform: translateY(100%); transition: transform 0.3s ease; max-height: 80vh; overflow-y: auto; }
+  .orders-drawer { position: fixed; bottom: 0; left: 0; right: 0; background: white; z-index: 210; border-radius: 20px 20px 0 0; padding: 1.2rem; transform: translateY(100%); transition: transform 0.3s ease; max-height: 85vh; overflow-y: auto; }
   .orders-drawer.open { transform: translateY(0); }
   .order-card { background: var(--cream); border-radius: 14px; padding: 0.9rem 1rem; margin-bottom: 0.8rem; border-left: 4px solid var(--deep-red); }
   .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
@@ -737,6 +737,54 @@
   .orders-empty { text-align: center; padding: 2.5rem 1rem; color: var(--text-mid); }
   .orders-empty div { font-size: 3rem; margin-bottom: 0.5rem; }
   .orders-loading { text-align: center; padding: 2rem; color: #aaa; font-size: 0.85rem; }
+
+  /* ── ORDER TRACKING TIMELINE ── */
+  .order-tracking-wrap { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed #e0d4cc; }
+  .tracking-label { font-size: 0.6rem; font-weight: 700; color: var(--text-mid); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.6rem; }
+  .tracking-steps { display: flex; align-items: flex-start; gap: 0; position: relative; }
+  .tracking-step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
+  .tracking-step:not(:last-child)::after {
+    content: ''; position: absolute; top: 10px; left: 50%; width: 100%; height: 2px;
+    background: #e0d4cc; z-index: 0;
+  }
+  .tracking-step.done:not(:last-child)::after { background: var(--deep-red); }
+  .tracking-step.active:not(:last-child)::after { background: linear-gradient(90deg, var(--deep-red) 40%, #e0d4cc 100%); }
+  .t-dot {
+    width: 20px; height: 20px; border-radius: 50%; z-index: 1;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; font-weight: 700;
+    background: #e0d4cc; color: #aaa;
+    border: 2px solid #e0d4cc;
+    flex-shrink: 0;
+  }
+  .tracking-step.done .t-dot { background: var(--deep-red); color: white; border-color: var(--deep-red); }
+  .tracking-step.active .t-dot {
+    background: white; color: var(--deep-red); border-color: var(--deep-red);
+    box-shadow: 0 0 0 3px rgba(232,101,10,0.18);
+    animation: pulseDot 1.4s ease-in-out infinite;
+  }
+  @keyframes pulseDot { 0%,100%{box-shadow:0 0 0 3px rgba(232,101,10,0.18)} 50%{box-shadow:0 0 0 6px rgba(232,101,10,0.08)} }
+  .t-label { font-size: 0.55rem; color: #aaa; text-align: center; margin-top: 4px; line-height: 1.3; max-width: 60px; }
+  .tracking-step.done .t-label { color: var(--deep-red); font-weight: 600; }
+  .tracking-step.active .t-label { color: var(--deep-red); font-weight: 700; }
+
+  /* ── DTDC TRACKING BANNER ── */
+  .dtdc-track-banner {
+    margin-top: 0.65rem; background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+    border-radius: 10px; padding: 0.65rem 0.9rem;
+    display: flex; align-items: center; gap: 0.65rem;
+  }
+  .dtdc-logo { font-size: 1.1rem; flex-shrink: 0; }
+  .dtdc-text { flex: 1; }
+  .dtdc-text .dtdc-title { font-size: 0.7rem; font-weight: 700; color: white; }
+  .dtdc-text .dtdc-sub { font-size: 0.6rem; color: rgba(255,255,255,0.7); margin-top: 1px; line-height: 1.4; }
+  .dtdc-track-btn {
+    background: #FFD600; color: #1a237e; font-size: 0.62rem; font-weight: 800;
+    padding: 0.35rem 0.7rem; border-radius: 8px; border: none; cursor: pointer;
+    font-family: 'Poppins', sans-serif; white-space: nowrap; flex-shrink: 0;
+    transition: transform 0.15s;
+  }
+  .dtdc-track-btn:hover { transform: scale(1.05); }
 
   /* ── ACCOUNT DRAWER ── */
   .account-drawer { position: fixed; bottom: 0; left: 0; right: 0; background: white; z-index: 215; border-radius: 20px 20px 0 0; padding: 1.2rem; transform: translateY(100%); transition: transform 0.3s ease; max-height: 90vh; overflow-y: auto; }
@@ -2287,10 +2335,66 @@ function startPayment() {
     await addDoc(collection(db,'orders'),{
       items: items.map(i => ({...i, weight: i.selectedWeight||'250g', price: i.selectedPrice})),
       total, shipping: shipping||{}, uid, userName,
-      date: serverTimestamp(), status: 'paid'
+      date: serverTimestamp(), status: 'paid',
+      trackingStatus: 'under_packing', dtdcLink: null
     });
     if (auth.currentUser) await window.savePurchasesToFirebase(items.map(i => i.id));
   };
+
+  // ── ORDER TRACKING HELPERS ──
+  function getTrackingSteps(status) {
+    // Steps: under_packing → shipment_created → out_for_delivery → delivered
+    const allSteps = [
+      { key: 'under_packing',      label: 'Under\nPacking',    icon: '📦' },
+      { key: 'shipment_created',   label: 'Shipment\nCreated', icon: '🚚' },
+      { key: 'out_for_delivery',   label: 'Out for\nDelivery', icon: '🛵' },
+      { key: 'delivered',          label: 'Delivered',          icon: '✅' },
+    ];
+    const order = ['under_packing','shipment_created','out_for_delivery','delivered'];
+    const currentIdx = order.indexOf(status || 'under_packing');
+    return allSteps.map((s, i) => ({
+      ...s,
+      state: i < currentIdx ? 'done' : i === currentIdx ? 'active' : 'pending'
+    }));
+  }
+
+  function renderTrackingTimeline(status, dtdcLink) {
+    const steps = getTrackingSteps(status);
+    const timeline = `
+      <div class="order-tracking-wrap">
+        <div class="tracking-label">📍 Tracking Status</div>
+        <div class="tracking-steps">
+          ${steps.map(s => `
+            <div class="tracking-step ${s.state}">
+              <div class="t-dot">${s.state === 'done' ? '✓' : s.state === 'active' ? s.icon : ''}</div>
+              <div class="t-label">${s.label.replace('\n','<br>')}</div>
+            </div>
+          `).join('')}
+        </div>
+        ${(status === 'shipment_created' || status === 'out_for_delivery' || status === 'delivered') ? `
+          <div class="dtdc-track-banner">
+            <div class="dtdc-logo">🚀</div>
+            <div class="dtdc-text">
+              <div class="dtdc-title">DTDC Tracking Active</div>
+              <div class="dtdc-sub">${dtdcLink ? 'Tracking link sent to your mobile number' : 'DTDC will send a tracking link to your mobile'}</div>
+            </div>
+            ${dtdcLink ? `<button class="dtdc-track-btn" onclick="window.open('${dtdcLink}','_blank')">Track 📲</button>` : `<span style="font-size:0.6rem;color:rgba(255,255,255,0.6);max-width:60px;text-align:center;line-height:1.3;">Link via SMS</span>`}
+          </div>
+        ` : ''}
+      </div>`;
+    return timeline;
+  }
+
+  function getStatusBadge(status) {
+    const map = {
+      'under_packing':    { bg: '#FFF3E0', color: '#E65100', text: '📦 Under Packing' },
+      'shipment_created': { bg: '#E3F2FD', color: '#1565C0', text: '🚚 Shipment Created · Bhimavaram' },
+      'out_for_delivery': { bg: '#F3E5F5', color: '#6A1B9A', text: '🛵 Out for Delivery' },
+      'delivered':        { bg: '#E8F5E9', color: '#2E7D32', text: '✅ Delivered' },
+    };
+    const s = map[status] || map['under_packing'];
+    return `<span class="order-status" style="background:${s.bg};color:${s.color};">${s.text}</span>`;
+  }
 
   window.loadOrders = async function(listEl) {
     try {
@@ -2308,10 +2412,24 @@ function startPayment() {
       }
       listEl.innerHTML = snapshot.docs.map((d,i) => {
         const o = d.data();
+        const trackStatus = o.trackingStatus || 'under_packing';
         const date = o.date?.toDate ? o.date.toDate().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Recent';
         const itemNames = (o.items||[]).map(it => `🍬 ${it.name} (${it.weight||'250g'}) x${it.qty}`).join('<br>');
         const addr = o.shipping?.city ? `📍 ${o.shipping.house}, ${o.shipping.city} - ${o.shipping.pincode}` : '';
-        return `<div class="order-card"><div class="order-header"><span class="order-id">Order #${String(i+1).padStart(4,'0')}</span><span class="order-status">✅ Paid</span></div><div class="order-items">${itemNames}</div>${addr?`<div style="font-size:0.7rem;color:#888;margin:0.4rem 0 0;">${addr}</div>`:''}<div class="order-footer" style="margin-top:0.6rem"><span class="order-total">₹${o.total}</span><span class="order-date">🕐 ${date}</span></div></div>`;
+        return `
+          <div class="order-card">
+            <div class="order-header">
+              <span class="order-id">Order #${String(i+1).padStart(4,'0')}</span>
+              ${getStatusBadge(trackStatus)}
+            </div>
+            <div class="order-items">${itemNames}</div>
+            ${addr ? `<div style="font-size:0.7rem;color:#888;margin:0.4rem 0 0;">${addr}</div>` : ''}
+            <div class="order-footer" style="margin-top:0.6rem">
+              <span class="order-total">₹${o.total}</span>
+              <span class="order-date">🕐 ${date}</span>
+            </div>
+            ${renderTrackingTimeline(trackStatus, o.dtdcLink || null)}
+          </div>`;
       }).join('');
     } catch(e) {
       listEl.innerHTML = `<div class="orders-empty"><div>⚠️</div><p>Could not load orders.<br><small>${e.message}</small></p></div>`;
