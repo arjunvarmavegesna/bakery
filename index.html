@@ -313,6 +313,10 @@
     display: block;
     background: inherit;
   }
+  /* Inline actions (desktop only, hidden on mobile) */
+  .pp-actions-inline {
+    display: none;
+  }
   @media (min-width: 768px) {
     /* Two-column layout: photo left, details right */
     .product-page {
@@ -332,7 +336,7 @@
     }
     .pp-hero {
       height: 100%;
-      min-height: 480px;
+      min-height: 500px;
       max-width: none;
       margin: 0;
       border-radius: 0;
@@ -343,21 +347,40 @@
       object-fit: cover;
     }
     .pp-body {
-      padding: 2rem 2.5rem;
+      padding: 2rem 2.5rem 2rem;
       overflow-y: auto;
       max-height: calc(100vh - 60px);
     }
     .pp-name { font-size: 2rem; }
+    /* Hide mobile fixed bar on desktop */
     .pp-actions {
-      position: sticky;
-      bottom: 0;
-      transform: none !important;
-      grid-column: 2;
-      margin: 0 2.5rem 1.5rem;
-      border-radius: 14px;
-      border-top: none;
-      box-shadow: 0 4px 20px rgba(232,101,10,0.15);
+      display: none !important;
     }
+    /* Show inline buttons on desktop */
+    .pp-actions-inline {
+      display: flex;
+      gap: 0.7rem;
+      margin-top: 1.5rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid #f0f0f0;
+    }
+    .pp-actions-inline .pp-add-cart {
+      flex: 1; background: white; color: var(--deep-red);
+      border: 2px solid var(--deep-red); border-radius: 14px;
+      padding: 0.9rem; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; font-family: 'Poppins', sans-serif;
+      transition: background 0.2s;
+    }
+    .pp-actions-inline .pp-add-cart:hover { background: var(--cream); }
+    .pp-actions-inline .pp-buy-now {
+      flex: 2; background: var(--deep-red); color: white;
+      border: none; border-radius: 14px;
+      padding: 0.9rem; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; font-family: 'Poppins', sans-serif;
+      transition: background 0.2s;
+      box-shadow: 0 4px 14px rgba(232,101,10,0.35);
+    }
+    .pp-actions-inline .pp-buy-now:hover { background: var(--brown); }
   }
   .pp-badge {
     position: absolute; top: 16px; left: 16px;
@@ -1710,9 +1733,14 @@
     </div>
     <div id="ppTopReviews"></div>
     <button onclick="openReviewsPage()" style="width:100%;background:var(--cream);border:1.5px solid rgba(232,101,10,0.3);border-radius:12px;padding:0.7rem;font-size:0.82rem;font-weight:600;color:var(--deep-red);cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:0.5rem;">See All Reviews ›</button>
-  </div>
-</div>
+    <!-- Desktop: buttons inline in right column -->
+    <div class="pp-actions-inline" id="ppActionsInline">
+      <button class="pp-add-cart" onclick="ppAddToCart()">🛒 Add to Cart</button>
+      <button class="pp-buy-now" onclick="ppBuyNow()">⚡ Buy Now</button>
+    </div>
+  </div><!-- end pp-body -->
 </div><!-- end pp-desktop-wrap -->
+<!-- Mobile only: fixed bottom bar -->
 <div class="pp-actions" id="ppActions">
   <button class="pp-add-cart" onclick="ppAddToCart()">🛒 Add to Cart</button>
   <button class="pp-buy-now" onclick="ppBuyNow()">⚡ Buy Now</button>
