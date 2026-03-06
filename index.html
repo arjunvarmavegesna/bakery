@@ -1355,7 +1355,7 @@
     <h3>Festival Gift Boxes</h3>
     <p>Premium assorted boxes from ₹299. Perfect for Diwali, Ugadi & weddings!</p>
   </div>
-  <button class="promo-btn" onclick="scrollToProducts();filterCategory('gifts',event)">Shop Now</button>
+  <button class="promo-btn" onclick="filterCategory('gifts');">Shop Now</button>
 </div>
 
 <!-- TODAY'S SPECIALS -->
@@ -2110,10 +2110,12 @@ document.getElementById('searchInput').addEventListener('input', function() {
   document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
 });
 
-function filterCategory(cat, evt) {
-  document.querySelectorAll('.cat-pill').forEach(el => el.classList.remove('active'));
-  const target = evt ? evt.currentTarget : null;
-  if (target) target.classList.add('active');
+function filterCategory(cat) {
+  // Update active cat pill
+  document.querySelectorAll('.cat-pill').forEach(el => {
+    const onclick = el.getAttribute('onclick') || '';
+    el.classList.toggle('active', onclick.includes("'" + cat + "'"));
+  });
   const filtered = cat === 'all' ? products : products.filter(p => p.cat === cat);
   renderProducts(filtered);
   document.getElementById('products').scrollIntoView({ behavior: 'smooth', block: 'start' });
