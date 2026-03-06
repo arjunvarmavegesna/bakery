@@ -528,68 +528,89 @@
   <div class="product-page-header">
     <button class="pp-back-btn" onclick="closeProductPage()" aria-label="Back to products">←</button>
     <div class="pp-header-title" id="ppHeaderTitle"></div>
-    <button class="nav-icon-btn" onclick="closeProductPage();openCart();" style="color:var(--deep-red);" aria-label="Open cart">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-    </button>
+    <div style="display:flex;gap:4px;align-items:center;">
+      <button class="nav-icon-btn" id="ppShareBtn" onclick="shareProductPage()" style="color:var(--deep-red);" aria-label="Share product">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </button>
+      <button class="nav-icon-btn" onclick="closeProductPage();openCart();" style="color:var(--deep-red);" aria-label="Open cart">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      </button>
+    </div>
   </div>
-  <div class="pp-hero" id="ppHero"></div>
-  <div class="pp-body">
-    <h1 class="pp-name" id="ppName"></h1>
-    <p class="pp-desc" id="ppDesc"></p>
-    <div class="pp-price-row">
-      <div class="pp-price" id="ppPrice"></div>
-      <div class="pp-old-price" id="ppOldPrice"></div>
-      <div class="pp-saving" id="ppSaving"></div>
+
+  <!-- Two-column layout: image left, details right -->
+  <div class="pp-layout">
+
+    <!-- LEFT: image gallery + thumbnails -->
+    <div class="pp-left">
+      <div class="pp-hero" id="ppHero"></div>
     </div>
-    <div class="pp-meta">
-      <div class="pp-tag">🚚 Free delivery ₹1000+</div>
-      <div class="pp-tag">✅ Fresh daily</div>
-      <div class="pp-tag">🥛 Pure ingredients</div>
-    </div>
-    <div class="pp-section-title">Why you'll love it</div>
-    <div class="pp-highlights">
-      <div class="pp-highlight-item"><span class="pp-hi-icon" aria-hidden="true">🥛</span><span class="pp-hi-text">Pure ingredients, no preservatives</span></div>
-      <div class="pp-highlight-item"><span class="pp-hi-icon" aria-hidden="true">👨‍🍳</span><span class="pp-hi-text">Made by master halwais daily</span></div>
-      <div class="pp-highlight-item"><span class="pp-hi-icon" aria-hidden="true">📦</span><span class="pp-hi-text">Hygienically packed &amp; sealed</span></div>
-      <div class="pp-highlight-item"><span class="pp-hi-icon" aria-hidden="true">⭐</span><span class="pp-hi-text">50 years of trusted taste</span></div>
-    </div>
-    <div class="pp-weight-divider"></div>
-    <div class="pp-weight-qty-row" id="ppWeightQtyRow">
-      <div class="pp-weight-group" id="ppWeightGroup">
-        <label class="pp-wq-label" for="ppWeightSelect">WEIGHT</label>
-        <select class="pp-weight-select" id="ppWeightSelect" onchange="onWeightSelectChange(this)" aria-label="Select weight">
-          <option value="">Select Weight</option>
-        </select>
-      </div>
-      <div class="pp-qty-group">
-        <span class="pp-wq-label">QUANTITY</span>
-        <div class="pp-qty-stepper" role="group" aria-label="Quantity selector">
-          <button class="pp-qty-stepper-btn" onclick="changePPQty(-1)" aria-label="Decrease quantity">−</button>
-          <span class="pp-qty-stepper-val" id="ppQty" aria-live="polite">1</span>
-          <button class="pp-qty-stepper-btn" onclick="changePPQty(1)" aria-label="Increase quantity">+</button>
+
+    <!-- RIGHT: all product details + buttons -->
+    <div class="pp-right">
+      <div class="pp-body">
+        <h1 class="pp-name" id="ppName"></h1>
+        <p class="pp-desc" id="ppDesc"></p>
+        <div class="pp-price-row">
+          <div class="pp-price" id="ppPrice"></div>
+          <div class="pp-old-price" id="ppOldPrice"></div>
+          <div class="pp-saving" id="ppSaving"></div>
         </div>
-      </div>
-    </div>
-    <div class="pp-weight-divider"></div>
-    <div class="pp-section-title">Ratings &amp; Reviews</div>
-    <div id="ppReviewsSummary" style="background:white;border-radius:14px;padding:1rem;margin-bottom:0.8rem;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-      <div style="display:flex;align-items:center;gap:1rem;">
-        <div>
-          <div style="font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700;color:var(--deep-red);line-height:1;" id="ppAvgRating">4.9</div>
-          <div style="font-size:1rem;color:#FFA000;" id="ppStarsDisplay">★★★★★</div>
-          <div style="font-size:0.65rem;color:#aaa;" id="ppReviewCount">128 reviews</div>
+        <div class="pp-meta">
+          <div class="pp-tag">🚚 Free delivery ₹1000+</div>
+          <div class="pp-tag">✅ Fresh daily</div>
+          <div class="pp-tag">🥛 Pure ingredients</div>
         </div>
-        <div style="flex:1;" id="ppMiniRatingBars"></div>
+        <div class="pp-section-title">Why you'll love it</div>
+        <div class="pp-highlights">
+          <div class="pp-highlight-item"><span class="pp-hi-icon" aria-hidden="true">🥛</span><span class="pp-hi-text">Pure ingredients, no preservatives</span></div>
+          <div class="pp-highlight-item"><span class="pp-hi-icon" aria-hidden="true">👨‍🍳</span><span class="pp-hi-text">Made by master halwais daily</span></div>
+          <div class="pp-highlight-item"><span class="pp-hi-icon" aria-hidden="true">📦</span><span class="pp-hi-text">Hygienically packed &amp; sealed</span></div>
+          <div class="pp-highlight-item"><span class="pp-hi-icon" aria-hidden="true">⭐</span><span class="pp-hi-text">50 years of trusted taste</span></div>
+        </div>
+        <div class="pp-weight-divider"></div>
+        <div class="pp-weight-qty-row" id="ppWeightQtyRow">
+          <div class="pp-weight-group" id="ppWeightGroup">
+            <label class="pp-wq-label" for="ppWeightSelect">WEIGHT</label>
+            <select class="pp-weight-select" id="ppWeightSelect" onchange="onWeightSelectChange(this)" aria-label="Select weight">
+              <option value="">Select Weight</option>
+            </select>
+          </div>
+          <div class="pp-qty-group">
+            <span class="pp-wq-label">QUANTITY</span>
+            <div class="pp-qty-stepper" role="group" aria-label="Quantity selector">
+              <button class="pp-qty-stepper-btn" onclick="changePPQty(-1)" aria-label="Decrease quantity">−</button>
+              <span class="pp-qty-stepper-val" id="ppQty" aria-live="polite">1</span>
+              <button class="pp-qty-stepper-btn" onclick="changePPQty(1)" aria-label="Increase quantity">+</button>
+            </div>
+          </div>
+        </div>
+        <!-- ── ACTION BUTTONS (always visible, inline) ── -->
+        <div class="pp-inline-actions">
+          <button class="pp-add-cart" onclick="ppAddToCart()">🛒 Add to Cart</button>
+          <button class="pp-buy-now" onclick="ppBuyNow()">⚡ Buy Now</button>
+        </div>
+        <div class="pp-weight-divider"></div>
+        <div class="pp-section-title">Ratings &amp; Reviews</div>
+        <div id="ppReviewsSummary" style="background:white;border-radius:14px;padding:1rem;margin-bottom:0.8rem;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+          <div style="display:flex;align-items:center;gap:1rem;">
+            <div>
+              <div style="font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700;color:var(--deep-red);line-height:1;" id="ppAvgRating">4.9</div>
+              <div style="font-size:1rem;color:#FFA000;" id="ppStarsDisplay">★★★★★</div>
+              <div style="font-size:0.65rem;color:#aaa;" id="ppReviewCount">128 reviews</div>
+            </div>
+            <div style="flex:1;" id="ppMiniRatingBars"></div>
+          </div>
+        </div>
+        <div id="ppTopReviews"></div>
+        <button onclick="openReviewsPage()" style="width:100%;background:var(--cream);border:1.5px solid rgba(232,101,10,0.3);border-radius:12px;padding:0.7rem;font-size:0.82rem;font-weight:600;color:var(--deep-red);cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:0.5rem;">See All Reviews ›</button>
       </div>
-    </div>
-    <div id="ppTopReviews"></div>
-    <button onclick="openReviewsPage()" style="width:100%;background:var(--cream);border:1.5px solid rgba(232,101,10,0.3);border-radius:12px;padding:0.7rem;font-size:0.82rem;font-weight:600;color:var(--deep-red);cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:0.5rem;">See All Reviews ›</button>
-  </div>
+    </div><!-- end pp-right -->
+
+  </div><!-- end pp-layout -->
 </div>
-<div class="pp-actions" id="ppActions">
-  <button class="pp-add-cart" onclick="ppAddToCart()">🛒 Add to Cart</button>
-  <button class="pp-buy-now" onclick="ppBuyNow()">⚡ Buy Now</button>
-</div>
+<!-- pp-actions hidden — buttons are inline above -->
+<div class="pp-actions" id="ppActions" style="display:none;"></div>
 
 <!-- ══ REVIEWS PAGE ══ -->
 <div class="reviews-page" id="reviewsPage" role="dialog" aria-modal="true" aria-label="Product reviews">
@@ -731,6 +752,8 @@
       products.push(...loaded);
       renderProducts();
       renderSpecials();
+      // Check if user navigated directly to a product URL
+      if (window._checkProductUrlOnLoad) window._checkProductUrlOnLoad();
     } catch(e) {
       console.error('Failed to load products:', e);
       document.getElementById('productsGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#aaa;"><div style="font-size:2rem;margin-bottom:0.5rem;">⚠️</div><p>Could not load products. Please refresh.</p></div>`;
