@@ -1,929 +1,976 @@
-/* ════════════════════════════════════════════
-   Sree Ramu Sweets — Main JavaScript
-   Est. 1975 · Vijayawada
-   ════════════════════════════════════════════ */
-
-'use strict';
-
-// ── GLOBAL STATE ──
-let products = [];
-let cart = {};
-let searchVisible = false;
-let wishlist = new Set();
-let purchasedProducts = new Set();
-let deliveredProducts = new Set();
-let currentFilterCat = 'all';
-let currentSort = null;
-let currentProductId = null;
-let ppQty = 1;
-let ppSelectedWeight = null;
-const userReviews = {};
-
-// ── DELIVERY CHARGE CALCULATOR ──
-// AP & Telangana: ₹100 up to 1kg. Other states: ₹140. FREE above ₹1000.
-const AP_TG_STATES = ['andhra pradesh', 'telangana'];
-
-function getDeliveryCharge(state, subtotal) {
-  if (subtotal >= 1000) return 0;
-  const stateLower = (state || '').toLowerCase().trim();
-  if (AP_TG_STATES.some(s => stateLower.includes(s))) return 100;
-  return 140;
-}
-
-// ── REVIEWS DATA ──
-const reviewsData = {
-  1: { avg: 4.9, total: 128, dist: [2,3,8,24,91], reviews: [
-    { name:'Padma Lakshmi', loc:'Vijayawada', rating:5, text:'Best Mysore Pak in Vijayawada! Just like my grandmother used to make.', date:'12 Feb 2025', color:'#E8650A', verified:true },
-    { name:'Suresh Babu', loc:'Guntur', rating:5, text:'Pure ghee taste is unmatched. Perfectly sweet.', date:'08 Jan 2025', color:'#B84D00', verified:true },
-  ]},
-  2: { avg: 4.8, total: 95, dist: [1,2,6,20,66], reviews: [
-    { name:'Ravi Shankar', loc:'Hyderabad', rating:5, text:'Ordered for Diwali gifting. Everyone at office was impressed!', date:'15 Nov 2024', color:'#E8650A', verified:true },
-  ]},
-};
-
-// ── WEIGHT VARIANT HELPERS ──
-function getWeightVariants(p) {
-  const variants = [];
-  if (p.price250 || p.price) {
-    variants.push({ size: '250g', price: p.price250 || p.price, oldPrice: p.oldPrice250 || p.oldPrice || null });
-  }
-  if (p.price500) {
-    variants.push({ size: '500g', price: p.price500, oldPrice: p.oldPrice500 || null });
-  }
-  if (p.price1kg) {
-    variants.push({ size: '1 kg', price: p.price1kg, oldPrice: p.oldPrice1kg || null });
-  }
-  return variants;
-}
-
-function renderWeightDropdown(variants) {
-  const select = document.getElementById('ppWeightSelect');
-  const group = document.getElementById('ppWeightGroup');
-  select.innerHTML = variants.map((v, i) =>
-    `<option value="${i}">  ${v.size}  —  ₹${v.price}${v.oldPrice ? '  (MRP ₹'+v.oldPrice+')' : ''}</option>`
-  ).join('');
-  group.style.display = variants.length > 0 ? 'block' : 'none';
-}
-
-function onWeightSelectChange(sel) {
-  const p = products.find(x => x.id === currentProductId);
-  if (!p) return;
-  selectWeightVariant(parseInt(sel.value));
-}
-
-function selectWeightVariant(index) {
-  const p = products.find(x => x.id === currentProductId);
-  if (!p) return;
-  const variants = getWeightVariants(p);
-  const v = variants[index];
-  if (!v) return;
-  ppSelectedWeight = v;
-  const sel = document.getElementById('ppWeightSelect');
-  if (sel) sel.value = String(index);
-  document.getElementById('ppPrice').textContent = '₹' + v.price;
-  const oldPriceEl = document.getElementById('ppOldPrice');
-  const savingEl = document.getElementById('ppSaving');
-  if (v.oldPrice) {
-    oldPriceEl.textContent = '₹' + v.oldPrice;
-    const saving = Math.round((v.oldPrice - v.price) / v.oldPrice * 100);
-    savingEl.textContent = saving + '% OFF';
-    oldPriceEl.style.display = 'block';
-    savingEl.style.display = 'block';
-  } else {
-    oldPriceEl.style.display = 'none';
-    savingEl.style.display = 'none';
-  }
-}
-
-// ── CATALOGUE ──
-function openCatalogue() {
-  document.getElementById('catalogueOverlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeCatalogue() {
-  document.getElementById('catalogueOverlay').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-function catalogueGoTo(cat) {
-  closeCatalogue();
-  // Small delay so the overlay closes before categories page opens
-  setTimeout(() => {
-    if (cat === 'all') {
-      openCategoriesPage();
-    } else {
-      filterCategory(cat);
-      scrollToProducts();
-    }
-  }, 300);
-}
-
-// ── WISHLIST ──
-function toggleWishlist(id, btn) {
-  if (wishlist.has(id)) {
-    wishlist.delete(id);
-    if (btn) btn.textContent = '🤍';
-    showToast('Removed from wishlist');
-    if (window.saveWishlistToFirebase) window.saveWishlistToFirebase(id, false);
-  } else {
-    wishlist.add(id);
-    if (btn) btn.textContent = '❤️';
-    showToast('Added to wishlist!');
-    if (window.saveWishlistToFirebase) window.saveWishlistToFirebase(id, true);
-  }
-  updateWishlistBadge();
-}
-
-function updateWishlistBadge() {
-  const el = document.getElementById('wishlistCountBadge');
-  if (el) el.textContent = wishlist.size;
-}
-
-function openWishlistPage() {
-  updateWishlistBadge();
-  renderWishlist();
-  document.getElementById('wishlistPage').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeWishlistPage() {
-  document.getElementById('wishlistPage').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-function renderWishlist() {
-  const content = document.getElementById('wishlistContent');
-  const items = products.filter(p => wishlist.has(p.id));
-  if (items.length === 0) {
-    content.innerHTML = `<div class="wishlist-empty"><div>🤍</div><p>Your wishlist is empty!<br><small>Tap the heart on any product to save it here.</small></p></div>`;
-    return;
-  }
-  content.innerHTML = `<div class="wishlist-grid">${items.map(p => `
-    <div class="wishlist-card" onclick="closeWishlistPage();setTimeout(()=>openProductPage('${p.id}'),300)">
-      <div class="wishlist-card-img" style="background:${p.bg||'#FFF0E0'}">${p.photoUrl ? `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;" alt="${p.name}">` : '🍬'}</div>
-      <button class="wishlist-remove" onclick="event.stopPropagation();removeFromWishlist('${p.id}')">✕</button>
-      <div class="wishlist-card-info">
-        <div class="wishlist-card-name">${p.name}</div>
-        <div class="wishlist-card-price">₹${p.price250 || p.price}</div>
-        <button class="wishlist-add-btn" onclick="event.stopPropagation();openProductPage('${p.id}')">🛒 Add to Cart</button>
-      </div>
-    </div>
-  `).join('')}</div>`;
-}
-
-function removeFromWishlist(id) {
-  wishlist.delete(id);
-  updateWishlistBadge();
-  renderWishlist();
-}
-
-// ── TODAY'S SPECIALS ──
-function renderSpecials() {
-  const container = document.getElementById('specialsScroll');
-  if (!container) return;
-  let specials = products.filter(p => p.special === true);
-  if (specials.length === 0) specials = products.filter(p => p.popular === true || p.bestseller === true);
-  if (specials.length === 0) specials = products.slice(0, 6);
-  if (specials.length === 0) {
-    container.innerHTML = '<div style="padding:1.5rem 1rem;color:#aaa;font-size:0.82rem;text-align:center;">No specials today. Check back soon! 🍬</div>';
-    document.getElementById('specialsHint').style.display = 'block';
-    return;
-  }
-  container.innerHTML = specials.map(p => {
-    const displayPrice = p.price250 || p.price;
-    const oldPrice = p.oldPrice250 || p.oldPrice || null;
-    const discount = oldPrice ? Math.round((oldPrice - displayPrice) / oldPrice * 100) : null;
-    return `
-    <div class="special-card" onclick="openProductPage('${p.id}')" style="cursor:pointer;position:relative;">
-      ${discount ? `<div style="position:absolute;top:8px;left:8px;background:#E8650A;color:white;font-size:0.58rem;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:0.5px;z-index:2;">${discount}% OFF</div>` : (p.badge ? `<div style="position:absolute;top:8px;left:8px;background:#E8650A;color:white;font-size:0.58rem;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:0.5px;z-index:2;">${p.badge}</div>` : '')}
-      <div class="special-img" style="background:${p.bg||'#FFF0E0'}">
-        ${p.photoUrl ? `<img src="${p.photoUrl}" alt="${p.name}">` : `<span style="font-size:2.8rem">🍬</span>`}
-      </div>
-      <div class="special-info">
-        <div class="special-name">${p.name}</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.3rem;margin-top:0.35rem;">
-          <div class="special-price">
-            ₹${displayPrice}
-            ${oldPrice ? `<small style="color:#aaa;text-decoration:line-through;font-weight:400;font-size:0.68rem;margin-left:2px;">₹${oldPrice}</small>` : ''}
-          </div>
-          <button
-            onclick="event.stopPropagation();quickAddSpecial('${p.id}')"
-            style="background:var(--deep-red);color:white;border:none;border-radius:8px;padding:0.28rem 0.55rem;font-size:0.68rem;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;white-space:nowrap;flex-shrink:0;transition:background 0.2s;"
-            onmouseover="this.style.background='var(--brown)'" onmouseout="this.style.background='var(--deep-red)'"
-          >+ Cart</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function quickAddSpecial(id) {
-  const p = products.find(x => x.id === id);
-  if (!p) return;
-  const variants = getWeightVariants(p);
-  const v = variants[0];
-  if (!v) return;
-  const cartKey = id + '_' + v.size;
-  if (!cart[cartKey]) cart[cartKey] = { ...p, qty: 0, selectedWeight: v.size, selectedPrice: v.price };
-  cart[cartKey].qty++;
-  updateCartBadge();
-  showToast(`${p.name} (${v.size}) added! 🛒`);
-}
-
-// ── CATEGORIES PAGE ──
-function openCategoriesPage() {
-  backToCatGrid();
-  document.getElementById('categoriesPage').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeCategoriesPage() {
-  document.getElementById('categoriesPage').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-function showCatProducts(cat, title) {
-  const filtered = cat === 'all' ? products : products.filter(p => p.cat === cat);
-  document.getElementById('catPageContent').style.display = 'none';
-  document.getElementById('catProductsSection').style.display = 'block';
-  document.getElementById('catProductsTitle').textContent = title;
-  renderProducts(filtered, 'catProductsGrid');
-}
-
-function backToCatGrid() {
-  document.getElementById('catPageContent').style.display = 'block';
-  document.getElementById('catProductsSection').style.display = 'none';
-}
-
-// ── PRODUCT RENDERING ──
-function renderProducts(list, containerId = 'productsGrid') {
-  if (list === undefined) list = products;
-  const grid = document.getElementById(containerId);
-  if (!grid) return;
-  if (!list.length) {
-    grid.innerHTML = `<div style="text-align:center;padding:3rem;color:#aaa;grid-column:1/-1;"><div style="font-size:3rem;margin-bottom:1rem;">🍬</div><p>No products found</p></div>`;
-    return;
-  }
-  grid.innerHTML = list.map(p => {
-    const displayPrice = p.price250 || p.price;
-    return `
-    <div class="product-card" onclick="openProductPage('${p.id}')">
-      <div class="product-img" style="background:${p.bg||'#FFF0E0'}">
-        ${p.photoUrl ? `<img src="${p.photoUrl}" alt="${p.name}" loading="lazy">` : `<span style="font-size:3.2rem">🍬</span>`}
-        ${p.badge ? `<div class="product-badge">${p.badge}</div>` : ''}
-        <button class="product-fav" onclick="event.stopPropagation();toggleWishlist('${p.id}',this)" id="fav-${containerId}-${p.id}">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
-      </div>
-      <div class="product-info">
-        <div class="product-name">${p.name}</div>
-        <div class="product-desc">${p.desc}</div>
-        <div class="product-weight">${p.price500 ? '250g / 500g' + (p.price1kg ? ' / 1kg' : '') : (p.weight || 'Per 250g pack')}</div>
-        <div class="product-footer">
-          <div class="product-price">
-            ${p.oldPrice || p.oldPrice250 ? `<span>₹${p.oldPrice || p.oldPrice250}</span>` : ''}
-            ₹${displayPrice}
-          </div>
-          <div style="font-size:0.65rem;color:var(--deep-red);font-weight:600;">View →</div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function addToCart(id) {
-  const p = products.find(x => x.id === id);
-  if (!p) return;
-  const variants = getWeightVariants(p);
-  const v = variants[0];
-  const cartKey = id + '_' + v.size;
-  if (!cart[cartKey]) cart[cartKey] = { ...p, qty: 0, selectedWeight: v.size, selectedPrice: v.price };
-  cart[cartKey].qty++;
-  updateCartBadge();
-  showToast(`${p.name} (${v.size}) added to cart!`);
-}
-
-function updateCartBadge() {
-  const total = Object.values(cart).reduce((s, i) => s + i.qty, 0);
-  document.getElementById('cartCount').textContent = total;
-}
-
-// ── CART ──
-function openCart() {
-  const items = Object.values(cart);
-  const cartItemsEl = document.getElementById('cartItems');
-  const cartTotalEl = document.getElementById('cartTotal');
-  const currentState = shippingData && shippingData.state ? shippingData.state : '';
-
-  if (items.length === 0) {
-    cartItemsEl.innerHTML = `<div class="empty-cart"><div>🛒</div><p>Your cart is empty!<br><small>Add some delicious sweets 😋</small></p></div>`;
-    cartTotalEl.innerHTML = '';
-  } else {
-    cartItemsEl.innerHTML = items.map(item => `
-      <div class="cart-item">
-        <div class="cart-item-img" style="background:${item.bg||'#FFF0E0'};">${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.name}">` : '🍬'}</div>
-        <div class="cart-item-info">
-          <div class="cart-item-name">${item.name}</div>
-          <div class="cart-item-weight">📦 ${item.selectedWeight || '250g'}</div>
-          <div class="cart-item-price">₹${item.selectedPrice * item.qty}</div>
-        </div>
-        <div class="qty-ctrl">
-          <button class="qty-btn" onclick="changeQty('${item.id}_${item.selectedWeight}',-1)">−</button>
-          <span class="qty-val">${item.qty}</span>
-          <button class="qty-btn" onclick="changeQty('${item.id}_${item.selectedWeight}',1)">+</button>
-        </div>
-      </div>
-    `).join('');
-
-    const subtotal = items.reduce((s,i) => s + i.selectedPrice * i.qty, 0);
-    const delivery = getDeliveryCharge(currentState, subtotal);
-    const isAP_TG = AP_TG_STATES.some(s => currentState.toLowerCase().includes(s));
-    const deliveryNote = subtotal >= 1000 ? '' : (isAP_TG || !currentState ? ' (AP/TG rate)' : ' (Other state rate)');
-    cartTotalEl.innerHTML = `
-      <div class="cart-total">
-        <div class="total-row"><span>Subtotal</span><span>₹${subtotal}</span></div>
-        <div class="total-row"><span>Delivery${deliveryNote ? `<br><small style="color:#aaa;font-size:0.6rem;">${deliveryNote}</small>` : ''}</span><span>${delivery === 0 ? '<span style="color:green">FREE</span>' : '₹' + delivery}</span></div>
-        ${!currentState ? `<div class="total-row"><span style="font-size:0.68rem;color:#aaa;">📍 Delivery: ₹100 AP/TG · ₹140 Other States · FREE above ₹1000</span></div>` : ''}
-        <div class="total-row grand"><span>Total</span><span>₹${subtotal + delivery}</span></div>
-        <button class="checkout-btn" onclick="openShipping()">Proceed to Checkout 📍</button>
-      </div>
-    `;
-  }
-
-  document.getElementById('overlay').classList.add('open');
-  document.getElementById('cartDrawer').classList.add('open');
-}
-
-function changeQty(cartKey, delta) {
-  if (!cart[cartKey]) return;
-  cart[cartKey].qty += delta;
-  if (cart[cartKey].qty <= 0) delete cart[cartKey];
-  updateCartBadge();
-  openCart();
-}
-
-// ── OVERLAYS & DRAWERS ──
-function closeAll() {
-  document.getElementById('overlay').classList.remove('open');
-  document.getElementById('cartDrawer').classList.remove('open');
-  document.getElementById('ordersDrawer').classList.remove('open');
-  document.getElementById('shippingDrawer').classList.remove('open');
-  document.getElementById('accountDrawer').classList.remove('open');
-  document.getElementById('helpDrawer').classList.remove('open');
-  closeProductPage();
-  closeCategoriesPage();
-  closeWishlistPage();
-  closeReviewsPage();
-  closeCatalogue();
-}
-
-function openOrders() {
-  document.getElementById('overlay').classList.add('open');
-  document.getElementById('ordersDrawer').classList.add('open');
-  const list = document.getElementById('ordersList');
-  if (window.loadOrders) window.loadOrders(list);
-}
-
-// ── SEARCH ──
-function toggleSearch() {
-  searchVisible = !searchVisible;
-  document.getElementById('searchBar').style.display = searchVisible ? 'block' : 'none';
-  if (searchVisible) document.getElementById('searchInput').focus();
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  const searchInput = document.getElementById('searchInput');
-  if (searchInput) {
-    searchInput.addEventListener('input', function() {
-      const q = this.value.toLowerCase();
-      const filtered = q ? products.filter(p => p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)) : products;
-      renderProducts(filtered);
-      document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
-    });
-  }
-});
-
-// ── CATEGORY FILTER ──
-function filterCategory(cat) {
-  currentFilterCat = cat;
-  document.querySelectorAll('.cat-pill').forEach(el => el.classList.remove('active'));
-  const activePill = event && event.currentTarget;
-  if (activePill) activePill.classList.add('active');
-  if (currentSort) {
-    renderSorted();
-  } else {
-    const filtered = cat === 'all' ? products : products.filter(p => p.cat === cat);
-    renderProducts(filtered);
-  }
-  document.getElementById('products').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-// ── HELP & SUPPORT ──
-function openHelpSupport() {
-  document.getElementById('accountDrawer').classList.remove('open');
-  setTimeout(() => {
-    document.getElementById('overlay').classList.add('open');
-    document.getElementById('helpDrawer').classList.add('open');
-  }, 250);
-}
-
-// ── SORT ──
-function toggleSortMenu() {
-  const menu = document.getElementById('sortMenu');
-  const chevron = document.getElementById('sortChevron');
-  const isOpen = menu.style.display === 'block';
-  menu.style.display = isOpen ? 'none' : 'block';
-  chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-  if (!isOpen) {
-    setTimeout(() => document.addEventListener('click', closeSortOnOutside, { once: true }), 10);
-  }
-}
-
-function closeSortOnOutside(e) {
-  const menu = document.getElementById('sortMenu');
-  const btn = document.getElementById('sortBtn');
-  if (menu && !menu.contains(e.target) && !btn.contains(e.target)) {
-    menu.style.display = 'none';
-    document.getElementById('sortChevron').style.transform = 'rotate(0deg)';
-  }
-}
-
-function applySort(key) {
-  currentSort = key;
-  const labels = { bestsellers: '🏆 Best Sellers', popular: '🔥 Popular', lowtohigh: 'Low → High', hightolow: 'High → Low' };
-  document.getElementById('sortLabel').textContent = labels[key];
-  document.querySelectorAll('.sort-option').forEach(el => {
-    el.classList.toggle('active', el.dataset.key === key);
-  });
-  document.getElementById('sortMenu').style.display = 'none';
-  document.getElementById('sortChevron').style.transform = 'rotate(0deg)';
-  renderSorted();
-}
-
-function renderSorted() {
-  let list = currentFilterCat === 'all' ? [...products] : products.filter(p => p.cat === currentFilterCat);
-  if (currentSort === 'bestsellers') {
-    list = list.filter(p => p.bestseller === true || p.special === true).concat(list.filter(p => !p.bestseller && !p.special));
-  } else if (currentSort === 'popular') {
-    list = list.filter(p => p.popular === true || p.special === true).concat(list.filter(p => !p.popular && !p.special));
-  } else if (currentSort === 'lowtohigh') {
-    list.sort((a, b) => (a.price250 || a.price || 0) - (b.price250 || b.price || 0));
-  } else if (currentSort === 'hightolow') {
-    list.sort((a, b) => (b.price250 || b.price || 0) - (a.price250 || a.price || 0));
-  }
-  renderProducts(list);
-}
-
-function scrollToProducts() {
-  document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
-}
-
-// ── TOAST ──
-let toastTimeout;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-// ── PRODUCT PAGE ──
-function openProductPage(id) {
-  const p = products.find(x => x.id === id);
-  if (!p) return;
-  currentProductId = id;
-  ppQty = 1;
-
-  document.getElementById('categoriesPage').classList.remove('open');
-  document.getElementById('wishlistPage').classList.remove('open');
-  document.getElementById('catalogueOverlay').classList.remove('open');
-
-  document.getElementById('ppHeaderTitle').textContent = p.name;
-  document.getElementById('ppHero').style.background = p.bg||'#FFF0E0';
-  document.getElementById('ppHero').innerHTML = `
-    ${p.photoUrl ? `<img src="${p.photoUrl}" alt="${p.name}">` : `<span style="font-size:7rem">🍬</span>`}
-    ${p.badge ? `<div class="pp-badge">${p.badge}</div>` : ''}
-    <button class="product-fav" style="position:absolute;top:12px;right:12px;width:36px;height:36px;font-size:1.1rem;" onclick="toggleWishlist('${p.id}',this)">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
-  `;
-  document.getElementById('ppName').textContent = p.name;
-  document.getElementById('ppDesc').textContent = p.desc;
-  document.getElementById('ppQty').textContent = ppQty;
-
-  const variants = getWeightVariants(p);
-  renderWeightDropdown(variants);
-  ppSelectedWeight = variants[0];
-  selectWeightVariant(0);
-
-  document.getElementById('productPage').classList.add('open');
-  document.getElementById('ppActions').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  renderProductReviews(id);
-}
-
-function closeProductPage() {
-  document.getElementById('productPage').classList.remove('open');
-  document.getElementById('ppActions').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-function changePPQty(delta) {
-  ppQty = Math.max(1, ppQty + delta);
-  document.getElementById('ppQty').textContent = ppQty;
-}
-
-function ppAddToCart() {
-  const p = products.find(x => x.id === currentProductId);
-  if (!p) return;
-  if (!ppSelectedWeight) { showToast('Please select a weight!'); return; }
-  const cartKey = p.id + '_' + ppSelectedWeight.size;
-  if (!cart[cartKey]) cart[cartKey] = { ...p, qty: 0, selectedWeight: ppSelectedWeight.size, selectedPrice: ppSelectedWeight.price };
-  cart[cartKey].qty += ppQty;
-  updateCartBadge();
-  showToast(`${p.name} (${ppSelectedWeight.size}) x${ppQty} added to cart!`);
-  closeProductPage();
-}
-
-function ppBuyNow() {
-  const p = products.find(x => x.id === currentProductId);
-  if (!p) return;
-  if (!ppSelectedWeight) { showToast('Please select a weight!'); return; }
-  const cartKey = p.id + '_' + ppSelectedWeight.size;
-  if (!cart[cartKey]) cart[cartKey] = { ...p, qty: 0, selectedWeight: ppSelectedWeight.size, selectedPrice: ppSelectedWeight.price };
-  cart[cartKey].qty += ppQty;
-  updateCartBadge();
-  closeProductPage();
-  setTimeout(() => openShipping(), 300);
-}
-
-// ── REVIEWS ──
-function starsHtml(rating, size = '0.85rem') {
-  return `<span style="font-size:${size};color:#FFA000;">${'★'.repeat(rating)}${'☆'.repeat(5-rating)}</span>`;
-}
-
-function renderProductReviews(productId) {
-  const data = reviewsData[productId] || { avg: 4.8, total: 0, dist: [0,0,0,0,0], reviews: [] };
-  const barsHtml = [5,4,3,2,1].map(star => {
-    const count = data.dist[star-1];
-    const pct = data.total > 0 ? Math.round(count/data.total*100) : 0;
-    return `<div class="rating-bar-row" style="margin-bottom:0.25rem;"><span class="rbar-label">${star}</span><div class="rbar-track"><div class="rbar-fill" style="width:${pct}%"></div></div><span class="rbar-count">${count}</span></div>`;
-  }).join('');
-  const m = document.getElementById('ppMiniRatingBars'); if(m) m.innerHTML = barsHtml;
-  const a = document.getElementById('ppAvgRating'); if(a) a.textContent = data.avg.toFixed(1);
-  const s = document.getElementById('ppStarsDisplay'); if(s) s.innerHTML = starsHtml(Math.round(data.avg), '1rem');
-  const c = document.getElementById('ppReviewCount'); if(c) c.textContent = data.total + ' reviews';
-  const t = document.getElementById('ppTopReviews');
-  if(t) t.innerHTML = data.reviews.slice(0,2).map(r => `
-    <div class="review-item" style="margin-bottom:0.6rem;">
-      <div class="review-item-header">
-        <div class="review-avatar" style="background:${r.color};font-size:0.8rem;">${r.name[0]}</div>
-        <div class="review-meta"><div class="review-name">${r.name}</div><div>${starsHtml(r.rating)} ${r.verified?'<span class="verified-badge">✓ Verified</span>':''}</div></div>
-      </div>
-      <div class="review-body">"${r.text}"</div>
-    </div>`).join('');
-}
-
-let currentReviewProductId = null;
-let selectedRating = 0;
-
-function openReviewsPage() {
-  const id = currentProductId;
-  currentReviewProductId = id;
-  const p = products.find(x => x.id === id);
-  const data = reviewsData[id] || { avg: 4.8, total: 0, dist: [0,0,0,0,0], reviews: [] };
-  document.getElementById('reviewsPageTitle').innerHTML = `${p ? p.name : 'Reviews'} <small id="reviewsPageSub">${data.avg.toFixed(1)}★ · ${data.total} reviews</small>`;
-  const barsHtml = [5,4,3,2,1].map(star => {
-    const count = data.dist[star-1];
-    const pct = data.total > 0 ? Math.round(count/data.total*100) : 0;
-    return `<div class="rating-bar-row"><span class="rbar-label">${star}</span><div class="rbar-track"><div class="rbar-fill" style="width:${pct}%"></div></div><span class="rbar-count">${count}</span></div>`;
-  }).join('');
-  document.getElementById('reviewsRatingSummary').innerHTML = `
-    <div class="rating-big">
-      <div><div class="rating-num">${data.avg.toFixed(1)}</div><div class="rating-stars-big">${starsHtml(Math.round(data.avg),'1.1rem')}</div><div class="rating-total">${data.total} ratings</div></div>
-      <div class="rating-bars" style="flex:1;">${barsHtml}</div>
-    </div>
-    <div class="rating-chips"><div class="rating-chip">✅ Pure Ingredients</div><div class="rating-chip">😋 Great Taste</div><div class="rating-chip">📦 Good Packaging</div><div class="rating-chip">🚚 Fast Delivery</div></div>`;
-  const allReviews = [...(userReviews[id]||[]), ...(data.reviews||[])];
-  document.getElementById('reviewsListFull').innerHTML = allReviews.length === 0
-    ? `<div style="text-align:center;padding:3rem 1rem;color:#aaa;"><div style="font-size:3rem;margin-bottom:0.5rem;">💬</div><p>No reviews yet.</p></div>`
-    : allReviews.map((r,i) => `
-      <div class="review-item">
-        <div class="review-item-header">
-          <div class="review-avatar" style="background:${r.color||'#E8650A'}">${r.name[0].toUpperCase()}</div>
-          <div class="review-meta"><div class="review-name">${r.name} <span style="font-size:0.62rem;color:#aaa;font-weight:400">· ${r.loc||'India'}</span></div><div class="review-date">${r.date||'Recently'}</div></div>
-          ${r.verified?'<span class="verified-badge">✓ Verified</span>':''}
-        </div>
-        <div class="review-stars">${starsHtml(r.rating)}</div>
-        <div class="review-body">"${r.text}"</div>
-        <div class="review-helpful"><span class="helpful-label">Helpful?</span><button class="helpful-btn" onclick="this.classList.toggle('liked')">👍 Yes</button><button class="helpful-btn" onclick="this.classList.toggle('liked')">👎 No</button></div>
-      </div>`).join('');
-  document.getElementById('reviewsPage').classList.add('open');
-  const writeBtn = document.getElementById('writeReviewBtn');
-  writeBtn.classList.add('open');
-
-  const isDelivered = deliveredProducts.has(id);
-  if (isDelivered) {
-    writeBtn.querySelector('button').textContent = '✍️ Write a Review';
-    writeBtn.querySelector('button').disabled = false;
-    writeBtn.querySelector('button').style.opacity = '1';
-    writeBtn.querySelector('button').style.background = 'var(--deep-red)';
-  } else if (purchasedProducts.has(id)) {
-    writeBtn.querySelector('button').innerHTML = '⏳ Review available after delivery';
-    writeBtn.querySelector('button').disabled = true;
-    writeBtn.querySelector('button').style.opacity = '0.6';
-    writeBtn.querySelector('button').style.background = '#888';
-  } else {
-    writeBtn.querySelector('button').innerHTML = '🔒 Purchase this product to review';
-    writeBtn.querySelector('button').disabled = true;
-    writeBtn.querySelector('button').style.opacity = '0.5';
-    writeBtn.querySelector('button').style.background = '#aaa';
-  }
-  document.body.style.overflow = 'hidden';
-}
-
-function closeReviewsPage() {
-  document.getElementById('reviewsPage').classList.remove('open');
-  document.getElementById('writeReviewBtn').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-function openWriteReview() {
-  if (!deliveredProducts.has(currentReviewProductId)) {
-    if (purchasedProducts.has(currentReviewProductId)) {
-      showToast('⏳ Review will be available after your order is delivered!');
-    } else {
-      showToast('🔒 Only verified buyers can review!');
-    }
-    return;
-  }
-  selectedRating = 0;
-  const userName = window.currentUser ? window.currentUser.displayName || '' : '';
-  document.getElementById('reviewName').value = userName;
-  document.getElementById('reviewName').readOnly = !!userName;
-  document.getElementById('reviewText').value = '';
-  document.getElementById('starLabel').textContent = 'Tap a star to rate';
-  document.querySelectorAll('.star-pick').forEach(s => s.classList.remove('active'));
-  document.getElementById('reviewModalOverlay').classList.add('open');
-}
-
-function closeWriteReview() {
-  document.getElementById('reviewModalOverlay').classList.remove('open');
-}
-
-function setRating(val) {
-  selectedRating = val;
-  const labels = ['','Poor 😞','Fair 😐','Good 🙂','Very Good 😊','Excellent 🤩'];
-  document.getElementById('starLabel').textContent = labels[val];
-  document.querySelectorAll('.star-pick').forEach(s => s.classList.toggle('active', parseInt(s.dataset.val) <= val));
-}
-
-function submitReview() {
-  const name = document.getElementById('reviewName').value.trim();
-  const text = document.getElementById('reviewText').value.trim();
-  if (!selectedRating) { showToast('⭐ Please select a star rating!'); return; }
-  if (name.length < 2) { showToast('📝 Please enter your name!'); return; }
-  if (text.length < 10) { showToast('📝 Please write at least a short review!'); return; }
-  if (!deliveredProducts.has(currentReviewProductId)) { showToast('⏳ Review available after delivery!'); return; }
-  const id = currentReviewProductId;
-  if (!userReviews[id]) userReviews[id] = [];
-  const colors = ['#E8650A','#B84D00','#FF8C2A','#5C3A00','#CC5500'];
-  const now = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
-  userReviews[id].unshift({ name, text, rating: selectedRating, loc: shippingData?.city || 'India', date: now, color: colors[Math.floor(Math.random()*colors.length)], verified: true });
-  if (reviewsData[id]) { reviewsData[id].total += 1; reviewsData[id].dist[selectedRating-1] += 1; }
-  closeWriteReview();
-  showToast('🎉 Thank you for your verified review!');
-  if (window.saveReviewToFirebase) window.saveReviewToFirebase(id, { name, text, rating: selectedRating, loc: shippingData?.city || 'India', date: now });
-  setTimeout(() => { openReviewsPage(); renderProductReviews(id); }, 400);
-}
-
-// ── SHIPPING ──
-let shippingData = {};
-
-function openShipping() {
-  if (!window.currentUser) {
-    document.getElementById('cartDrawer').classList.remove('open');
-    document.getElementById('overlay').classList.remove('open');
-    showToast('🔐 Please sign in to place your order!');
-    setTimeout(() => { if (window.openAccount) window.openAccount(); }, 800);
-    return;
-  }
-  document.getElementById('cartDrawer').classList.remove('open');
-  document.getElementById('shippingPage1').style.display = 'block';
-  document.getElementById('shippingPage2').style.display = 'none';
-  document.getElementById('stepAddress').className = 'shipping-step active';
-  document.getElementById('stepPayment').className = 'shipping-step';
-  const user = window.currentUser;
-  const nameField = document.getElementById('ship_name');
-  if (nameField && !nameField.value) nameField.value = user.displayName || '';
-  document.getElementById('overlay').classList.add('open');
-  document.getElementById('shippingDrawer').classList.add('open');
-}
-
-function backToCart() {
-  document.getElementById('shippingDrawer').classList.remove('open');
-  openCart();
-}
-
-function backToAddress() {
-  document.getElementById('shippingPage2').style.display = 'none';
-  document.getElementById('shippingPage1').style.display = 'block';
-  document.getElementById('stepAddress').className = 'shipping-step active';
-  document.getElementById('stepPayment').className = 'shipping-step';
-}
-
-let pincodeTimer = null;
-document.addEventListener('DOMContentLoaded', function() {
-  const pincodeInput = document.getElementById('ship_pincode');
-  if (pincodeInput) {
-    pincodeInput.addEventListener('input', function() {
-      const val = this.value.replace(/\D/g,'');
-      this.value = val;
-      clearTimeout(pincodeTimer);
-      hideErr('err_pincode');
-      document.getElementById('locationTag').classList.remove('show');
-      if (val.length === 6) pincodeTimer = setTimeout(() => lookupPincode(val), 400);
-      else if (val.length < 6) {
-        document.getElementById('ship_city').value = '';
-        document.getElementById('ship_state').value = '';
-        document.getElementById('ship_city').disabled = false;
-        document.getElementById('ship_state').disabled = false;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ══ PRIMARY SEO ══ -->
+  <title>Sri Ramu Sweets – Authentic Indian Sweets & Mithai | Bhimavaram Since 1965</title>
+  <meta name="description" content="Order authentic handmade Indian sweets online from Sri Ramu Sweets, Bhimavaram. Mysore Pak, Kaju Katli, Laddu, Kala Jamun & 50+ varieties. Free delivery above ₹1000. Serving India since 1965.">
+  <meta name="keywords" content="Indian sweets online, Bhimavaram sweets shop, Mysore Pak, Kaju Katli, Laddu, Kala Jamun, Andhra sweets, Mithai, gift boxes, Diwali sweets, authentic sweets Bhimavaram">
+  <meta name="author" content="Sri Ramu Sweets">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://www.sreeramusweets.com/">
+
+  <!-- ══ OPEN GRAPH (Facebook / WhatsApp) ══ -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.sreeramusweets.com/">
+  <meta property="og:title" content="Sri Ramu Sweets – Authentic Indian Sweets Since 1965">
+  <meta property="og:description" content="50+ varieties of handmade Indian sweets & mithai. Mysore Pak, Kaju Katli, Laddu & more. Order online with free delivery above ₹1000.">
+  <meta property="og:image" content="https://www.sreeramusweets.com/og-image.jpg">
+  <meta property="og:image:alt" content="Sri Ramu Sweets – Authentic Indian Sweets">
+  <meta property="og:locale" content="en_IN">
+  <meta property="og:site_name" content="Sri Ramu Sweets">
+
+  <!-- ══ TWITTER CARD ══ -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Sri Ramu Sweets – Authentic Indian Sweets Since 1965">
+  <meta name="twitter:description" content="50+ varieties of handmade Indian sweets. Order online. Free delivery above ₹1000.">
+  <meta name="twitter:image" content="https://www.sreeramusweets.com/og-image.jpg">
+
+  <!-- ══ GEO & LOCAL SEO ══ -->
+  <meta name="geo.region" content="IN-AP">
+  <meta name="geo.placename" content="Bhimavaram, West Godavari, Andhra Pradesh, India">
+  <meta name="geo.position" content="16.5062;80.6480">
+  <meta name="ICBM" content="16.5062, 80.6480">
+
+  <!-- ══ PWA / MOBILE ══ -->
+  <meta name="theme-color" content="#E8650A">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sri Ramu Sweets">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+
+  <!-- ══ STRUCTURED DATA — Local Business ══ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FoodEstablishment",
+    "name": "Sri Ramu Sweets",
+    "description": "Authentic handmade Indian sweets shop established in 1965. Specialising in Mysore Pak, Kaju Katli, Laddu, Kala Jamun and 50+ varieties of traditional mithai.",
+    "url": "https://www.sreeramusweets.com",
+    "telephone": "+91-9666659344",
+    "foundingDate": "1965",
+    "priceRange": "₹₹",
+    "servesCuisine": "Indian",
+    "currenciesAccepted": "INR",
+    "paymentAccepted": "Cash, Credit Card, Debit Card, UPI, NetBanking",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Sunday Market",
+      "addressLocality": "Bhimavaram",
+      "addressRegion": "Andhra Pradesh",
+      "postalCode": "534201",
+      "addressCountry": "IN"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "16.5062",
+      "longitude": "80.6480"
+    },
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+        "opens": "09:00",
+        "closes": "20:00"
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": "Sunday",
+        "opens": "09:00",
+        "closes": "14:00"
       }
-    });
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "reviewCount": "25000",
+      "bestRating": "5",
+      "worstRating": "1"
+    },
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Indian Sweets & Mithai Catalogue",
+      "itemListElement": [
+        { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Mysore Pak", "category": "Indian Sweets" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Kaju Katli", "category": "Mithai" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Laddu", "category": "Indian Sweets" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Kala Jamun", "category": "Indian Sweets" } }
+      ]
+    },
+    "sameAs": [
+      "https://www.facebook.com/sreeramusweets",
+      "https://www.instagram.com/sreeramusweets"
+    ]
   }
-});
+  </script>
 
-async function lookupPincode(pin) {
-  const spinner = document.getElementById('pincodeSpinner');
-  const locationTag = document.getElementById('locationTag');
-  const cityInput = document.getElementById('ship_city');
-  const stateInput = document.getElementById('ship_state');
-  const pincodeInput = document.getElementById('ship_pincode');
-  spinner.classList.add('show');
-  pincodeInput.classList.remove('error','success');
-  try {
-    const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
-    const data = await res.json();
-    spinner.classList.remove('show');
-    if (data[0].Status === 'Success' && data[0].PostOffice?.length > 0) {
-      const po = data[0].PostOffice[0];
-      cityInput.value = po.District||po.Block||po.Name;
-      stateInput.value = po.State;
-      cityInput.disabled = true; stateInput.disabled = true;
-      cityInput.classList.add('success'); stateInput.classList.add('success');
-      pincodeInput.classList.add('success');
-      document.getElementById('locationText').textContent = `${po.Region||po.Name}, ${po.District||po.Block}, ${po.State}`;
-      locationTag.classList.add('show');
-      hideErr('err_pincode');
+  <!-- ══ STRUCTURED DATA — BreadcrumbList ══ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.sreeramusweets.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Shop", "item": "https://www.sreeramusweets.com/#products" }
+    ]
+  }
+  </script>
+
+  <!-- ══ FONTS ══ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- ══ STYLESHEET ══ -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- ══ PRELOAD CRITICAL SCRIPTS ══ -->
+  <link rel="preload" href="https://checkout.razorpay.com/v1/checkout.js" as="script">
+</head>
+<body>
+
+<!-- ══ STRUCTURED DATA: WebSite with SearchAction ══ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "url": "https://www.sreeramusweets.com/",
+  "name": "Sri Ramu Sweets",
+  "description": "Authentic Indian sweets and mithai online store",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://www.sreeramusweets.com/?search={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+
+<!-- ══ OFFER STRIP ══ -->
+<div class="offer-strip" role="banner" aria-label="Promotions">
+  🎉 <span>FREE delivery above ₹1000+ (India Only)</span> | <span>International Delivery Available</span> 🎊
+</div>
+
+<!-- ══ NAVBAR ══ -->
+<header>
+  <nav class="navbar" aria-label="Main navigation">
+    <a href="/" class="nav-logo" aria-label="Sri Ramu Sweets Home">
+      Sri Ramu Sweets
+      <span>EST. 1965 · BHIMAVARAM</span>
+    </a>
+    <div class="nav-icons">
+      <button class="nav-icon-btn" onclick="toggleSearch()" aria-label="Search products">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </button>
+      <button class="nav-icon-btn" onclick="openCart()" aria-label="Open cart">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span class="cart-badge" id="cartCount" aria-live="polite" aria-label="Items in cart">0</span>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<!-- ══ SEARCH BAR ══ -->
+<div class="search-bar" id="searchBar" style="display:none" role="search">
+  <div class="search-inner">
+    <span aria-hidden="true">🔍</span>
+    <input type="search" placeholder="Search sweets, snacks, gifts…" id="searchInput" aria-label="Search products">
+  </div>
+</div>
+
+<!-- ══ HERO ══ -->
+<main>
+  <section class="hero" aria-label="Welcome banner">
+    <div class="hero-tag">🌟 Authentic Since 1965</div>
+    <h1>Taste the <em>Pure Joy</em> of<br>Homemade Sweets</h1>
+    <p>Made with love, pure ghee, and age-old recipes passed down through generations.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="scrollToProducts()">Order Now</button>
+      <button class="btn-outline" onclick="openCatalogue()">View Catalogue</button>
+    </div>
+    <div class="hero-stats" aria-label="Store statistics">
+      <div class="stat-item"><div class="stat-num">50+</div><div class="stat-lbl">Varieties</div></div>
+      <div class="stat-item"><div class="stat-num">25k+</div><div class="stat-lbl">Happy Customers</div></div>
+      <div class="stat-item"><div class="stat-num">4.9★</div><div class="stat-lbl">Rating</div></div>
+    </div>
+  </section>
+
+  <!-- ══ CATEGORIES ══ -->
+  <section class="section" aria-labelledby="cat-heading">
+    <div class="section-header">
+      <h2 class="section-title" id="cat-heading">Shop by <span>Category</span></h2>
+    </div>
+    <nav class="cat-scroll" aria-label="Product categories">
+      <div class="cat-pill active" onclick="filterCategory('all')" role="button" aria-pressed="true">
+        <div class="cat-icon" style="background:#FFF0E0;">🍬</div><span>All Items</span>
+      </div>
+      <div class="cat-pill" onclick="filterCategory('sweets')" role="button" aria-pressed="false">
+        <div class="cat-icon" style="background:#FDE8E8;">🧁</div><span>Sweets</span>
+      </div>
+      <div class="cat-pill" onclick="filterCategory('mithai')" role="button" aria-pressed="false">
+        <div class="cat-icon" style="background:#FFF3CD;">🟡</div><span>Mithai</span>
+      </div>
+      <div class="cat-pill" onclick="filterCategory('snacks')" role="button" aria-pressed="false">
+        <div class="cat-icon" style="background:#E8F5E9;">🥜</div><span>Snacks</span>
+      </div>
+      <div class="cat-pill" onclick="filterCategory('gifts')" role="button" aria-pressed="false">
+        <div class="cat-icon" style="background:#F3E5F5;">🎁</div><span>Gift Boxes</span>
+      </div>
+      <div class="cat-pill" onclick="filterCategory('seasonal')" role="button" aria-pressed="false">
+        <div class="cat-icon" style="background:#E3F2FD;">🪔</div><span>Seasonal</span>
+      </div>
+    </nav>
+  </section>
+
+  <!-- ══ PRODUCTS ══ -->
+  <section class="section" id="products" style="padding-top:0" aria-labelledby="products-heading">
+    <div class="section-header">
+      <h2 class="section-title" id="products-heading">Our <span>Bestsellers</span></h2>
+      <div style="position:relative;">
+        <button id="sortBtn" onclick="toggleSortMenu()" aria-label="Sort products" style="display:flex;align-items:center;gap:0.35rem;background:white;border:1.5px solid rgba(232,101,10,0.3);border-radius:20px;padding:0.35rem 0.75rem;font-size:0.72rem;font-weight:600;color:var(--deep-red);cursor:pointer;font-family:'Poppins',sans-serif;transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 10px rgba(232,101,10,0.15)'" onmouseout="this.style.boxShadow='none'">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+          <span id="sortLabel">Sort</span>
+          <svg id="sortChevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s;" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div id="sortMenu" role="listbox" aria-label="Sort options" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:white;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.14);min-width:160px;z-index:99;overflow:hidden;border:1px solid rgba(0,0,0,0.06);">
+          <div onclick="applySort('bestsellers')" class="sort-option" data-key="bestsellers" role="option">🏆 Best Sellers</div>
+          <div onclick="applySort('popular')" class="sort-option" data-key="popular" role="option">🔥 Popular</div>
+          <div onclick="applySort('lowtohigh')" class="sort-option" data-key="lowtohigh" role="option">💰 Price: Low to High</div>
+          <div onclick="applySort('hightolow')" class="sort-option" data-key="hightolow" role="option">💎 Price: High to Low</div>
+        </div>
+      </div>
+    </div>
+    <div class="products-grid" id="productsGrid" aria-label="Product listings">
+      <div style="grid-column:1/-1;text-align:center;padding:3rem;color:#B84D00;">
+        <p style="font-size:0.9rem;opacity:0.7;">Loading fresh sweets...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ PROMO ══ -->
+  <div class="promo-banner" role="complementary" aria-label="Festival gift box promotion">
+    <div class="promo-text">
+      <h3>Festival Gift Boxes</h3>
+      <p>Premium assorted boxes from ₹299. Perfect for Diwali, Ugadi &amp; weddings!</p>
+    </div>
+  </div>
+
+  <!-- ══ TODAY'S SPECIALS ══ -->
+  <section class="section" aria-labelledby="specials-heading">
+    <div class="section-header">
+      <h2 class="section-title" id="specials-heading">Today's <span>Specials</span> 🔥</h2>
+      <a class="view-all" onclick="openCategoriesPage()" role="button" aria-label="See all products">See All</a>
+    </div>
+    <div class="h-scroll" id="specialsScroll" aria-label="Today's special products">
+      <div class="specials-skeleton"><div class="skeleton-pulse" style="height:110px;"></div><div style="padding:0.6rem 0.8rem 0.8rem;"><div class="skeleton-pulse" style="height:14px;width:80%;margin-bottom:6px;"></div><div class="skeleton-pulse" style="height:12px;width:50%;"></div></div></div>
+      <div class="specials-skeleton"><div class="skeleton-pulse" style="height:110px;"></div><div style="padding:0.6rem 0.8rem 0.8rem;"><div class="skeleton-pulse" style="height:14px;width:80%;margin-bottom:6px;"></div><div class="skeleton-pulse" style="height:12px;width:50%;"></div></div></div>
+      <div class="specials-skeleton"><div class="skeleton-pulse" style="height:110px;"></div><div style="padding:0.6rem 0.8rem 0.8rem;"><div class="skeleton-pulse" style="height:14px;width:80%;margin-bottom:6px;"></div><div class="skeleton-pulse" style="height:12px;width:50%;"></div></div></div>
+    </div>
+    <p id="specialsHint" style="display:none;font-size:0.7rem;color:#aaa;margin-top:0.5rem;text-align:center;">
+      💡 Mark products as <strong>special: true</strong>, <strong>popular: true</strong>, or <strong>bestseller: true</strong> in Firebase to feature them here.
+    </p>
+  </section>
+
+  <!-- ══ TESTIMONIALS ══ -->
+  <section class="section" aria-labelledby="reviews-heading">
+    <div class="section-header"><h2 class="section-title" id="reviews-heading">Customer <span>Love</span> ❤️</h2></div>
+    <div class="h-scroll" aria-label="Customer reviews">
+      <article class="review-card"><div class="stars" aria-label="5 stars">★★★★★</div><blockquote class="review-text">"Best Mysore Pak in Vijayawada! Just like my grandmother used to make."</blockquote><div class="reviewer"><div class="reviewer-avatar" style="background:#E8650A;" aria-hidden="true">P</div><div><div class="reviewer-name">Padma Lakshmi</div><div class="reviewer-loc">Vijayawada</div></div></div></article>
+      <article class="review-card"><div class="stars" aria-label="5 stars">★★★★★</div><blockquote class="review-text">"Ordered the Diwali gift boxes for office. Everyone was amazed by the quality!"</blockquote><div class="reviewer"><div class="reviewer-avatar" style="background:#FF8C2A;" aria-hidden="true">R</div><div><div class="reviewer-name">Ravi Shankar</div><div class="reviewer-loc">Hyderabad</div></div></div></article>
+      <article class="review-card"><div class="stars" aria-label="5 stars">★★★★★</div><blockquote class="review-text">"The delivery was fast and fresh. Kaju Katli was perfectly made."</blockquote><div class="reviewer"><div class="reviewer-avatar" style="background:#B84D00;" aria-hidden="true">S</div><div><div class="reviewer-name">Sravanthi G</div><div class="reviewer-loc">Guntur</div></div></div></article>
+    </div>
+  </section>
+</main>
+
+<!-- ══ FOOTER ══ -->
+<footer class="footer">
+  <div class="footer-logo">Sri Ramu Sweets</div>
+  <p>Crafting authentic Indian sweets with<br>love &amp; tradition since 1965.</p>
+  <nav class="footer-links" aria-label="Footer navigation">
+    <a href="#">About Us</a><a href="#">Contact</a><a href="#">Track Order</a><a href="#">Privacy Policy</a><a href="#">Refund Policy</a>
+  </nav>
+  <address>📍 Sunday Market, Bhimavaram, West Godavari, AP · 📞 <a href="tel:+919666659344" style="color:inherit;">+91 9666659344</a></address>
+  <div class="footer-bottom" style="margin-top:0.8rem">© 2025 Sri Ramu Sweets. All rights reserved.</div>
+</footer>
+
+<!-- ══ OVERLAYS ══ -->
+<div class="overlay" id="overlay" onclick="closeAll()" aria-hidden="true"></div>
+
+<!-- ══ CATALOGUE OVERLAY ══ -->
+<div class="catalogue-overlay" id="catalogueOverlay" role="dialog" aria-modal="true" aria-labelledby="catalogueTitle" onclick="if(event.target===this)closeCatalogue()">
+  <div class="catalogue-sheet">
+    <div class="catalogue-sheet-header">
+      <div class="catalogue-handle" style="position:absolute;top:8px;left:50%;transform:translateX(-50%);"></div>
+      <button onclick="closeCatalogue()" aria-label="Close catalogue">←</button>
+      <h2 id="catalogueTitle">Our Catalogue 📖</h2>
+    </div>
+    <div class="catalogue-body">
+      <div class="catalogue-intro">
+        <div class="catalogue-intro-icon">🏪</div>
+        <p>Welcome to <strong>Sri Ramu Sweets</strong>! We've been crafting authentic Indian sweets since 1965. Browse our complete range below and order with free delivery above ₹1000.</p>
+      </div>
+
+      <div class="catalogue-section-label">🍬 Browse by Category</div>
+      <div class="catalogue-cat-grid">
+        <div class="catalogue-cat-card" onclick="catalogueGoTo('sweets')" role="button">
+          <div class="catalogue-cat-card-icon" style="background:#FDE8E8;">🧁</div>
+          <div class="catalogue-cat-card-name">Sweets</div>
+          <div class="catalogue-cat-card-desc">Laddu, Mysore Pak, Kala Jamun & more pure ghee classics</div>
+          <div class="catalogue-cat-card-count">Bestsellers ★</div>
+        </div>
+        <div class="catalogue-cat-card" onclick="catalogueGoTo('mithai')" role="button">
+          <div class="catalogue-cat-card-icon" style="background:#FFF3CD;">🟡</div>
+          <div class="catalogue-cat-card-name">Mithai</div>
+          <div class="catalogue-cat-card-desc">Kaju Katli, Peda, Barfi — premium North & South Indian</div>
+          <div class="catalogue-cat-card-count">25+ Items</div>
+        </div>
+        <div class="catalogue-cat-card" onclick="catalogueGoTo('snacks')" role="button">
+          <div class="catalogue-cat-card-icon" style="background:#E8F5E9;">🥜</div>
+          <div class="catalogue-cat-card-name">Snacks</div>
+          <div class="catalogue-cat-card-desc">Chakli, Murukku, Ribbon Pakoda — crispy & savoury</div>
+          <div class="catalogue-cat-card-count">Crispy Picks</div>
+        </div>
+        <div class="catalogue-cat-card" onclick="catalogueGoTo('gifts')" role="button">
+          <div class="catalogue-cat-card-icon" style="background:#F3E5F5;">🎁</div>
+          <div class="catalogue-cat-card-name">Gift Boxes</div>
+          <div class="catalogue-cat-card-desc">Premium assorted gift boxes — perfect for festivals & weddings</div>
+          <div class="catalogue-cat-card-count">From ₹299</div>
+        </div>
+        <div class="catalogue-cat-card" onclick="catalogueGoTo('seasonal')" role="button">
+          <div class="catalogue-cat-card-icon" style="background:#E3F2FD;">🪔</div>
+          <div class="catalogue-cat-card-name">Seasonal</div>
+          <div class="catalogue-cat-card-desc">Limited edition festival specials — Diwali, Ugadi & more</div>
+          <div class="catalogue-cat-card-count">Festival Special</div>
+        </div>
+        <div class="catalogue-cat-card" onclick="catalogueGoTo('all')" role="button">
+          <div class="catalogue-cat-card-icon" style="background:#FFF0E0;">🍬</div>
+          <div class="catalogue-cat-card-name">All Items</div>
+          <div class="catalogue-cat-card-desc">Browse our complete catalogue of 50+ sweet & savoury items</div>
+          <div class="catalogue-cat-card-count">50+ Varieties</div>
+        </div>
+      </div>
+
+      <div class="catalogue-section-label">✨ Why Choose Us</div>
+      <div class="catalogue-highlights">
+        <div class="catalogue-highlight">
+          <div class="catalogue-highlight-icon">🥛</div>
+          <div class="catalogue-highlight-text">Pure desi ghee, no preservatives, made daily</div>
+        </div>
+        <div class="catalogue-highlight">
+          <div class="catalogue-highlight-icon">👨‍🍳</div>
+          <div class="catalogue-highlight-text">Master halwais with 50+ years of expertise</div>
+        </div>
+        <div class="catalogue-highlight">
+          <div class="catalogue-highlight-icon">📦</div>
+          <div class="catalogue-highlight-text">Hygienically sealed, delivered Pan-India</div>
+        </div>
+        <div class="catalogue-highlight">
+          <div class="catalogue-highlight-icon">⭐</div>
+          <div class="catalogue-highlight-text">4.9★ rating from 25,000+ happy customers</div>
+        </div>
+        <div class="catalogue-highlight">
+          <div class="catalogue-highlight-icon">🚚</div>
+          <div class="catalogue-highlight-text">Free delivery on orders above ₹1000</div>
+        </div>
+        <div class="catalogue-highlight">
+          <div class="catalogue-highlight-icon">🌐</div>
+          <div class="catalogue-highlight-text">International delivery available worldwide</div>
+        </div>
+      </div>
+
+      <div class="catalogue-cta">
+        <h3>Ready to order?</h3>
+        <p>Shop from our full range and get the freshest sweets delivered to your doorstep across India!</p>
+        <button class="catalogue-cta-btn" onclick="catalogueGoTo('all')">🛒 Shop All Products</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CART DRAWER ══ -->
+<div class="cart-drawer" id="cartDrawer" role="dialog" aria-modal="true" aria-label="Shopping cart">
+  <div class="drawer-handle" aria-hidden="true"></div>
+  <h2 class="drawer-title">Your Cart 🛒</h2>
+  <div id="cartItems"></div>
+  <div id="cartTotal"></div>
+</div>
+
+<!-- ══ SHIPPING DRAWER ══ -->
+<div class="shipping-drawer" id="shippingDrawer" role="dialog" aria-modal="true" aria-label="Delivery address">
+  <div class="drawer-handle" aria-hidden="true"></div>
+  <div class="shipping-steps" aria-label="Checkout steps">
+    <div class="shipping-step done" id="stepCart">✅ Cart</div>
+    <div class="shipping-step active" id="stepAddress">📍 Address</div>
+    <div class="shipping-step" id="stepPayment">💳 Payment</div>
+  </div>
+  <div id="shippingPage1">
+    <h2 class="drawer-title">Delivery Address 📍</h2>
+    <div class="section-divider">Contact Details</div>
+    <div class="form-group"><label class="form-label" for="ship_name">Full Name *</label><input class="form-input" id="ship_name" type="text" placeholder="e.g. Ravi Kumar" autocomplete="name"/><div class="error-msg" id="err_name">Please enter your full name</div></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label" for="ship_phone">Mobile Number *</label><input class="form-input" id="ship_phone" type="tel" maxlength="10" placeholder="10-digit number" autocomplete="tel"/><div class="error-msg" id="err_phone">Enter valid 10-digit number</div></div>
+      <div class="form-group"><label class="form-label" for="ship_alt_phone">Alternate Number</label><input class="form-input" id="ship_alt_phone" type="tel" maxlength="10" placeholder="Optional" autocomplete="tel"/></div>
+    </div>
+    <div class="section-divider">Delivery Address</div>
+    <div class="form-group"><label class="form-label" for="ship_pincode">Pincode *</label><div class="pincode-wrap"><input class="form-input" id="ship_pincode" type="tel" maxlength="6" placeholder="6-digit pincode" autocomplete="postal-code"/><span class="pincode-spinner" id="pincodeSpinner" aria-hidden="true">⏳</span></div><div class="location-tag" id="locationTag">📍 <span id="locationText"></span></div><div class="error-msg" id="err_pincode">Enter valid 6-digit pincode</div></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label" for="ship_city">City *</label><input class="form-input" id="ship_city" type="text" placeholder="Auto-filled" autocomplete="address-level2"/><div class="error-msg" id="err_city">Enter city name</div></div>
+      <div class="form-group"><label class="form-label" for="ship_state">State *</label><input class="form-input" id="ship_state" type="text" placeholder="Auto-filled" autocomplete="address-level1"/></div>
+    </div>
+    <div class="form-group"><label class="form-label" for="ship_house">House / Flat / Building *</label><input class="form-input" id="ship_house" type="text" placeholder="e.g. Flat 2B, Sunrise Apts" autocomplete="address-line1"/><div class="error-msg" id="err_house">Please enter house/flat details</div></div>
+    <div class="form-group"><label class="form-label" for="ship_street">Street / Area / Landmark *</label><input class="form-input" id="ship_street" type="text" placeholder="e.g. Near Sunday Market, Bhimavaram" autocomplete="address-line2"/><div class="error-msg" id="err_street">Please enter street/area details</div></div>
+    <div class="form-group"><label class="form-label" for="ship_note">Delivery Instructions</label><input class="form-input" id="ship_note" type="text" placeholder="e.g. Call before delivery, leave at door…"/></div>
+    <button class="ship-btn" onclick="goToReview()">Continue to Review →</button>
+    <button class="ship-btn-back" onclick="backToCart()">← Back to Cart</button>
+  </div>
+  <div id="shippingPage2" style="display:none">
+    <h2 class="drawer-title">Review &amp; Pay 💳</h2>
+    <div class="address-confirm-card"><div class="addr-name" id="confirm_name"></div><div class="addr-detail" id="confirm_address"></div></div>
+    <div class="shipping-summary"><div class="shipping-summary-title">Order Summary</div><div id="confirm_items"></div><div class="shipping-summary-row grand"><span>Total Payable</span><span id="confirm_total"></span></div></div>
+    <button class="ship-btn" onclick="proceedToPayment()">💳 Pay Now</button>
+    <button class="ship-btn-back" onclick="backToAddress()">← Edit Address</button>
+  </div>
+</div>
+
+<!-- ══ ACCOUNT DRAWER ══ -->
+<div class="account-drawer" id="accountDrawer" role="dialog" aria-modal="true" aria-label="Account">
+  <div class="drawer-handle" aria-hidden="true"></div>
+  <div id="loginView">
+    <div class="login-hero">
+      <div class="login-logo" aria-hidden="true">🍬</div>
+      <div class="login-title">Welcome to Sri Ramu Sweets</div>
+      <div class="login-sub">Sign in to track your orders, save addresses, and get exclusive offers!</div>
+    </div>
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 19 13 24 13c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.4 0 10.2-2 13.8-5.3l-6.4-5.4C29.3 35.3 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-8H6.3C9.6 35.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6.4 5.4C42 35.3 44 30 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+      Continue with Google
+    </button>
+    <div class="login-benefits">
+      <div class="benefit-item"><div class="benefit-icon" aria-hidden="true">📦</div><div class="benefit-text">Track all your orders</div></div>
+      <div class="benefit-item"><div class="benefit-icon" aria-hidden="true">📍</div><div class="benefit-text">Save delivery addresses</div></div>
+      <div class="benefit-item"><div class="benefit-icon" aria-hidden="true">🎁</div><div class="benefit-text">Exclusive member offers</div></div>
+      <div class="benefit-item"><div class="benefit-icon" aria-hidden="true">⚡</div><div class="benefit-text">Faster checkout</div></div>
+    </div>
+  </div>
+  <div id="profileView" style="display:none">
+    <div class="profile-banner">
+      <div id="profileAvatarWrap"></div>
+      <div class="profile-info">
+        <div class="profile-name" id="profileName">Loading...</div>
+        <div class="profile-email" id="profileEmail"></div>
+        <div class="profile-member">⭐ Sweet Member</div>
+      </div>
+    </div>
+    <div class="account-menu">
+      <div class="account-menu-item" onclick="openMyOrders()" role="button"><div class="menu-icon" style="background:#FDE8E8;" aria-hidden="true">📦</div><div class="menu-text"><div class="menu-title">My Orders</div><div class="menu-sub">View all your past orders</div></div><span class="menu-arrow" aria-hidden="true">›</span></div>
+      <div class="account-menu-item" onclick="showToast('🚧 Coming soon!')" role="button"><div class="menu-icon" style="background:#E8F5E9;" aria-hidden="true">📍</div><div class="menu-text"><div class="menu-title">Saved Addresses</div><div class="menu-sub">Manage delivery addresses</div></div><span class="menu-arrow" aria-hidden="true">›</span></div>
+      <div class="account-menu-item" onclick="showToast('🚧 Coming soon!')" role="button"><div class="menu-icon" style="background:#FFF3CD;" aria-hidden="true">🎁</div><div class="menu-text"><div class="menu-title">Offers &amp; Coupons</div><div class="menu-sub">Your exclusive member deals</div></div><span class="menu-arrow" aria-hidden="true">›</span></div>
+      <div class="account-menu-item" onclick="openHelpSupport()" role="button"><div class="menu-icon" style="background:#E3F2FD;" aria-hidden="true">💬</div><div class="menu-text"><div class="menu-title">Help &amp; Support</div><div class="menu-sub">WhatsApp or call us</div></div><span class="menu-arrow" aria-hidden="true">›</span></div>
+    </div>
+    <button class="signout-btn" onclick="signOutUser()">🚪 Sign Out</button>
+  </div>
+</div>
+
+<!-- ══ ORDERS DRAWER ══ -->
+<div class="orders-drawer" id="ordersDrawer" role="dialog" aria-modal="true" aria-label="My orders">
+  <div class="drawer-handle" aria-hidden="true"></div>
+  <h2 class="drawer-title">My Orders 📦</h2>
+  <div id="ordersList"><div class="orders-loading">Loading your orders...</div></div>
+</div>
+
+<!-- ══ CATEGORIES PAGE ══ -->
+<div class="categories-page" id="categoriesPage" role="dialog" aria-modal="true" aria-label="All categories">
+  <div class="cat-page-header">
+    <button onclick="closeCategoriesPage()" aria-label="Close categories">←</button>
+    <h2>All Categories</h2>
+  </div>
+  <div id="catPageContent">
+    <div class="cat-section">
+      <div class="cat-section-label">Browse by type</div>
+      <div class="cat-grid">
+        <div class="cat-card" onclick="showCatProducts('sweets','🧁 Sweets')" role="button"><div class="cat-card-icon" style="background:#FDE8E8;">🧁</div><div class="cat-card-info"><div class="cat-card-name">Sweets</div><div class="cat-card-count">Laddu, Mysore Pak &amp; more</div></div></div>
+        <div class="cat-card" onclick="showCatProducts('mithai','🟡 Mithai')" role="button"><div class="cat-card-icon" style="background:#FFF3CD;">🟡</div><div class="cat-card-info"><div class="cat-card-name">Mithai</div><div class="cat-card-count">Kaju Katli, Peda &amp; more</div></div></div>
+        <div class="cat-card" onclick="showCatProducts('snacks','🥜 Snacks')" role="button"><div class="cat-card-icon" style="background:#E8F5E9;">🥜</div><div class="cat-card-info"><div class="cat-card-name">Snacks</div><div class="cat-card-count">Chakli, Murukku &amp; more</div></div></div>
+        <div class="cat-card" onclick="showCatProducts('gifts','🎁 Gift Boxes')" role="button"><div class="cat-card-icon" style="background:#F3E5F5;">🎁</div><div class="cat-card-info"><div class="cat-card-name">Gift Boxes</div><div class="cat-card-count">Premium assorted boxes</div></div></div>
+        <div class="cat-card" onclick="showCatProducts('seasonal','🪔 Seasonal')" role="button"><div class="cat-card-icon" style="background:#E3F2FD;">🪔</div><div class="cat-card-info"><div class="cat-card-name">Seasonal</div><div class="cat-card-count">Festival specials</div></div></div>
+        <div class="cat-card" onclick="showCatProducts('all','🍬 All Items')" role="button"><div class="cat-card-icon" style="background:#FFF0E0;">🍬</div><div class="cat-card-info"><div class="cat-card-name">All Items</div><div class="cat-card-count">Browse everything</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div id="catProductsSection" style="display:none" class="cat-products-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;padding-top:1rem;">
+      <div class="cat-products-title" id="catProductsTitle"></div>
+      <button class="back-to-cats" onclick="backToCatGrid()">← All</button>
+    </div>
+    <div class="products-grid" id="catProductsGrid"></div>
+  </div>
+</div>
+
+<!-- ══ WISHLIST PAGE ══ -->
+<div class="wishlist-page" id="wishlistPage" role="dialog" aria-modal="true" aria-label="My wishlist">
+  <div class="wishlist-header">
+    <button onclick="closeWishlistPage()" aria-label="Close wishlist">←</button>
+    <h2>My Wishlist ❤️</h2>
+    <div class="wishlist-count-badge" id="wishlistCountBadge" aria-live="polite">0</div>
+  </div>
+  <div id="wishlistContent"></div>
+</div>
+
+<!-- ══ PRODUCT PAGE ══ -->
+<div class="product-page" id="productPage" role="dialog" aria-modal="true" aria-label="Product details">
+  <div class="product-page-header">
+    <button class="pp-back-btn" onclick="closeProductPage()" aria-label="Back to products">←</button>
+    <div class="pp-header-title" id="ppHeaderTitle"></div>
+    <button class="nav-icon-btn" onclick="closeProductPage();openCart();" style="color:var(--deep-red);" aria-label="Open cart">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    </button>
+  </div>
+  <div class="pp-hero" id="ppHero"></div>
+  <div class="pp-body">
+    <h1 class="pp-name" id="ppName"></h1>
+    <p class="pp-desc" id="ppDesc"></p>
+    <div class="pp-price-row">
+      <div class="pp-price" id="ppPrice"></div>
+      <div class="pp-old-price" id="ppOldPrice"></div>
+      <div class="pp-saving" id="ppSaving"></div>
+    </div>
+    <div class="pp-meta">
+      <div class="pp-tag">🚚 Free delivery ₹1000+</div>
+      <div class="pp-tag">✅ Fresh daily</div>
+      <div class="pp-tag">🥛 Pure ingredients</div>
+    </div>
+    <div class="pp-section-title">Why you'll love it</div>
+    <div class="pp-highlights">
+      <div class="pp-highlight-item"><span class="pp-hi-icon" aria-hidden="true">🥛</span><span class="pp-hi-text">Pure ingredients, no preservatives</span></div>
+      <div class="pp-highlight-item"><span class="pp-hi-icon" aria-hidden="true">👨‍🍳</span><span class="pp-hi-text">Made by master halwais daily</span></div>
+      <div class="pp-highlight-item"><span class="pp-hi-icon" aria-hidden="true">📦</span><span class="pp-hi-text">Hygienically packed &amp; sealed</span></div>
+      <div class="pp-highlight-item"><span class="pp-hi-icon" aria-hidden="true">⭐</span><span class="pp-hi-text">50 years of trusted taste</span></div>
+    </div>
+    <div class="pp-weight-divider"></div>
+    <div class="pp-weight-qty-row" id="ppWeightQtyRow">
+      <div class="pp-weight-group" id="ppWeightGroup">
+        <label class="pp-wq-label" for="ppWeightSelect">WEIGHT</label>
+        <select class="pp-weight-select" id="ppWeightSelect" onchange="onWeightSelectChange(this)" aria-label="Select weight">
+          <option value="">Select Weight</option>
+        </select>
+      </div>
+      <div class="pp-qty-group">
+        <span class="pp-wq-label">QUANTITY</span>
+        <div class="pp-qty-stepper" role="group" aria-label="Quantity selector">
+          <button class="pp-qty-stepper-btn" onclick="changePPQty(-1)" aria-label="Decrease quantity">−</button>
+          <span class="pp-qty-stepper-val" id="ppQty" aria-live="polite">1</span>
+          <button class="pp-qty-stepper-btn" onclick="changePPQty(1)" aria-label="Increase quantity">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="pp-weight-divider"></div>
+    <div class="pp-section-title">Ratings &amp; Reviews</div>
+    <div id="ppReviewsSummary" style="background:white;border-radius:14px;padding:1rem;margin-bottom:0.8rem;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700;color:var(--deep-red);line-height:1;" id="ppAvgRating">4.9</div>
+          <div style="font-size:1rem;color:#FFA000;" id="ppStarsDisplay">★★★★★</div>
+          <div style="font-size:0.65rem;color:#aaa;" id="ppReviewCount">128 reviews</div>
+        </div>
+        <div style="flex:1;" id="ppMiniRatingBars"></div>
+      </div>
+    </div>
+    <div id="ppTopReviews"></div>
+    <button onclick="openReviewsPage()" style="width:100%;background:var(--cream);border:1.5px solid rgba(232,101,10,0.3);border-radius:12px;padding:0.7rem;font-size:0.82rem;font-weight:600;color:var(--deep-red);cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:0.5rem;">See All Reviews ›</button>
+  </div>
+</div>
+<div class="pp-actions" id="ppActions">
+  <button class="pp-add-cart" onclick="ppAddToCart()">🛒 Add to Cart</button>
+  <button class="pp-buy-now" onclick="ppBuyNow()">⚡ Buy Now</button>
+</div>
+
+<!-- ══ REVIEWS PAGE ══ -->
+<div class="reviews-page" id="reviewsPage" role="dialog" aria-modal="true" aria-label="Product reviews">
+  <div class="reviews-header">
+    <button onclick="closeReviewsPage()" aria-label="Close reviews">←</button>
+    <h2 id="reviewsPageTitle">Reviews<small id="reviewsPageSub"></small></h2>
+  </div>
+  <div class="rating-summary" id="reviewsRatingSummary"></div>
+  <div class="reviews-list" id="reviewsListFull"></div>
+</div>
+<div class="write-review-btn" id="writeReviewBtn">
+  <button onclick="openWriteReview()">✍️ Write a Review</button>
+</div>
+
+<div class="review-modal-overlay" id="reviewModalOverlay" role="dialog" aria-modal="true" aria-label="Write a review">
+  <div class="review-modal">
+    <div class="review-modal-title">✍️ Write a Review</div>
+    <div class="star-picker" id="starPicker" role="group" aria-label="Star rating">
+      <span class="star-pick" data-val="1" onclick="setRating(1)" role="radio" aria-label="1 star" tabindex="0">★</span>
+      <span class="star-pick" data-val="2" onclick="setRating(2)" role="radio" aria-label="2 stars" tabindex="0">★</span>
+      <span class="star-pick" data-val="3" onclick="setRating(3)" role="radio" aria-label="3 stars" tabindex="0">★</span>
+      <span class="star-pick" data-val="4" onclick="setRating(4)" role="radio" aria-label="4 stars" tabindex="0">★</span>
+      <span class="star-pick" data-val="5" onclick="setRating(5)" role="radio" aria-label="5 stars" tabindex="0">★</span>
+    </div>
+    <div class="star-label" id="starLabel">Tap a star to rate</div>
+    <div class="review-form-group"><label class="review-form-label" for="reviewName">Your Name *</label><input class="review-form-input" id="reviewName" type="text" placeholder="e.g. Ravi Kumar" autocomplete="name"/></div>
+    <div class="review-form-group"><label class="review-form-label" for="reviewText">Your Review *</label><textarea class="review-form-input" id="reviewText" placeholder="Tell us about your experience…" aria-label="Review text"></textarea></div>
+    <button class="review-submit-btn" onclick="submitReview()">Submit Review</button>
+    <button class="review-cancel-btn" onclick="closeWriteReview()">Cancel</button>
+  </div>
+</div>
+
+<div class="review-prompt-overlay" id="reviewPromptOverlay" role="dialog" aria-modal="true">
+  <div class="review-prompt">
+    <div class="review-prompt-handle" aria-hidden="true"></div>
+    <h3>🎉 How was your order?</h3>
+    <p>You can now leave a verified review for the products you received.</p>
+    <div class="review-prompt-items" id="reviewPromptItems"></div>
+    <button class="review-prompt-skip" onclick="document.getElementById('reviewPromptOverlay').classList.remove('open')">Skip for now</button>
+  </div>
+</div>
+
+<!-- ══ ORDER PLACED PAGE ══ -->
+<div class="order-placed-page" id="orderPlacedPage" role="dialog" aria-modal="true" aria-label="Order confirmed">
+  <div class="order-placed-circle" aria-hidden="true">🎉</div>
+  <h2 class="order-placed-title">Order Placed!</h2>
+  <p class="order-placed-sub">Your order has been placed successfully.<br>Our team will pack and dispatch it soon. 🍬</p>
+  <div class="order-placed-details" id="orderPlacedDetails"></div>
+  <button class="order-placed-btn" onclick="closeOrderPlacedPage(); openMyOrders();">📦 Track My Order</button>
+  <button class="order-placed-btn-outline" onclick="closeOrderPlacedPage();">🛍️ Continue Shopping</button>
+</div>
+
+<!-- ══ HELP & SUPPORT DRAWER ══ -->
+<div class="cart-drawer" id="helpDrawer" role="dialog" aria-modal="true" aria-label="Help and support">
+  <div class="drawer-handle" aria-hidden="true"></div>
+  <h2 class="drawer-title">Help &amp; Support 💬</h2>
+  <p style="font-size:0.82rem;color:var(--text-mid);margin-bottom:1.4rem;line-height:1.6;">We're here to help! Reach us on WhatsApp for quick replies, or call us directly during shop hours.</p>
+  <a href="https://wa.me/919666659344?text=Hi%20Sree%20Ramu%20Sweets%2C%20I%20need%20some%20help!" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp"
+    style="display:flex;align-items:center;gap:1rem;background:#e7fbe9;border:1.5px solid #a5d6a7;border-radius:16px;padding:1rem 1.1rem;margin-bottom:0.8rem;text-decoration:none;cursor:pointer;transition:box-shadow 0.2s;"
+    onmouseover="this.style.boxShadow='0 4px 16px rgba(37,211,102,0.18)'" onmouseout="this.style.boxShadow='none'">
+    <div style="width:46px;height:46px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;flex-shrink:0;" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </div>
+    <div><div style="font-size:0.92rem;font-weight:700;color:#1b5e20;">Chat on WhatsApp</div><div style="font-size:0.72rem;color:#388e3c;margin-top:2px;">+91 9666659344 · Usually replies in minutes</div></div>
+    <div style="margin-left:auto;color:#25D366;font-size:1.1rem;" aria-hidden="true">→</div>
+  </a>
+  <a href="tel:+919666659344" aria-label="Call us"
+    style="display:flex;align-items:center;gap:1rem;background:#e8f0fe;border:1.5px solid #9fc3f8;border-radius:16px;padding:1rem 1.1rem;margin-bottom:1.4rem;text-decoration:none;cursor:pointer;transition:box-shadow 0.2s;"
+    onmouseover="this.style.boxShadow='0 4px 16px rgba(66,133,244,0.18)'" onmouseout="this.style.boxShadow='none'">
+    <div style="width:46px;height:46px;border-radius:50%;background:#4285F4;display:flex;align-items:center;justify-content:center;flex-shrink:0;" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+    </div>
+    <div><div style="font-size:0.92rem;font-weight:700;color:#1a237e;">Call Us Directly</div><div style="font-size:0.72rem;color:#3949ab;margin-top:2px;">+91 9666659344 · Mon–Sat, 9am–8pm</div></div>
+    <div style="margin-left:auto;color:#4285F4;font-size:1.1rem;" aria-hidden="true">→</div>
+  </a>
+  <div style="background:var(--cream);border-radius:12px;padding:0.8rem 1rem;text-align:center;border:1px solid rgba(232,101,10,0.12);">
+    <address style="font-size:0.72rem;color:var(--text-mid);line-height:1.6;font-style:normal;">📍 Sunday Market, Bhimavaram, West Godavari, Andhra Pradesh<br>🕐 Shop Hours: Mon–Sat 9am–8pm, Sun 9am–2pm</address>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<nav class="bottom-nav" aria-label="Bottom navigation">
+  <div class="nav-item active" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>Home
+  </div>
+  <div class="nav-item" onclick="openCategoriesPage()" role="button" aria-label="Browse categories">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Categories
+  </div>
+  <div class="nav-item cart-nav" onclick="openCart()" role="button" aria-label="Open cart">
+    <div class="cart-nav-inner"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div>
+  </div>
+  <div class="nav-item" onclick="openWishlistPage()" role="button" aria-label="Open wishlist">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Wishlist
+  </div>
+  <div class="nav-item" id="accountNavBtn" onclick="openAccount()" role="button" aria-label="My account">
+    <div id="navAccountIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>Account
+  </div>
+</nav>
+
+<!-- ══ THIRD-PARTY SCRIPTS ══ -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<!-- ══ MAIN APP SCRIPT ══ -->
+<script src="main.js"></script>
+
+<!-- ══ FIREBASE ══ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, getDocs, setDoc, deleteDoc,
+    doc, orderBy, query, where, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyChB0J289Ihu8OxE60Vc-CHsWcKT28RtAU",
+    authDomain: "sree-ramu-sweets.firebaseapp.com",
+    projectId: "sree-ramu-sweets",
+    storageBucket: "sree-ramu-sweets.firebasestorage.app",
+    messagingSenderId: "217706015668",
+    appId: "1:217706015668:web:c03e8659136877b9a860e1"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const db   = getFirestore(app);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  async function loadProductsFromFirebase() {
+    try {
+      const q = query(collection(db,'products'), orderBy('createdAt','desc'));
+      const snap = await getDocs(q);
+      const loaded = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.active !== false);
+      products.length = 0;
+      products.push(...loaded);
+      renderProducts();
+      renderSpecials();
+    } catch(e) {
+      console.error('Failed to load products:', e);
+      document.getElementById('productsGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#aaa;"><div style="font-size:2rem;margin-bottom:0.5rem;">⚠️</div><p>Could not load products. Please refresh.</p></div>`;
+      document.getElementById('specialsScroll').innerHTML = `<div style="padding:1rem;color:#aaa;font-size:0.8rem;">Could not load specials.</div>`;
+    }
+  }
+  loadProductsFromFirebase();
+
+  onAuthStateChanged(auth, async (user) => {
+    window.currentUser = user || null;
+    updateNavAvatar(user);
+    const drawer = document.getElementById('accountDrawer');
+    if (drawer && drawer.classList.contains('open')) renderAccountView(user);
+    if (user) {
+      await Promise.all([loadWishlistFromFirebase(user.uid), loadPurchasesFromFirebase(user.uid), loadReviewsFromFirebase()]);
+      await loadDeliveredProductsFromFirebase(user.uid);
     } else {
-      pincodeInput.classList.add('error'); cityInput.value=''; stateInput.value='';
-      cityInput.disabled=false; stateInput.disabled=false;
-      locationTag.classList.remove('show');
-      showErr('err_pincode','Invalid pincode');
+      wishlist.clear(); purchasedProducts.clear(); deliveredProducts.clear();
+      updateWishlistBadge(); renderProducts();
     }
-  } catch(e) {
-    spinner.classList.remove('show');
-    pincodeInput.classList.add('error');
-    showErr('err_pincode','Could not verify pincode. Enter city manually.');
-    cityInput.disabled=false; stateInput.disabled=false;
+  });
+
+  function updateNavAvatar(user) {
+    const wrap = document.getElementById('navAccountIcon'); if (!wrap) return;
+    wrap.innerHTML = (user && user.photoURL)
+      ? `<img src="${user.photoURL}" class="nav-avatar" alt="Your account avatar" referrerpolicy="no-referrer"/>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
   }
-}
 
-function showErr(id, msg) { const el=document.getElementById(id); if(el){el.textContent=msg||el.textContent;el.classList.add('show');} }
-function hideErr(id) { const el=document.getElementById(id); if(el) el.classList.remove('show'); }
-function setFieldError(inputId,errId,msg) { document.getElementById(inputId).classList.add('error'); showErr(errId,msg); return false; }
-function clearFieldError(inputId,errId) { document.getElementById(inputId).classList.remove('error'); hideErr(errId); return true; }
-
-function validateShippingForm() {
-  let valid = true;
-  const name = document.getElementById('ship_name').value.trim();
-  if (name.length < 3) { setFieldError('ship_name','err_name','Please enter your full name'); valid=false; } else clearFieldError('ship_name','err_name');
-  const phone = document.getElementById('ship_phone').value.trim();
-  if (!/^[6-9]\d{9}$/.test(phone)) { setFieldError('ship_phone','err_phone','Enter valid 10-digit number'); valid=false; } else clearFieldError('ship_phone','err_phone');
-  const pincode = document.getElementById('ship_pincode').value.trim();
-  if (!/^\d{6}$/.test(pincode)) { setFieldError('ship_pincode','err_pincode','Enter valid 6-digit pincode'); valid=false; } else clearFieldError('ship_pincode','err_pincode');
-  const city = document.getElementById('ship_city').value.trim();
-  if (!city) { setFieldError('ship_city','err_city','City is required'); valid=false; } else clearFieldError('ship_city','err_city');
-  const house = document.getElementById('ship_house').value.trim();
-  if (house.length < 3) { setFieldError('ship_house','err_house','Please enter your house/flat details'); valid=false; } else clearFieldError('ship_house','err_house');
-  const street = document.getElementById('ship_street').value.trim();
-  if (street.length < 5) { setFieldError('ship_street','err_street','Please enter your street/area'); valid=false; } else clearFieldError('ship_street','err_street');
-  return valid;
-}
-
-function goToReview() {
-  if (goToReview._busy) return;
-  goToReview._busy = true;
-  setTimeout(() => goToReview._busy = false, 1000);
-  if (!validateShippingForm()) {
-    const firstErr = document.querySelector('.form-input.error');
-    if(firstErr) firstErr.scrollIntoView({behavior:'smooth',block:'center'});
-    return;
+  function renderAccountView(user) {
+    const loginView = document.getElementById('loginView');
+    const profileView = document.getElementById('profileView');
+    if (!loginView || !profileView) return;
+    if (user) {
+      loginView.style.display = 'none'; profileView.style.display = 'block';
+      document.getElementById('profileName').textContent = user.displayName || 'Sweet Customer';
+      document.getElementById('profileEmail').textContent = user.email || '';
+      const wrap = document.getElementById('profileAvatarWrap');
+      wrap.innerHTML = user.photoURL
+        ? `<img src="${user.photoURL}" class="profile-avatar" alt="${user.displayName || 'Profile'}" referrerpolicy="no-referrer"/>`
+        : `<div class="profile-avatar-placeholder" aria-hidden="true">${(user.displayName||'U')[0].toUpperCase()}</div>`;
+    } else { loginView.style.display = 'block'; profileView.style.display = 'none'; }
   }
-  shippingData = {
-    name: document.getElementById('ship_name').value.trim(),
-    phone: document.getElementById('ship_phone').value.trim(),
-    altPhone: document.getElementById('ship_alt_phone').value.trim(),
-    pincode: document.getElementById('ship_pincode').value.trim(),
-    city: document.getElementById('ship_city').value.trim(),
-    state: document.getElementById('ship_state').value.trim(),
-    house: document.getElementById('ship_house').value.trim(),
-    street: document.getElementById('ship_street').value.trim(),
-    note: document.getElementById('ship_note').value.trim(),
+
+  window.signInWithGoogle = async function() {
+    try { showToast('⏳ Opening Google login...'); await signInWithPopup(auth, provider); showToast('✅ Signed in successfully!'); }
+    catch(e) { showToast('❌ Login failed. Try again.'); console.error(e); }
   };
-  document.getElementById('confirm_name').textContent = shippingData.name + '  📞 ' + shippingData.phone;
-  document.getElementById('confirm_address').innerHTML = shippingData.house + ', ' + shippingData.street + '<br>' + shippingData.city + ', ' + shippingData.state + ' - ' + shippingData.pincode + (shippingData.note ? '<br>📝 ' + shippingData.note : '');
-  const items = Object.values(cart);
-  const subtotal = items.reduce((s,i) => s + i.selectedPrice*i.qty, 0);
-  const delivery = getDeliveryCharge(shippingData.state, subtotal);
-  const isAP_TG = AP_TG_STATES.some(s => shippingData.state.toLowerCase().includes(s));
-  const deliveryLabel = delivery === 0 ? '<span style="color:green">FREE</span>' :
-    `₹${delivery} <small style="color:#aaa;font-size:0.65rem;">(${isAP_TG ? 'AP/TG rate' : 'Other state rate'})</small>`;
-  document.getElementById('confirm_items').innerHTML = items.map(i => `<div class="shipping-summary-row"><span>${i.name} (${i.selectedWeight||'250g'}) x${i.qty}</span><span>₹${i.selectedPrice*i.qty}</span></div>`).join('') +
-    `<div class="shipping-summary-row"><span>Delivery</span><span>${deliveryLabel}</span></div>`;
-  document.getElementById('confirm_total').textContent = '₹' + (subtotal+delivery);
-  document.getElementById('shippingPage1').style.display = 'none';
-  document.getElementById('shippingPage2').style.display = 'block';
-  document.getElementById('stepAddress').className = 'shipping-step done';
-  document.getElementById('stepPayment').className = 'shipping-step active';
-  document.getElementById('shippingDrawer').scrollTop = 0;
-}
+  window.signOutUser = async function() {
+    try { await signOut(auth); window.currentUser = null; wishlist.clear(); purchasedProducts.clear(); deliveredProducts.clear(); updateWishlistBadge(); renderAccountView(null); showToast('👋 Signed out successfully'); }
+    catch(e) { showToast('❌ Sign out failed'); }
+  };
+  window.openAccount = function() {
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('accountDrawer').classList.add('open');
+    renderAccountView(auth.currentUser);
+  };
 
-function proceedToPayment() {
-  if (proceedToPayment._busy) return;
-  proceedToPayment._busy = true;
-  setTimeout(() => proceedToPayment._busy = false, 2000);
-  document.getElementById('shippingDrawer').classList.remove('open');
-  document.getElementById('overlay').classList.remove('open');
-  startPayment();
-}
+  async function loadWishlistFromFirebase(uid) {
+    try {
+      const snap = await getDocs(query(collection(db,'wishlist'), where('uid','==',uid)));
+      wishlist.clear(); snap.forEach(d => wishlist.add(d.data().productId));
+      updateWishlistBadge(); renderProducts();
+    } catch(e) { console.error('Wishlist load failed:',e); }
+  }
+  window.saveWishlistToFirebase = async function(productId, add) {
+    const user = auth.currentUser; if (!user) return;
+    const docId = `${user.uid}_${productId}`;
+    const ref = doc(db,'wishlist',docId);
+    try { if (add) await setDoc(ref,{uid:user.uid,productId,savedAt:serverTimestamp()}); else await deleteDoc(ref); }
+    catch(e) { console.error('Wishlist save failed:',e); }
+  };
 
-// ── EMAIL ──
-emailjs.init('CmgzshDIJLAWVwlW8');
+  async function loadPurchasesFromFirebase(uid) {
+    try {
+      const snap = await getDocs(query(collection(db,'purchases'), where('uid','==',uid)));
+      purchasedProducts.clear(); snap.forEach(d => purchasedProducts.add(d.data().productId));
+    } catch(e) { console.error('Purchases load failed:',e); }
+  }
+  window.savePurchasesToFirebase = async function(productIds) {
+    const user = auth.currentUser; if (!user) return;
+    try {
+      await Promise.all(productIds.map(pid => setDoc(doc(db,'purchases',`${user.uid}_${pid}`),{uid:user.uid,productId:pid,boughtAt:serverTimestamp()},{merge:true})));
+    } catch(e) { console.error('Purchases save failed:',e); }
+  };
 
-function sendOrderEmail(items, total, shipping, paymentId) {
-  const subtotal = items.reduce((s,i) => s + i.selectedPrice*i.qty, 0);
-  const delivery = getDeliveryCharge(shipping?.state || '', subtotal);
-  const itemLines = items.map(i => i.name + ' (' + (i.selectedWeight||'250g') + ') x' + i.qty + ' = Rs.' + (i.selectedPrice*i.qty)).join('\n');
-  const address = shipping ? [shipping.house+', '+shipping.street, shipping.city+', '+shipping.state+' - '+shipping.pincode].join(', ') : 'Not provided';
-  const isAP_TG = AP_TG_STATES.some(s => (shipping?.state||'').toLowerCase().includes(s));
-  const deliveryInfo = delivery === 0 ? 'FREE (above Rs.1000)' : `Rs.${delivery} (${isAP_TG ? 'AP/Telangana rate' : 'Other state rate'})`;
-  const now = new Date().toLocaleString('en-IN', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-  emailjs.send('service_1hzy94j','template_wclu0uv',{
-    date: now, payment_id: paymentId||'N/A', items: itemLines,
-    subtotal, delivery: deliveryInfo, total,
-    customer_name: shipping?.name||'Guest', phone: shipping?.phone||'N/A',
-    address, delivery_state: shipping?.state||'N/A',
-    shipping_note: `Delivery Charge: ${deliveryInfo} | State: ${shipping?.state||'N/A'}`
-  }).catch(err=>console.error('Email failed:',err));
-}
+  async function loadDeliveredProductsFromFirebase(uid) {
+    try {
+      const q = query(collection(db,'orders'), where('uid','==',uid), where('trackingStatus','==','delivered'));
+      const snap = await getDocs(q);
+      deliveredProducts.clear();
+      snap.forEach(d => { const o = d.data(); (o.items||[]).forEach(item => deliveredProducts.add(item.id)); });
+    } catch(e) { console.error('Delivered products load failed:',e); }
+  }
 
-// ── ORDER PLACED PAGE ──
-function showOrderPlacedPage(items, total, shipping, paymentId) {
-  const subtotal = items.reduce((s,i) => s + i.selectedPrice*i.qty, 0);
-  const delivery = getDeliveryCharge(shipping?.state || '', subtotal);
-  const isAP_TG = AP_TG_STATES.some(s => (shipping?.state||'').toLowerCase().includes(s));
-  const now = new Date().toLocaleString('en-IN', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-  const itemsHtml = items.map(i =>
-    `<div class="order-placed-row"><span>${i.name} (${i.selectedWeight||'250g'}) x${i.qty}</span><strong>₹${i.selectedPrice*i.qty}</strong></div>`
-  ).join('');
-  const deliveryLabel = delivery === 0 ? 'FREE' : `₹${delivery} (${isAP_TG ? 'AP/TG' : 'Other State'})`;
-  document.getElementById('orderPlacedDetails').innerHTML = `
-    ${itemsHtml}
-    <div class="order-placed-row"><span>Delivery Charge</span><strong>${deliveryLabel}</strong></div>
-    <div class="order-placed-row total"><span>Total Paid</span><span>₹${total}</span></div>
-    <div class="order-placed-row" style="margin-top:0.5rem;"><span>📍 Deliver to</span><strong>${shipping?.city || ''}, ${shipping?.state || ''}</strong></div>
-    <div class="order-placed-row"><span>🕐 Ordered on</span><strong>${now}</strong></div>
-    ${paymentId ? `<div class="order-placed-row"><span>Payment ID</span><strong style="font-size:0.7rem;">${paymentId}</strong></div>` : ''}
-  `;
-  document.getElementById('orderPlacedPage').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
+  async function loadReviewsFromFirebase() {
+    try {
+      const snap = await getDocs(query(collection(db,'reviews'), orderBy('createdAt','desc')));
+      snap.forEach(d => {
+        const r = d.data();
+        if (!userReviews[r.productId]) userReviews[r.productId] = [];
+        const exists = userReviews[r.productId].some(x => x.firestoreId === d.id);
+        if (!exists) userReviews[r.productId].unshift({...r, firestoreId:d.id, verified:true});
+      });
+    } catch(e) { console.error('Reviews load failed:',e); }
+  }
+  window.saveReviewToFirebase = async function(productId, reviewObj) {
+    const user = auth.currentUser; if (!user) return null;
+    try { return (await addDoc(collection(db,'reviews'),{...reviewObj,productId,uid:user.uid,createdAt:serverTimestamp()})).id; }
+    catch(e) { console.error('Review save failed:',e); return null; }
+  };
 
-function closeOrderPlacedPage() {
-  document.getElementById('orderPlacedPage').classList.remove('open');
-  document.body.style.overflow = '';
-}
+  window.saveOrderToFirebase = async function(items, total, shipping) {
+    const uid = auth.currentUser ? auth.currentUser.uid : 'guest';
+    const userName = auth.currentUser ? auth.currentUser.displayName : (shipping?.name||'Guest');
+    await addDoc(collection(db,'orders'),{
+      items: items.map(i => ({...i, weight: i.selectedWeight||'250g', price: i.selectedPrice})),
+      total, shipping: shipping||{}, uid, userName,
+      date: serverTimestamp(), status: 'paid',
+      trackingStatus: 'under_packing', dtdcLink: null
+    });
+    if (auth.currentUser) await window.savePurchasesToFirebase(items.map(i => i.id));
+  };
 
-// ── RAZORPAY PAYMENT ──
-function startPayment() {
-  const items = Object.values(cart);
-  if (!items.length) return;
-  const subtotal = items.reduce((s,i) => s + i.selectedPrice*i.qty, 0);
-  const delivery = getDeliveryCharge(shippingData?.state || '', subtotal);
-  const total = subtotal + delivery;
-  const options = {
-    key: "rzp_test_SN8B17Y4nm9Htx",
-    amount: total * 100, currency: "INR",
-    name: "Sree Ramu Sweets", description: "Sweet Order",
-    theme: { color: '#E8650A' },
-    handler: async function(response) {
-      const purchasedIds = items.map(i => i.id);
-      purchasedIds.forEach(pid => purchasedProducts.add(pid));
-      try { if (window.saveOrderToFirebase) await window.saveOrderToFirebase(items, total, shippingData); } catch(e) {}
-      sendOrderEmail(items, total, shippingData, response.razorpay_payment_id);
-      cart = {}; updateCartBadge();
-      showOrderPlacedPage(items, total, shippingData, response.razorpay_payment_id);
+  // ── ORDER TRACKING ──
+  function getTrackingSteps(status) {
+    const allSteps = [
+      { key: 'under_packing',    label: 'Under\nPacking',    icon: '📦' },
+      { key: 'shipment_created', label: 'Shipment\nCreated', icon: '🚚' },
+      { key: 'out_for_delivery', label: 'Out for\nDelivery', icon: '🛵' },
+      { key: 'delivered',        label: 'Delivered',          icon: '✅' },
+    ];
+    const order = ['under_packing','shipment_created','out_for_delivery','delivered'];
+    const currentIdx = order.indexOf(status || 'under_packing');
+    return allSteps.map((s, i) => ({...s, state: i < currentIdx ? 'done' : i === currentIdx ? 'active' : 'pending'}));
+  }
+
+  function renderTrackingTimeline(status, dtdcLink) {
+    const steps = getTrackingSteps(status);
+    return `
+      <div class="order-tracking-wrap">
+        <div class="tracking-label">📍 Tracking Status</div>
+        <div class="tracking-steps">
+          ${steps.map(s => `
+            <div class="tracking-step ${s.state}">
+              <div class="t-dot">${s.state === 'done' ? '✓' : s.state === 'active' ? s.icon : ''}</div>
+              <div class="t-label">${s.label.replace('\n','<br>')}</div>
+            </div>`).join('')}
+        </div>
+        ${(status === 'shipment_created' || status === 'out_for_delivery' || status === 'delivered') ? `
+          <div class="dtdc-track-banner">
+            <div class="dtdc-logo" aria-hidden="true">🚀</div>
+            <div class="dtdc-text">
+              <div class="dtdc-title">DTDC Tracking Active</div>
+              <div class="dtdc-sub">${dtdcLink ? 'Tracking link sent to your mobile number' : 'DTDC will send a tracking link to your mobile'}</div>
+            </div>
+            ${dtdcLink ? `<button class="dtdc-track-btn" onclick="window.open('${dtdcLink}','_blank')">Track 📲</button>` : `<span style="font-size:0.6rem;color:rgba(255,255,255,0.6);max-width:60px;text-align:center;line-height:1.3;">Link via SMS</span>`}
+          </div>` : ''}
+      </div>`;
+  }
+
+  function getStatusBadge(status) {
+    const map = {
+      'under_packing':    { bg: '#FFF3E0', color: '#E65100', text: '📦 Under Packing' },
+      'shipment_created': { bg: '#E3F2FD', color: '#1565C0', text: '🚚 Shipment Created · Bhimavaram' },
+      'out_for_delivery': { bg: '#F3E5F5', color: '#6A1B9A', text: '🛵 Out for Delivery' },
+      'delivered':        { bg: '#E8F5E9', color: '#2E7D32', text: '✅ Delivered' },
+    };
+    const s = map[status] || map['under_packing'];
+    return `<span class="order-status" style="background:${s.bg};color:${s.color};">${s.text}</span>`;
+  }
+
+  window.loadOrders = async function(listEl) {
+    try {
+      listEl.innerHTML = '<div class="orders-loading">⏳ Loading your orders...</div>';
+      const user = auth.currentUser;
+      if (!user) {
+        listEl.innerHTML = `<div class="orders-empty"><div aria-hidden="true">🔐</div><p>Please sign in to view your orders</p><button onclick="window.openAccount()" style="margin-top:1rem;padding:0.6rem 1.4rem;background:#E8650A;color:white;border:none;border-radius:20px;font-family:Poppins,sans-serif;font-weight:600;cursor:pointer;font-size:0.82rem;">Sign In with Google</button></div>`;
+        return;
+      }
+      const q = query(collection(db,'orders'), where('uid','==',user.uid), orderBy('date','desc'));
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) {
+        listEl.innerHTML = `<div class="orders-empty"><div aria-hidden="true">🛍️</div><p style="font-weight:600;color:#5C2B00;">No orders yet!</p><p style="font-size:0.78rem;color:#aaa;">Go pick some delicious sweets! 😋</p><button onclick="closeAll()" style="margin-top:1.2rem;padding:0.65rem 1.6rem;background:#E8650A;color:white;border:none;border-radius:20px;font-family:Poppins,sans-serif;font-weight:600;cursor:pointer;font-size:0.82rem;">🍬 Shop Now</button></div>`;
+        return;
+      }
+      listEl.innerHTML = snapshot.docs.map((d,i) => {
+        const o = d.data();
+        const trackStatus = o.trackingStatus || 'under_packing';
+        const isDelivered = trackStatus === 'delivered';
+        const date = o.date?.toDate ? o.date.toDate().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Recent';
+        const itemNames = (o.items||[]).map(it => `🍬 ${it.name} (${it.weight||'250g'}) x${it.qty}`).join('<br>');
+        const addr = o.shipping?.city ? `📍 ${o.shipping.house}, ${o.shipping.city} - ${o.shipping.pincode}` : '';
+        const reviewBtn = isDelivered
+          ? `<button onclick="openReviewFromOrder(${JSON.stringify((o.items||[]).map(it=>it.id))})"
+               style="margin-top:0.6rem;width:100%;background:linear-gradient(135deg,#E8650A,#FF8C2A);color:white;border:none;border-radius:10px;padding:0.55rem;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:0.4rem;">
+               ⭐ Rate &amp; Review Your Order
+             </button>` : '';
+        return `
+          <article class="order-card">
+            <div class="order-header">
+              <span class="order-id">Order #${String(i+1).padStart(4,'0')}</span>
+              ${getStatusBadge(trackStatus)}
+            </div>
+            <div class="order-items">${itemNames}</div>
+            ${addr ? `<div style="font-size:0.7rem;color:#888;margin:0.4rem 0 0;">${addr}</div>` : ''}
+            <div class="order-footer" style="margin-top:0.6rem">
+              <span class="order-total">₹${o.total}</span>
+              <span class="order-date">🕐 ${date}</span>
+            </div>
+            ${renderTrackingTimeline(trackStatus, o.dtdcLink || null)}
+            ${reviewBtn}
+          </article>`;
+      }).join('');
+    } catch(e) {
+      listEl.innerHTML = `<div class="orders-empty"><div aria-hidden="true">⚠️</div><p>Could not load orders.<br><small>${e.message}</small></p></div>`;
     }
   };
-  const rzp = new Razorpay(options);
-  rzp.open();
-}
+
+  window.openMyOrders = function() {
+    document.getElementById('accountDrawer').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+    setTimeout(() => {
+      document.getElementById('overlay').classList.add('open');
+      document.getElementById('ordersDrawer').classList.add('open');
+      window.loadOrders(document.getElementById('ordersList'));
+    }, 300);
+  };
+
+  window.openReviewFromOrder = function(productIds) {
+    if (!productIds || !productIds.length) return;
+    const firstId = productIds[0];
+    const p = products.find(x => x.id === firstId);
+    if (!p) { showToast('Product not found'); return; }
+    productIds.forEach(pid => deliveredProducts.add(pid));
+    document.getElementById('ordersDrawer').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+    setTimeout(() => { currentProductId = firstId; openReviewsPage(); }, 300);
+  };
+</script>
+
+</body>
+</html>
