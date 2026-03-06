@@ -1,6 +1,6 @@
 /* ════════════════════════════════════════════
    Sree Ramu Sweets — Main Stylesheet
-   Est. 1975 · Vijayawada
+   Est. 1965 · Bhimavaram
    ════════════════════════════════════════════ */
 
 :root {
@@ -53,7 +53,9 @@ body {
   color: var(--saffron);
   letter-spacing: 0.5px;
   line-height: 1.1;
+  text-decoration: none !important;
 }
+.nav-logo:hover, .nav-logo:visited, .nav-logo:focus { text-decoration: none !important; }
 .nav-logo span { color: var(--white); font-size: 0.7rem; display: block; letter-spacing: 2px; font-family: 'Poppins', sans-serif; font-weight: 300; }
 .nav-icons { display: flex; gap: 1.1rem; align-items: center; }
 .nav-icon-btn {
