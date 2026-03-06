@@ -15,7 +15,10 @@
   --text-mid: #7A3A10;
   --shadow: rgba(232,101,10,0.18);
 }
-
+.tiny-logo{
+  width: 28px;
+  height: 28px;
+}
 /* ── RESET & BASE ── */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 * { -webkit-tap-highlight-color: transparent; }
