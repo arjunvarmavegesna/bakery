@@ -33,8 +33,8 @@ function getDeliveryCharge(state, subtotal) {
 // ── REVIEWS DATA ──
 const reviewsData = {
   1: { avg: 4.9, total: 128, dist: [2,3,8,24,91], reviews: [
-    { name:'Padma Lakshmi', loc:'Bhimavaram', rating:5, text:'Best Mysore Pak in Bhimavaram! Just like my grandmother used to make.', date:'12 Feb 2025', color:'#E8650A', verified:true },
-    { name:'Suresh Babu', loc:'Guntur', rating:5, text:'Pure ghee taste is unmatched. Perfectly sweet.', date:'08 Jan 2025', color:'#B84D00', verified:true },
+    { name:'Tejeswini', loc:'Vijayawada', rating:5, text:'Best Mysore Pak in Vijayawada! Just like my grandmother used to make.', date:'12 Feb 2025', color:'#E8650A', verified:true },
+    { name:'Arjun Varma', loc:'Bhimavaram', rating:5, text:'Pure ghee taste is unmatched. Perfectly sweet.', date:'08 Jan 2025', color:'#B84D00', verified:true },
   ]},
   2: { avg: 4.8, total: 95, dist: [1,2,6,20,66], reviews: [
     { name:'Ravi Shankar', loc:'Hyderabad', rating:5, text:'Ordered for Diwali gifting. Everyone at office was impressed!', date:'15 Nov 2024', color:'#E8650A', verified:true },
@@ -143,7 +143,6 @@ function updateWishlistBadge() {
 function openWishlistPage() {
   updateWishlistBadge();
   renderWishlist();
-  history.pushState({ page: 'wishlist' }, '', '');
   document.getElementById('wishlistPage').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -235,7 +234,6 @@ function quickAddSpecial(id) {
 // ── CATEGORIES PAGE ──
 function openCategoriesPage() {
   backToCatGrid();
-  history.pushState({ page: 'categories' }, '', '');
   document.getElementById('categoriesPage').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -351,7 +349,6 @@ function openCart() {
     `;
   }
 
-  history.pushState({ page: 'cart' }, '', '');
   document.getElementById('overlay').classList.add('open');
   document.getElementById('cartDrawer').classList.add('open');
 }
@@ -378,21 +375,6 @@ function closeAll() {
   closeReviewsPage();
   closeCatalogue();
 }
-window.closeAll = closeAll;
-
-function goHome() {
-  closeAll();
-  document.getElementById('orderPlacedPage')?.classList.remove('open');
-  document.body.style.overflow = '';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  currentFilterCat = 'all';
-  currentSort = null;
-  document.querySelectorAll('.cat-pill').forEach((el, i) => el.classList.toggle('active', i === 0));
-  const sortLabel = document.getElementById('sortLabel');
-  if (sortLabel) sortLabel.textContent = 'Sort By';
-  renderProducts(products);
-}
-window.goHome = goHome;
 
 function openOrders() {
   document.getElementById('overlay').classList.add('open');
@@ -517,12 +499,51 @@ function openProductPage(id) {
   document.getElementById('catalogueOverlay').classList.remove('open');
 
   document.getElementById('ppHeaderTitle').textContent = p.name;
-  document.getElementById('ppHero').style.background = p.bg||'#FFF0E0';
-  document.getElementById('ppHero').innerHTML = `
-    ${p.photoUrl ? `<img src="${p.photoUrl}" alt="${p.name}">` : `<span style="font-size:7rem">🍬</span>`}
-    ${p.badge ? `<div class="pp-badge">${p.badge}</div>` : ''}
-    <button class="product-fav" style="position:absolute;top:12px;right:12px;width:36px;height:36px;font-size:1.1rem;" onclick="toggleWishlist('${p.id}',this)">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
-  `;
+
+  // ── Build photo gallery ──
+  const photos = Array.isArray(p.photoUrls) && p.photoUrls.length
+    ? p.photoUrls
+    : (p.photoUrl ? [p.photoUrl] : []);
+
+  const heroEl = document.getElementById('ppHero');
+  heroEl.style.background = p.bg || '#FFF0E0';
+
+  if (photos.length <= 1) {
+    // Single photo — original layout
+    heroEl.innerHTML = `
+      ${photos[0] ? `<img src="${photos[0]}" alt="${p.name}">` : `<span style="font-size:7rem">🍬</span>`}
+      ${p.badge ? `<div class="pp-badge">${p.badge}</div>` : ''}
+      <button class="product-fav" style="position:absolute;top:12px;right:12px;width:36px;height:36px;font-size:1.1rem;" onclick="toggleWishlist('${p.id}',this)">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
+    `;
+    heroEl.classList.remove('pp-has-gallery');
+  } else {
+    // Multi-photo gallery
+    heroEl.classList.add('pp-has-gallery');
+    heroEl.innerHTML = `
+      <div class="pp-gallery-track" id="ppGalleryTrack">
+        ${photos.map((url, i) => `
+          <div class="pp-gallery-slide" style="background:${p.bg||'#FFF0E0'}">
+            <img src="${url}" alt="${p.name} photo ${i+1}">
+          </div>`).join('')}
+      </div>
+      ${p.badge ? `<div class="pp-badge">${p.badge}</div>` : ''}
+      <button class="product-fav" style="position:absolute;top:12px;right:12px;width:36px;height:36px;font-size:1.1rem;z-index:3;" onclick="toggleWishlist('${p.id}',this)">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
+      <button class="pp-gallery-arrow pp-gallery-arrow-left" id="ppArrowLeft" onclick="ppGalleryGoTo(_galleryIndex - 1)" aria-label="Previous photo">&#8249;</button>
+      <button class="pp-gallery-arrow pp-gallery-arrow-right" id="ppArrowRight" onclick="ppGalleryGoTo(_galleryIndex + 1)" aria-label="Next photo">&#8250;</button>
+      <div class="pp-gallery-dots" id="ppGalleryDots">
+        ${photos.map((_, i) => `<span class="pp-gallery-dot${i===0?' active':''}" onclick="ppGalleryGoTo(${i})"></span>`).join('')}
+      </div>
+    `;
+    // Thumbnail strip (below hero, inside pp-body — we inject it)
+    const thumbHtml = `<div class="pp-thumbs" id="ppThumbStrip">
+      ${photos.map((url, i) => `<img class="pp-thumb${i===0?' active':''}" src="${url}" alt="thumb ${i+1}" onclick="ppGalleryGoTo(${i})">`).join('')}
+    </div>`;
+    // Insert thumb strip after hero
+    heroEl.insertAdjacentHTML('afterend', thumbHtml);
+
+    initGallerySwipe(photos.length);
+  }
+
   document.getElementById('ppName').textContent = p.name;
   document.getElementById('ppDesc').textContent = p.desc;
   document.getElementById('ppQty').textContent = ppQty;
@@ -536,15 +557,69 @@ function openProductPage(id) {
   document.getElementById('ppActions').classList.add('open');
   document.body.style.overflow = 'hidden';
   renderProductReviews(id);
-
-  // Push history so browser back/swipe closes this page instead of leaving site
-  history.pushState({ page: 'product', id }, '', '');
 }
+
+// ── Gallery helpers ──
+let _galleryIndex = 0;
+let _galleryTotal = 0;
+let _galleryTouchStartX = 0;
+let _galleryTouchStartY = 0;
+
+function ppGalleryGoTo(idx) {
+  idx = Math.max(0, Math.min(_galleryTotal - 1, idx));
+  _galleryIndex = idx;
+  const track = document.getElementById('ppGalleryTrack');
+  if (track) track.style.transform = `translateX(-${idx * 100}%)`;
+  document.querySelectorAll('.pp-gallery-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+  document.querySelectorAll('.pp-thumb').forEach((t, i) => t.classList.toggle('active', i === idx));
+  // Arrow visibility
+  const left = document.getElementById('ppArrowLeft');
+  const right = document.getElementById('ppArrowRight');
+  if (left)  left.style.opacity  = idx === 0 ? '0' : '1';
+  if (right) right.style.opacity = idx === _galleryTotal - 1 ? '0' : '1';
+  if (left)  left.style.pointerEvents  = idx === 0 ? 'none' : 'auto';
+  if (right) right.style.pointerEvents = idx === _galleryTotal - 1 ? 'none' : 'auto';
+}
+
+function initGallerySwipe(total) {
+  _galleryIndex = 0;
+  _galleryTotal = total;
+  const track = document.getElementById('ppGalleryTrack');
+  if (!track) return;
+  track.style.transform = 'translateX(0)';
+
+  // Hide left arrow on first slide
+  const left = document.getElementById('ppArrowLeft');
+  if (left) { left.style.opacity = '0'; left.style.pointerEvents = 'none'; }
+
+  // Touch swipe
+  const hero = document.getElementById('ppHero');
+  hero.ontouchstart = (e) => {
+    _galleryTouchStartX = e.touches[0].clientX;
+    _galleryTouchStartY = e.touches[0].clientY;
+  };
+  hero.ontouchend = (e) => {
+    const dx = e.changedTouches[0].clientX - _galleryTouchStartX;
+    const dy = e.changedTouches[0].clientY - _galleryTouchStartY;
+    if (Math.abs(dx) < 30 || Math.abs(dy) > Math.abs(dx)) return; // ignore taps & vertical
+    if (dx < 0 && _galleryIndex < _galleryTotal - 1) ppGalleryGoTo(_galleryIndex + 1);
+    if (dx > 0 && _galleryIndex > 0) ppGalleryGoTo(_galleryIndex - 1);
+  };
+}
+
+window.ppGalleryGoTo = ppGalleryGoTo;
 
 function closeProductPage() {
   document.getElementById('productPage').classList.remove('open');
   document.getElementById('ppActions').classList.remove('open');
   document.body.style.overflow = '';
+  // Remove thumb strip if it exists
+  const thumbStrip = document.getElementById('ppThumbStrip');
+  if (thumbStrip) thumbStrip.remove();
+  const heroEl = document.getElementById('ppHero');
+  heroEl.classList.remove('pp-has-gallery');
+  heroEl.ontouchstart = null;
+  heroEl.ontouchend = null;
 }
 
 function changePPQty(delta) {
@@ -735,7 +810,6 @@ function openShipping() {
   const user = window.currentUser;
   const nameField = document.getElementById('ship_name');
   if (nameField && !nameField.value) nameField.value = user.displayName || '';
-  history.pushState({ page: 'shipping' }, '', '');
   document.getElementById('overlay').classList.add('open');
   document.getElementById('shippingDrawer').classList.add('open');
 }
@@ -935,7 +1009,7 @@ function startPayment() {
   const options = {
     key: "rzp_test_SN8B17Y4nm9Htx",
     amount: total * 100, currency: "INR",
-    name: "Sri Ramu Sweets", description: "Sweet Order",
+    name: "Sree Ramu Sweets", description: "Sweet Order",
     theme: { color: '#E8650A' },
     handler: async function(response) {
       const purchasedIds = items.map(i => i.id);
@@ -949,50 +1023,3 @@ function startPayment() {
   const rzp = new Razorpay(options);
   rzp.open();
 }
-
-/* ═══════════════════════════════════════════════════════════
-   BACK BUTTON / SWIPE HANDLER
-   Intercepts browser back so it closes overlays instead of
-   navigating away from the page.
-   ═══════════════════════════════════════════════════════════ */
-
-// Push a baseline history entry on load so the very first back
-// press doesn't leave the site
-history.replaceState({ page: 'home' }, '', '');
-
-window.addEventListener('popstate', function (e) {
-  // Check what's currently open and close the topmost one
-  const productPage     = document.getElementById('productPage');
-  const reviewsPage     = document.getElementById('reviewsPage');
-  const categoriesPage  = document.getElementById('categoriesPage');
-  const wishlistPage    = document.getElementById('wishlistPage');
-  const catalogueOverlay= document.getElementById('catalogueOverlay');
-  const cartDrawer      = document.getElementById('cartDrawer');
-  const shippingDrawer  = document.getElementById('shippingDrawer');
-  const ordersDrawer    = document.getElementById('ordersDrawer');
-  const accountDrawer   = document.getElementById('accountDrawer');
-  const helpDrawer      = document.getElementById('helpDrawer');
-  const orderPlacedPage = document.getElementById('orderPlacedPage');
-  const reviewModal     = document.getElementById('reviewModalOverlay');
-
-  if (reviewModal?.classList.contains('open'))        { reviewModal.classList.remove('open'); }
-  else if (orderPlacedPage?.classList.contains('open')){ closeOrderPlacedPage(); }
-  else if (reviewsPage?.classList.contains('open'))   { closeReviewsPage(); }
-  else if (productPage?.classList.contains('open'))   { closeProductPage(); }
-  else if (shippingDrawer?.classList.contains('open')){ shippingDrawer.classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
-  else if (cartDrawer?.classList.contains('open'))    { cartDrawer.classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
-  else if (ordersDrawer?.classList.contains('open'))  { ordersDrawer.classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
-  else if (accountDrawer?.classList.contains('open')) { accountDrawer.classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
-  else if (helpDrawer?.classList.contains('open'))    { helpDrawer.classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
-  else if (categoriesPage?.classList.contains('open')){ closeCategoriesPage(); }
-  else if (wishlistPage?.classList.contains('open'))  { closeWishlistPage(); }
-  else if (catalogueOverlay?.classList.contains('open')){ closeCatalogue(); }
-  else {
-    // Nothing open — we're on the home page, stay here
-    history.pushState({ page: 'home' }, '', '');
-    return;
-  }
-
-  // Always keep a state in the stack so next back press is also caught
-  history.pushState({ page: 'home' }, '', '');
-});
