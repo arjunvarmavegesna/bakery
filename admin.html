@@ -109,6 +109,19 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
 .form-textarea { resize:vertical; min-height:80px; }
 .form-select { cursor:pointer; }
 
+
+/* ── WEIGHT VARIANTS ── */
+.weight-variants-list { display:flex; flex-direction:column; gap:0.5rem; margin-bottom:0.6rem; }
+.weight-variant-row { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:0.5rem; align-items:center; }
+.weight-variant-row input { padding:0.6rem 0.8rem; border:1.5px solid #E8E0D8; border-radius:10px; font-family:"DM Sans",sans-serif; font-size:0.85rem; background:#FAFAF8; outline:none; width:100%; }
+.weight-variant-row input:focus { border-color:var(--brand); background:white; }
+.btn-remove-variant { background:#fff5f5; border:1px solid rgba(229,57,53,0.25); color:var(--danger); border-radius:8px; width:30px; height:30px; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.btn-remove-variant:hover { background:var(--danger); color:white; }
+.btn-add-variant { background:var(--cream); border:1.5px dashed rgba(232,101,10,0.4); border-radius:10px; color:var(--brand); font-size:0.8rem; font-weight:700; padding:0.5rem 1rem; cursor:pointer; font-family:"DM Sans",sans-serif; width:100%; transition:all 0.15s; }
+.btn-add-variant:hover { background:var(--brand); color:white; border-style:solid; }
+.variant-header { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:0.5rem; }
+.variant-header span { font-size:0.65rem; font-weight:700; color:var(--text-soft); text-transform:uppercase; letter-spacing:0.3px; padding-left:2px; }
+
 /* ── PHOTO UPLOAD ── */
 .photo-upload-area {
   border:2.5px dashed #E8E0D8; border-radius:14px;
@@ -439,17 +452,15 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
                 <label class="form-label">Short Description *</label>
                 <input class="form-input" id="f_desc" type="text" placeholder="e.g. Pure ghee, besan & sugar magic">
               </div>
-              <div class="form-group">
-                <label class="form-label">Selling Price (₹) *</label>
-                <input class="form-input" id="f_price" type="number" placeholder="250" oninput="updatePreview()">
-              </div>
-              <div class="form-group">
-                <label class="form-label">MRP / Old Price (₹)</label>
-                <input class="form-input" id="f_oldprice" type="number" placeholder="300 (optional)">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Weight / Pack Size</label>
-                <input class="form-input" id="f_weight" type="text" placeholder="e.g. Per 250g pack">
+              <div class="form-group full">
+                <label class="form-label">Weight Options & Prices *</label>
+                <div class="variant-header" style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:0.5rem;font-size:0.68rem;font-weight:700;color:var(--text-mid);letter-spacing:0.3px;text-transform:uppercase;padding:0 0.2rem 0.3rem;">
+                  <span>Label (e.g. 250g)</span><span>Price (₹)</span><span>MRP (₹, opt.)</span><span></span>
+                </div>
+                <div class="weight-variants-list" id="f_variants_list"></div>
+                <button type="button" class="btn-add-variant" onclick="addVariantRow('add')" style="background:var(--cream);border:1.5px dashed rgba(232,101,10,0.4);color:var(--brand);font-size:0.8rem;font-weight:700;padding:0.5rem 1rem;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;margin-top:0.3rem;">+ Add Weight Option</button>
+                <input type="hidden" id="f_price" value="0">
+                <input type="hidden" id="f_oldprice" value="">
               </div>
               <div class="form-group">
                 <label class="form-label">Stock Quantity</label>
@@ -574,17 +585,15 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
           <label class="form-label">Description *</label>
           <input class="form-input" id="e_desc" type="text">
         </div>
-        <div class="form-group">
-          <label class="form-label">Selling Price (₹) *</label>
-          <input class="form-input" id="e_price" type="number" oninput="updateEditPreview()">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Old Price (₹)</label>
-          <input class="form-input" id="e_oldprice" type="number">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Weight / Pack Size</label>
-          <input class="form-input" id="e_weight" type="text">
+        <div class="form-group full">
+          <label class="form-label">Weight Options & Prices *</label>
+          <div class="variant-header" style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:0.5rem;font-size:0.68rem;font-weight:700;color:var(--text-mid);letter-spacing:0.3px;text-transform:uppercase;padding:0 0.2rem 0.3rem;">
+            <span>Label (e.g. 250g)</span><span>Price (₹)</span><span>MRP (₹, opt.)</span><span></span>
+          </div>
+          <div class="weight-variants-list" id="e_variants_list"></div>
+          <button type="button" class="btn-add-variant" onclick="addVariantRow('edit')" style="background:var(--cream);border:1.5px dashed rgba(232,101,10,0.4);color:var(--brand);font-size:0.8rem;font-weight:700;padding:0.5rem 1rem;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;margin-top:0.3rem;">+ Add Weight Option</button>
+          <input type="hidden" id="e_price" value="0">
+          <input type="hidden" id="e_oldprice" value="">
         </div>
         <div class="form-group">
           <label class="form-label">Stock Quantity</label>
@@ -742,6 +751,7 @@ function showAdmin(user) {
     ? `<img src="${user.photoURL}" class="sidebar-avatar" referrerpolicy="no-referrer"/>`
     : `<div class="sidebar-avatar-placeholder">${(user.displayName||'A')[0].toUpperCase()}</div>`;
   initColorPickers();
+  initVariants('add');
   loadAllData();
 }
 
@@ -1093,20 +1103,69 @@ window.filterTable = function() {
 };
 
 // ── ADD PRODUCT ──
-window.saveProduct = async function() {
-  const name     = document.getElementById('f_name').value.trim();
-  const cat      = document.getElementById('f_cat').value;
-  const desc     = document.getElementById('f_desc').value.trim();
-  const price    = parseFloat(document.getElementById('f_price').value);
-  const oldPrice = parseFloat(document.getElementById('f_oldprice').value) || null;
-  const weight   = document.getElementById('f_weight').value.trim();
-  const stock    = parseInt(document.getElementById('f_stock').value) || 0;
+// ── WEIGHT VARIANTS ──
+function addVariantRow(ctx, label='', price='', mrp='') {
+  const listId = ctx==='add' ? 'f_variants_list' : 'e_variants_list';
+  const list = document.getElementById(listId);
+  const row = document.createElement('div');
+  row.className = 'weight-variant-row';
+  row.innerHTML = `
+    <input type="text"   class="variant-label" placeholder="e.g. 250g" value="${label}" style="padding:0.6rem 0.8rem;border:1.5px solid #E8E0D8;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:#FAFAF8;outline:none;width:100%;">
+    <input type="number" class="variant-price" placeholder="₹" value="${price}" style="padding:0.6rem 0.8rem;border:1.5px solid #E8E0D8;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:#FAFAF8;outline:none;width:100%;">
+    <input type="number" class="variant-mrp"   placeholder="optional" value="${mrp}" style="padding:0.6rem 0.8rem;border:1.5px solid #E8E0D8;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:#FAFAF8;outline:none;width:100%;">
+    <button onclick="this.parentElement.remove()" style="background:#fff5f5;border:1px solid rgba(229,57,53,0.25);color:var(--danger);border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+  `;
+  list.appendChild(row);
+}
+window.addVariantRow = addVariantRow;
 
-  if (!name)          { highlight('f_name');  toast('⚠️ Product name is required','error'); return; }
-  if (!cat)           { highlight('f_cat');   toast('⚠️ Please select a category','error'); return; }
-  if (!desc)          { highlight('f_desc');  toast('⚠️ Description is required','error'); return; }
-  if (!price || price<=0) { highlight('f_price'); toast('⚠️ Valid price is required','error'); return; }
-  if (!addPhotoFile)  { toast('⚠️ Please upload a product photo','error'); return; }
+function initVariants(ctx) {
+  const listId = ctx==='add' ? 'f_variants_list' : 'e_variants_list';
+  document.getElementById(listId).innerHTML = '';
+  addVariantRow(ctx, '250g', '', '');
+  addVariantRow(ctx, '500g', '', '');
+}
+
+function getVariants(ctx) {
+  const listId = ctx==='add' ? 'f_variants_list' : 'e_variants_list';
+  const rows = document.getElementById(listId).querySelectorAll('.weight-variant-row');
+  const variants = [];
+  rows.forEach(row => {
+    const label = row.querySelector('.variant-label').value.trim();
+    const price = parseFloat(row.querySelector('.variant-price').value);
+    const mrp   = parseFloat(row.querySelector('.variant-mrp').value) || null;
+    if (label && price > 0) variants.push({ label, price, mrp });
+  });
+  return variants;
+}
+
+function loadVariants(ctx, variants) {
+  const listId = ctx==='add' ? 'f_variants_list' : 'e_variants_list';
+  document.getElementById(listId).innerHTML = '';
+  if (!variants || !variants.length) {
+    addVariantRow(ctx, '250g', '', '');
+    addVariantRow(ctx, '500g', '', '');
+    return;
+  }
+  variants.forEach(v => addVariantRow(ctx, v.label, v.price, v.mrp||''));
+}
+
+window.saveProduct = async function() {
+  const name  = document.getElementById('f_name').value.trim();
+  const cat   = document.getElementById('f_cat').value;
+  const desc  = document.getElementById('f_desc').value.trim();
+  const stock = parseInt(document.getElementById('f_stock').value) || 0;
+  const variants = getVariants('add');
+
+  if (!name)             { highlight('f_name'); toast('⚠️ Product name is required','error'); return; }
+  if (!cat)              { highlight('f_cat');  toast('⚠️ Please select a category','error'); return; }
+  if (!desc)             { highlight('f_desc'); toast('⚠️ Description is required','error'); return; }
+  if (!variants.length)  { toast('⚠️ Add at least one weight option with a price','error'); return; }
+  if (!addPhotoFile)     { toast('⚠️ Please upload a product photo','error'); return; }
+
+  // Use first variant as default price for backwards compatibility
+  const price    = variants[0].price;
+  const oldPrice = variants[0].mrp || null;
 
   setBtnLoading('saveBtn','saveBtnIcon','saveBtnText', true, 'Saving…');
   try {
@@ -1114,7 +1173,8 @@ window.saveProduct = async function() {
     await addDoc(collection(db, 'products'), {
       name, cat, desc, price,
       oldPrice: oldPrice || null,
-      weight: weight || 'Per 250g pack',
+      weight: variants[0].label,
+      variants,
       stock, photoUrl,
       bg: selectedColor,
       badge: selectedBadge || null,
@@ -1133,10 +1193,11 @@ window.saveProduct = async function() {
 };
 
 window.resetForm = function() {
-  ['f_name','f_cat','f_desc','f_price','f_oldprice','f_weight','f_stock'].forEach(id => {
+  ['f_name','f_cat','f_desc','f_stock'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.value = ''; el.classList.remove('error'); }
   });
+  initVariants('add');
   selectedColor = '#FFF0E0'; selectedBadge = '';
   clearPhoto('add', null);
   document.querySelectorAll('#colorRow .color-swatch').forEach(el =>
@@ -1154,13 +1215,11 @@ window.openEditModal = function(id) {
   editPhotoFile = null;
   editCurrentPhotoUrl = p.photoUrl || '';
 
-  document.getElementById('e_name').value    = p.name || '';
-  document.getElementById('e_cat').value     = p.cat || '';
-  document.getElementById('e_desc').value    = p.desc || '';
-  document.getElementById('e_price').value   = p.price || '';
-  document.getElementById('e_oldprice').value= p.oldPrice || '';
-  document.getElementById('e_weight').value  = p.weight || '';
-  document.getElementById('e_stock').value   = p.stock || '';
+  document.getElementById('e_name').value  = p.name || '';
+  document.getElementById('e_cat').value   = p.cat || '';
+  document.getElementById('e_desc').value  = p.desc || '';
+  document.getElementById('e_stock').value = p.stock || '';
+  loadVariants('edit', p.variants || []);
 
   editSelectedColor = p.bg || '#FFF0E0';
   editSelectedBadge = p.badge || '';
@@ -1205,26 +1264,26 @@ window.updateProduct = async function() {
   const name     = document.getElementById('e_name').value.trim();
   const cat      = document.getElementById('e_cat').value;
   const desc     = document.getElementById('e_desc').value.trim();
-  const price    = parseFloat(document.getElementById('e_price').value);
-  const oldPrice = parseFloat(document.getElementById('e_oldprice').value) || null;
-  const weight   = document.getElementById('e_weight').value.trim();
   const stock    = parseInt(document.getElementById('e_stock').value) || 0;
+  const variants = getVariants('edit');
 
-  if (!name || !cat || !desc || !price) {
-    toast('⚠️ Please fill all required fields','error'); return;
-  }
+  if (!name || !cat || !desc)  { toast('⚠️ Please fill all required fields','error'); return; }
+  if (!variants.length)        { toast('⚠️ Add at least one weight option with a price','error'); return; }
+
+  const price    = variants[0].price;
+  const oldPrice = variants[0].mrp || null;
 
   setBtnLoading('updateBtn','updateBtnIcon','updateBtnText', true, 'Saving…');
   try {
     let photoUrl = editCurrentPhotoUrl;
-    // If a new photo was selected, upload it
     if (editPhotoFile) {
       photoUrl = await uploadPhoto(editPhotoFile, name, 'edit');
     }
     await updateDoc(doc(db, 'products', editingId), {
       name, cat, desc, price,
       oldPrice: oldPrice || null,
-      weight: weight || 'Per 250g pack',
+      weight: variants[0].label,
+      variants,
       stock, photoUrl,
       bg: editSelectedColor,
       badge: editSelectedBadge || null,
