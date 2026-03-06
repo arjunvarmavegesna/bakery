@@ -1127,13 +1127,13 @@ function imgCell(p) {
 }
 
 function priceDisplay(p) {
-  const p250 = p.price250 || p.price;
+  const p250 = p.price250 || null;
   const has500 = !!p.price500;
   const has1kg = !!p.price1kg;
   // Show lowest/first available price as primary
-  const primary = p250 || p.price500 || p.price1kg;
-  const primaryLabel = p250 ? '250g' : has500 ? '500g' : '1kg';
-  const primaryOld = p250 ? (p.oldPrice250 || p.oldPrice) : has500 ? p.oldPrice500 : p.oldPrice1kg;
+  const primary = p250 || p.price500 || p.price1kg || p.price;
+  const primaryLabel = p250 ? '250g' : has500 ? '500g' : has1kg ? '1kg' : '';
+  const primaryOld = p250 ? p.oldPrice250 : has500 ? p.oldPrice500 : has1kg ? p.oldPrice1kg : (p.oldPrice || null);
   let html = `<div class="product-price-cell">₹${primary} <span style="font-size:0.62rem;color:var(--text-soft);font-weight:400;">(${primaryLabel})</span></div>`;
   if (primaryOld) html += `<div class="product-old-price">₹${primaryOld}</div>`;
   const extras = [];
