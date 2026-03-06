@@ -406,7 +406,6 @@
     min-width: 32px; line-height: 1;
   }
 
-
   .pp-actions {
     position: fixed; bottom: 0; left: 0; right: 0;
     background: white; padding: 0.9rem 1rem;
@@ -441,15 +440,42 @@
 
   /* ── SPECIAL CARD ── */
   .special-card {
-    min-width: 200px; background: white;
+    min-width: 160px; background: white;
+    border-radius: 14px; overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    flex-shrink: 0;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .special-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(155,28,28,0.12); }
+  .special-img {
+    height: 110px; display: flex; align-items: center;
+    justify-content: center; font-size: 3rem;
+    overflow: hidden;
+  }
+  .special-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .special-info { padding: 0.6rem 0.8rem 0.8rem; }
+  .special-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.88rem; color: var(--text-dark);
+    margin-bottom: 0.2rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .special-price { font-size: 0.85rem; font-weight: 700; color: var(--deep-red); }
+
+  /* ── SPECIALS SKELETON ── */
+  .specials-skeleton {
+    min-width: 160px; background: white;
     border-radius: 14px; overflow: hidden;
     box-shadow: 0 2px 10px rgba(0,0,0,0.07);
     flex-shrink: 0;
   }
-  .special-img { height: 110px; display: flex; align-items: center; justify-content: center; font-size: 3rem; }
-  .special-info { padding: 0.6rem 0.8rem 0.8rem; }
-  .special-name { font-family: 'Playfair Display', serif; font-size: 0.88rem; color: var(--text-dark); margin-bottom: 0.2rem; }
-  .special-price { font-size: 0.85rem; font-weight: 700; color: var(--deep-red); }
+  .skeleton-pulse {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 6px;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
   /* ── PROMO BANNER ── */
   .promo-banner {
@@ -658,7 +684,6 @@
   .review-helpful { display: flex; align-items: center; justify-content: flex-end; gap: 0.4rem; margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid #f5f5f5; }
   .helpful-btn { background: none; border: 1px solid #e0e0e0; border-radius: 20px; padding: 0.25rem 0.7rem; font-size: 0.65rem; cursor: pointer; color: var(--text-mid); font-family: 'Poppins', sans-serif; transition: background 0.15s; }
   .helpful-btn:hover, .helpful-btn.liked { background: var(--cream); border-color: var(--deep-red); color: var(--deep-red); }
-  .helpful-label { font-size: 0.62rem; color: #bbb; }
   .write-review-btn { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 0.9rem 1rem; border-top: 1px solid #eee; box-shadow: 0 -4px 15px rgba(0,0,0,0.07); z-index: 10; transform: translateX(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); }
   .write-review-btn.open { transform: translateX(0); }
   .write-review-btn button { width: 100%; background: var(--deep-red); color: white; border: none; border-radius: 14px; padding: 0.85rem; font-size: 0.9rem; font-weight: 700; cursor: pointer; font-family: 'Poppins', sans-serif; }
@@ -801,6 +826,19 @@
 
   @media (min-width: 768px) { .products-grid, .cat-products-grid { grid-template-columns: repeat(4, 1fr); } }
   @media (min-width: 1100px) { .products-grid, .cat-products-grid { grid-template-columns: repeat(5, 1fr); } }
+  /* ── SORT MENU ── */
+  .sort-option {
+    padding: 0.72rem 1rem;
+    font-size: 0.78rem; font-weight: 500;
+    color: var(--text-dark); cursor: pointer;
+    border-bottom: 1px solid #f5f5f5;
+    transition: background 0.15s;
+    font-family: 'Poppins', sans-serif;
+  }
+  .sort-option:last-child { border-bottom: none; }
+  .sort-option:hover { background: var(--cream); color: var(--deep-red); }
+  .sort-option.active { background: #FFF0E0; color: var(--deep-red); font-weight: 700; }
+
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   .hero > * { animation: slideUp 0.5s ease both; }
@@ -884,7 +922,19 @@
 <section class="section" id="products" style="padding-top:0">
   <div class="section-header">
     <div class="section-title">Our <span>Bestsellers</span></div>
-    <a class="view-all">View All</a>
+    <div style="position:relative;">
+      <button id="sortBtn" onclick="toggleSortMenu()" style="display:flex;align-items:center;gap:0.35rem;background:white;border:1.5px solid rgba(232,101,10,0.3);border-radius:20px;padding:0.35rem 0.75rem;font-size:0.72rem;font-weight:600;color:var(--deep-red);cursor:pointer;font-family:'Poppins',sans-serif;transition:background 0.2s,box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 10px rgba(232,101,10,0.15)'" onmouseout="this.style.boxShadow='none'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+        <span id="sortLabel">Sort</span>
+        <svg id="sortChevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div id="sortMenu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:white;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.14);min-width:160px;z-index:99;overflow:hidden;border:1px solid rgba(0,0,0,0.06);">
+        <div onclick="applySort('bestsellers')" class="sort-option" data-key="bestsellers">🏆 Best Sellers</div>
+        <div onclick="applySort('popular')" class="sort-option" data-key="popular">🔥 Popular</div>
+        <div onclick="applySort('lowtohigh')" class="sort-option" data-key="lowtohigh">💰 Price: Low to High</div>
+        <div onclick="applySort('hightolow')" class="sort-option" data-key="hightolow">💎 Price: High to Low</div>
+      </div>
+    </div>
   </div>
   <div class="products-grid" id="productsGrid"></div>
 </section>
@@ -894,20 +944,43 @@
     <h3>Festival Gift Boxes</h3>
     <p>Premium assorted boxes from ₹299. Perfect for Diwali, Ugadi & weddings!</p>
   </div>
-  <button class="promo-btn" onclick="showToast('🎁 Added to cart!')">Shop Now</button>
+
 </div>
 
+<!-- ── TODAY'S SPECIALS — now fully dynamic from Firebase ── -->
 <section class="section">
   <div class="section-header">
-    <div class="section-title">Today's <span>Specials</span></div>
-    <a class="view-all">See All</a>
+    <div class="section-title">Today's <span>Specials</span> 🔥</div>
+    <a class="view-all" onclick="openCategoriesPage()">See All</a>
   </div>
-  <div class="h-scroll">
-    <div class="special-card"><div class="special-img" style="background:#FFF0E0;">🍮</div><div class="special-info"><div class="special-name">Badam Halwa</div><div class="special-price">₹320 <small style="color:#aaa;text-decoration:line-through;font-weight:400">₹380</small></div></div></div>
-    <div class="special-card"><div class="special-img" style="background:#FDE8E8;">🧆</div><div class="special-info"><div class="special-name">Paniyaram</div><div class="special-price">₹120 <small style="color:#aaa;text-decoration:line-through;font-weight:400">₹150</small></div></div></div>
-    <div class="special-card"><div class="special-img" style="background:#E8F5E9;">🥧</div><div class="special-info"><div class="special-name">Coconut Burfi</div><div class="special-price">₹180 <small style="color:#aaa;text-decoration:line-through;font-weight:400">₹220</small></div></div></div>
-    <div class="special-card"><div class="special-img" style="background:#FFF3CD;">🫓</div><div class="special-info"><div class="special-name">Kesari Bath</div><div class="special-price">₹150 <small style="color:#aaa;text-decoration:line-through;font-weight:400">₹180</small></div></div></div>
+  <!-- Skeleton loader shown while products load -->
+  <div class="h-scroll" id="specialsScroll">
+    <div class="specials-skeleton">
+      <div class="skeleton-pulse" style="height:110px;"></div>
+      <div style="padding:0.6rem 0.8rem 0.8rem;">
+        <div class="skeleton-pulse" style="height:14px;width:80%;margin-bottom:6px;"></div>
+        <div class="skeleton-pulse" style="height:12px;width:50%;"></div>
+      </div>
+    </div>
+    <div class="specials-skeleton">
+      <div class="skeleton-pulse" style="height:110px;"></div>
+      <div style="padding:0.6rem 0.8rem 0.8rem;">
+        <div class="skeleton-pulse" style="height:14px;width:80%;margin-bottom:6px;"></div>
+        <div class="skeleton-pulse" style="height:12px;width:50%;"></div>
+      </div>
+    </div>
+    <div class="specials-skeleton">
+      <div class="skeleton-pulse" style="height:110px;"></div>
+      <div style="padding:0.6rem 0.8rem 0.8rem;">
+        <div class="skeleton-pulse" style="height:14px;width:80%;margin-bottom:6px;"></div>
+        <div class="skeleton-pulse" style="height:12px;width:50%;"></div>
+      </div>
+    </div>
   </div>
+  <!-- Helper text for shop owners -->
+  <p id="specialsHint" style="display:none;font-size:0.7rem;color:#aaa;margin-top:0.5rem;text-align:center;">
+    💡 Mark products as <strong>special: true</strong>, <strong>popular: true</strong>, or <strong>bestseller: true</strong> in Firebase to feature them here.
+  </p>
 </section>
 
 <section class="section">
@@ -1009,7 +1082,7 @@
       <div class="account-menu-item" onclick="openMyOrders()"><div class="menu-icon" style="background:#FDE8E8;">📦</div><div class="menu-text"><div class="menu-title">My Orders</div><div class="menu-sub">View all your past orders</div></div><span class="menu-arrow">›</span></div>
       <div class="account-menu-item" onclick="showToast('🚧 Coming soon!')"><div class="menu-icon" style="background:#E8F5E9;">📍</div><div class="menu-text"><div class="menu-title">Saved Addresses</div><div class="menu-sub">Manage delivery addresses</div></div><span class="menu-arrow">›</span></div>
       <div class="account-menu-item" onclick="showToast('🚧 Coming soon!')"><div class="menu-icon" style="background:#FFF3CD;">🎁</div><div class="menu-text"><div class="menu-title">Offers & Coupons</div><div class="menu-sub">Your exclusive member deals</div></div><span class="menu-arrow">›</span></div>
-      <div class="account-menu-item" onclick="showToast('🚧 Coming soon!')"><div class="menu-icon" style="background:#E3F2FD;">💬</div><div class="menu-text"><div class="menu-title">Help & Support</div><div class="menu-sub">Chat with us · +91 98765 43210</div></div><span class="menu-arrow">›</span></div>
+      <div class="account-menu-item" onclick="openHelpSupport()"><div class="menu-icon" style="background:#E3F2FD;">💬</div><div class="menu-text"><div class="menu-title">Help & Support</div><div class="menu-sub">WhatsApp or call us</div></div><span class="menu-arrow">›</span></div>
     </div>
     <button class="signout-btn" onclick="signOutUser()">🚪 Sign Out</button>
   </div>
@@ -1092,18 +1165,15 @@
       <div class="pp-highlight-item"><span class="pp-hi-icon">⭐</span><span class="pp-hi-text">50 years of trusted taste</span></div>
     </div>
 
-    <!-- ── WEIGHT + QTY SECTION (above add to cart) ── -->
     <div class="pp-weight-divider"></div>
 
     <div class="pp-weight-qty-row" id="ppWeightQtyRow">
-      <!-- Weight Dropdown -->
       <div class="pp-weight-group" id="ppWeightGroup">
         <span class="pp-wq-label">WEIGHT</span>
         <select class="pp-weight-select" id="ppWeightSelect" onchange="onWeightSelectChange(this)">
           <option value="">Select Weight</option>
         </select>
       </div>
-      <!-- Quantity Stepper -->
       <div class="pp-qty-group">
         <span class="pp-wq-label">QUANTITY</span>
         <div class="pp-qty-stepper">
@@ -1179,6 +1249,45 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- HELP & SUPPORT DRAWER -->
+<div class="cart-drawer" id="helpDrawer" style="max-height:auto;">
+  <div class="drawer-handle"></div>
+  <div class="drawer-title">Help & Support 💬</div>
+  <p style="font-size:0.82rem;color:var(--text-mid);margin-bottom:1.4rem;line-height:1.6;">We're here to help! Reach us on WhatsApp for quick replies, or call us directly during shop hours.</p>
+
+  <!-- WhatsApp -->
+  <a href="https://wa.me/919876543210?text=Hi%20Sree%20Ramu%20Sweets%2C%20I%20need%20some%20help!" target="_blank" rel="noopener"
+    style="display:flex;align-items:center;gap:1rem;background:#e7fbe9;border:1.5px solid #a5d6a7;border-radius:16px;padding:1rem 1.1rem;margin-bottom:0.8rem;text-decoration:none;cursor:pointer;transition:box-shadow 0.2s;"
+    onmouseover="this.style.boxShadow='0 4px 16px rgba(37,211,102,0.18)'" onmouseout="this.style.boxShadow='none'">
+    <div style="width:46px;height:46px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </div>
+    <div>
+      <div style="font-size:0.92rem;font-weight:700;color:#1b5e20;">Chat on WhatsApp</div>
+      <div style="font-size:0.72rem;color:#388e3c;margin-top:2px;">+91 98765 43210 · Usually replies in minutes</div>
+    </div>
+    <div style="margin-left:auto;color:#25D366;font-size:1.1rem;">→</div>
+  </a>
+
+  <!-- Call -->
+  <a href="tel:+919876543210"
+    style="display:flex;align-items:center;gap:1rem;background:#e8f0fe;border:1.5px solid #9fc3f8;border-radius:16px;padding:1rem 1.1rem;margin-bottom:1.4rem;text-decoration:none;cursor:pointer;transition:box-shadow 0.2s;"
+    onmouseover="this.style.boxShadow='0 4px 16px rgba(66,133,244,0.18)'" onmouseout="this.style.boxShadow='none'">
+    <div style="width:46px;height:46px;border-radius:50%;background:#4285F4;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+    </div>
+    <div>
+      <div style="font-size:0.92rem;font-weight:700;color:#1a237e;">Call Us Directly</div>
+      <div style="font-size:0.72rem;color:#3949ab;margin-top:2px;">+91 98765 43210 · Mon–Sat, 9am–8pm</div>
+    </div>
+    <div style="margin-left:auto;color:#4285F4;font-size:1.1rem;">→</div>
+  </a>
+
+  <div style="background:var(--cream);border-radius:12px;padding:0.8rem 1rem;text-align:center;border:1px solid rgba(232,101,10,0.12);">
+    <div style="font-size:0.72rem;color:var(--text-mid);line-height:1.6;">📍 MG Road, Vijayawada, Andhra Pradesh<br>🕐 Shop Hours: Mon–Sat 9am–8pm, Sun 9am–2pm</div>
+  </div>
+</div>
+
 <nav class="bottom-nav">
   <div class="nav-item active">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>Home
@@ -1207,9 +1316,8 @@ let purchasedProducts = new Set();
 // ── WEIGHT VARIANT STATE ──
 let currentProductId = null;
 let ppQty = 1;
-let ppSelectedWeight = null; // { size: '250g', price: 150, oldPrice: 180 }
+let ppSelectedWeight = null;
 
-// Build available weight variants for a product
 function getWeightVariants(p) {
   const variants = [];
   if (p.price250 || p.price) {
@@ -1227,21 +1335,16 @@ function getWeightVariants(p) {
 function renderWeightDropdown(variants) {
   const select = document.getElementById('ppWeightSelect');
   const group = document.getElementById('ppWeightGroup');
-
   select.innerHTML = variants.map((v, i) =>
     `<option value="${i}">  ${v.size}  —  ₹${v.price}${v.oldPrice ? '  (MRP ₹'+v.oldPrice+')' : ''}</option>`
   ).join('');
-
-  // Show/hide weight group based on variants
   group.style.display = variants.length > 0 ? 'block' : 'none';
 }
 
 function onWeightSelectChange(sel) {
   const p = products.find(x => x.id === currentProductId);
   if (!p) return;
-  const variants = getWeightVariants(p);
-  const index = parseInt(sel.value);
-  selectWeightVariant(index);
+  selectWeightVariant(parseInt(sel.value));
 }
 
 function selectWeightVariant(index) {
@@ -1250,16 +1353,10 @@ function selectWeightVariant(index) {
   const variants = getWeightVariants(p);
   const v = variants[index];
   if (!v) return;
-
   ppSelectedWeight = v;
-
-  // Sync dropdown
   const sel = document.getElementById('ppWeightSelect');
   if (sel) sel.value = String(index);
-
-  // Update price display
   document.getElementById('ppPrice').textContent = '₹' + v.price;
-
   const oldPriceEl = document.getElementById('ppOldPrice');
   const savingEl = document.getElementById('ppSaving');
   if (v.oldPrice) {
@@ -1327,6 +1424,66 @@ function renderWishlist() {
 
 function removeFromWishlist(id) {
   wishlist.delete(id); updateWishlistBadge(); renderWishlist();
+}
+
+// ── TODAY'S SPECIALS — Dynamic from Firebase ──
+function renderSpecials() {
+  const container = document.getElementById('specialsScroll');
+  if (!container) return;
+
+  // Priority: special:true → popular:true → bestseller:true → fallback top 6
+  let specials = products.filter(p => p.special === true);
+  if (specials.length === 0) specials = products.filter(p => p.popular === true || p.bestseller === true);
+  if (specials.length === 0) specials = products.slice(0, 6);
+
+  if (specials.length === 0) {
+    container.innerHTML = '<div style="padding:1.5rem 1rem;color:#aaa;font-size:0.82rem;text-align:center;">No specials today. Check back soon! 🍬</div>';
+    document.getElementById('specialsHint').style.display = 'block';
+    return;
+  }
+
+  container.innerHTML = specials.map(p => {
+    const displayPrice = p.price250 || p.price;
+    const oldPrice = p.oldPrice250 || p.oldPrice || null;
+    const discount = oldPrice ? Math.round((oldPrice - displayPrice) / oldPrice * 100) : null;
+    return `
+    <div class="special-card" onclick="openProductPage('${p.id}')" style="cursor:pointer;position:relative;">
+      ${discount ? `<div style="position:absolute;top:8px;left:8px;background:#E8650A;color:white;font-size:0.58rem;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:0.5px;z-index:2;">${discount}% OFF</div>` : (p.badge ? `<div style="position:absolute;top:8px;left:8px;background:#E8650A;color:white;font-size:0.58rem;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:0.5px;z-index:2;">${p.badge}</div>` : '')}
+      <div class="special-img" style="background:${p.bg||'#FFF0E0'}">
+        ${p.photoUrl
+          ? `<img src="${p.photoUrl}" alt="${p.name}">`
+          : `<span style="font-size:2.8rem">🍬</span>`}
+      </div>
+      <div class="special-info">
+        <div class="special-name">${p.name}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.3rem;margin-top:0.35rem;">
+          <div class="special-price">
+            ₹${displayPrice}
+            ${oldPrice ? `<small style="color:#aaa;text-decoration:line-through;font-weight:400;font-size:0.68rem;margin-left:2px;">₹${oldPrice}</small>` : ''}
+          </div>
+          <button
+            onclick="event.stopPropagation();quickAddSpecial('${p.id}')"
+            style="background:var(--deep-red);color:white;border:none;border-radius:8px;padding:0.28rem 0.55rem;font-size:0.68rem;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;white-space:nowrap;flex-shrink:0;transition:background 0.2s;"
+            onmouseover="this.style.background='var(--brown)'" onmouseout="this.style.background='var(--deep-red)'"
+          >+ Cart</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Quick add from specials — uses first (smallest) weight variant
+function quickAddSpecial(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  const variants = getWeightVariants(p);
+  const v = variants[0];
+  if (!v) return;
+  const cartKey = id + '_' + v.size;
+  if (!cart[cartKey]) cart[cartKey] = { ...p, qty: 0, selectedWeight: v.size, selectedPrice: v.price };
+  cart[cartKey].qty++;
+  updateCartBadge();
+  showToast(`${p.name} (${v.size}) added! 🛒`);
 }
 
 // ── CATEGORIES PAGE ──
@@ -1455,6 +1612,7 @@ function closeAll() {
   document.getElementById('ordersDrawer').classList.remove('open');
   document.getElementById('shippingDrawer').classList.remove('open');
   document.getElementById('accountDrawer').classList.remove('open');
+  document.getElementById('helpDrawer').classList.remove('open');
   closeProductPage();
   closeCategoriesPage();
   closeWishlistPage();
@@ -1482,11 +1640,87 @@ document.getElementById('searchInput').addEventListener('input', function() {
 });
 
 function filterCategory(cat) {
+  currentFilterCat = cat;
   document.querySelectorAll('.cat-pill').forEach(el => el.classList.remove('active'));
   event.currentTarget.classList.add('active');
-  const filtered = cat === 'all' ? products : products.filter(p => p.cat === cat);
-  renderProducts(filtered);
+  if (currentSort) {
+    renderSorted();
+  } else {
+    const filtered = cat === 'all' ? products : products.filter(p => p.cat === cat);
+    renderProducts(filtered);
+  }
   document.getElementById('products').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function openHelpSupport() {
+  document.getElementById('accountDrawer').classList.remove('open');
+  setTimeout(() => {
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('helpDrawer').classList.add('open');
+  }, 250);
+}
+
+let currentSort = null;
+let currentFilterCat = 'all';
+
+function toggleSortMenu() {
+  const menu = document.getElementById('sortMenu');
+  const chevron = document.getElementById('sortChevron');
+  const isOpen = menu.style.display === 'block';
+  menu.style.display = isOpen ? 'none' : 'block';
+  chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+  if (!isOpen) {
+    // Close on outside click
+    setTimeout(() => document.addEventListener('click', closeSortOnOutside, { once: true }), 10);
+  }
+}
+
+function closeSortOnOutside(e) {
+  const menu = document.getElementById('sortMenu');
+  const btn = document.getElementById('sortBtn');
+  if (menu && !menu.contains(e.target) && !btn.contains(e.target)) {
+    menu.style.display = 'none';
+    document.getElementById('sortChevron').style.transform = 'rotate(0deg)';
+  }
+}
+
+function applySort(key) {
+  currentSort = key;
+
+  // Update label
+  const labels = { bestsellers: '🏆 Best Sellers', popular: '🔥 Popular', lowtohigh: 'Low → High', hightolow: 'High → Low' };
+  document.getElementById('sortLabel').textContent = labels[key];
+
+  // Highlight active
+  document.querySelectorAll('.sort-option').forEach(el => {
+    el.classList.toggle('active', el.dataset.key === key);
+  });
+
+  // Close menu
+  document.getElementById('sortMenu').style.display = 'none';
+  document.getElementById('sortChevron').style.transform = 'rotate(0deg)';
+
+  // Apply
+  renderSorted();
+}
+
+function renderSorted() {
+  // Start from current category filter
+  let list = currentFilterCat === 'all' ? [...products] : products.filter(p => p.cat === currentFilterCat);
+
+  if (currentSort === 'bestsellers') {
+    list = list.filter(p => p.bestseller === true || p.special === true)
+               .concat(list.filter(p => !p.bestseller && !p.special));
+  } else if (currentSort === 'popular') {
+    list = list.filter(p => p.popular === true || p.special === true)
+               .concat(list.filter(p => !p.popular && !p.special));
+  } else if (currentSort === 'lowtohigh') {
+    list.sort((a, b) => (a.price250 || a.price || 0) - (b.price250 || b.price || 0));
+  } else if (currentSort === 'hightolow') {
+    list.sort((a, b) => (b.price250 || b.price || 0) - (a.price250 || a.price || 0));
+  }
+
+  renderProducts(list);
 }
 
 function scrollToProducts() {
@@ -1524,11 +1758,8 @@ function openProductPage(id) {
   document.getElementById('ppDesc').textContent = p.desc;
   document.getElementById('ppQty').textContent = ppQty;
 
-  // Build weight variants
   const variants = getWeightVariants(p);
   renderWeightDropdown(variants);
-
-  // Select first variant by default
   ppSelectedWeight = variants[0];
   selectWeightVariant(0);
 
@@ -1553,7 +1784,6 @@ function ppAddToCart() {
   const p = products.find(x => x.id === currentProductId);
   if (!p) return;
   if (!ppSelectedWeight) { showToast('Please select a weight!'); return; }
-
   const cartKey = p.id + '_' + ppSelectedWeight.size;
   if (!cart[cartKey]) cart[cartKey] = { ...p, qty: 0, selectedWeight: ppSelectedWeight.size, selectedPrice: ppSelectedWeight.price };
   cart[cartKey].qty += ppQty;
@@ -1566,7 +1796,6 @@ function ppBuyNow() {
   const p = products.find(x => x.id === currentProductId);
   if (!p) return;
   if (!ppSelectedWeight) { showToast('Please select a weight!'); return; }
-
   const cartKey = p.id + '_' + ppSelectedWeight.size;
   if (!cart[cartKey]) cart[cartKey] = { ...p, qty: 0, selectedWeight: ppSelectedWeight.size, selectedPrice: ppSelectedWeight.price };
   cart[cartKey].qty += ppQty;
@@ -1949,9 +2178,11 @@ function startPayment() {
       products.length = 0;
       products.push(...loaded);
       renderProducts();
+      renderSpecials(); // ← Render Today's Specials after products load
     } catch(e) {
       console.error('Failed to load products:', e);
       document.getElementById('productsGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#aaa;"><div style="font-size:2rem;margin-bottom:0.5rem;">⚠️</div><p>Could not load products. Please refresh.</p></div>`;
+      document.getElementById('specialsScroll').innerHTML = `<div style="padding:1rem;color:#aaa;font-size:0.8rem;">Could not load specials.</div>`;
     }
   }
   loadProductsFromFirebase();
