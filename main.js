@@ -44,14 +44,19 @@ const reviewsData = {
 // ── WEIGHT VARIANT HELPERS ──
 function getWeightVariants(p) {
   const variants = [];
-  if (p.price250 || p.price) {
-    variants.push({ size: '250g', price: p.price250 || p.price, oldPrice: p.oldPrice250 || p.oldPrice || null });
+  // Only add 250g if price250 is explicitly set (not just legacy p.price)
+  if (p.price250) {
+    variants.push({ size: '250g', price: p.price250, oldPrice: p.oldPrice250 || null });
   }
   if (p.price500) {
     variants.push({ size: '500g', price: p.price500, oldPrice: p.oldPrice500 || null });
   }
   if (p.price1kg) {
     variants.push({ size: '1 kg', price: p.price1kg, oldPrice: p.oldPrice1kg || null });
+  }
+  // Fallback for legacy products that only have p.price (old format, no price250)
+  if (variants.length === 0 && p.price) {
+    variants.push({ size: p.weight || '250g', price: p.price, oldPrice: p.oldPrice || null });
   }
   return variants;
 }
@@ -165,7 +170,7 @@ function renderWishlist() {
       <button class="wishlist-remove" onclick="event.stopPropagation();removeFromWishlist('${p.id}')">✕</button>
       <div class="wishlist-card-info">
         <div class="wishlist-card-name">${p.name}</div>
-        <div class="wishlist-card-price">₹${p.price250 || p.price}</div>
+        <div class="wishlist-card-price">₹${p.price250 || p.price500 || p.price1kg || p.price}</div>
         <button class="wishlist-add-btn" onclick="event.stopPropagation();openProductPage('${p.id}')">🛒 Add to Cart</button>
       </div>
     </div>
@@ -191,8 +196,8 @@ function renderSpecials() {
     return;
   }
   container.innerHTML = specials.map(p => {
-    const displayPrice = p.price250 || p.price;
-    const oldPrice = p.oldPrice250 || p.oldPrice || null;
+    const displayPrice = p.price250 || p.price500 || p.price1kg || p.price;
+    const oldPrice = (p.price250 ? p.oldPrice250 : p.price500 ? p.oldPrice500 : p.oldPrice1kg) || p.oldPrice || null;
     const discount = oldPrice ? Math.round((oldPrice - displayPrice) / oldPrice * 100) : null;
     return `
     <div class="special-card" onclick="openProductPage('${p.id}')" style="cursor:pointer;position:relative;">
@@ -266,7 +271,14 @@ function renderProducts(list, containerId = 'productsGrid') {
     return;
   }
   grid.innerHTML = list.map(p => {
-    const displayPrice = p.price250 || p.price;
+    const displayPrice = p.price250 || p.price500 || p.price1kg || p.price;
+    const displayOldPrice = (p.price250 ? p.oldPrice250 : p.price500 ? p.oldPrice500 : p.oldPrice1kg) || p.oldPrice || null;
+    // Build weight label showing only available sizes
+    const sizes = [];
+    if (p.price250) sizes.push('250g');
+    if (p.price500) sizes.push('500g');
+    if (p.price1kg) sizes.push('1kg');
+    const weightLabel = sizes.length > 1 ? sizes.join(' / ') : (p.weight || sizes[0] || '');
     return `
     <div class="product-card" onclick="openProductPage('${p.id}')">
       <div class="product-img" style="background:${p.bg||'#FFF0E0'}">
@@ -277,10 +289,10 @@ function renderProducts(list, containerId = 'productsGrid') {
       <div class="product-info">
         <div class="product-name">${p.name}</div>
         <div class="product-desc">${p.desc}</div>
-        <div class="product-weight">${p.price500 ? '250g / 500g' + (p.price1kg ? ' / 1kg' : '') : (p.weight || 'Per 250g pack')}</div>
+        <div class="product-weight">${weightLabel}</div>
         <div class="product-footer">
           <div class="product-price">
-            ${p.oldPrice || p.oldPrice250 ? `<span>₹${p.oldPrice || p.oldPrice250}</span>` : ''}
+            ${displayOldPrice ? `<span>₹${displayOldPrice}</span>` : ''}
             ₹${displayPrice}
           </div>
           <div style="font-size:0.65rem;color:var(--deep-red);font-weight:600;">View →</div>
@@ -466,9 +478,9 @@ function renderSorted() {
   } else if (currentSort === 'popular') {
     list = list.filter(p => p.popular === true || p.special === true).concat(list.filter(p => !p.popular && !p.special));
   } else if (currentSort === 'lowtohigh') {
-    list.sort((a, b) => (a.price250 || a.price || 0) - (b.price250 || b.price || 0));
+    list.sort((a, b) => (a.price250||a.price500||a.price1kg||a.price||0) - (b.price250||b.price500||b.price1kg||b.price||0));
   } else if (currentSort === 'hightolow') {
-    list.sort((a, b) => (b.price250 || b.price || 0) - (a.price250 || a.price || 0));
+    list.sort((a, b) => (b.price250||b.price500||b.price1kg||b.price||0) - (a.price250||a.price500||a.price1kg||a.price||0));
   }
   renderProducts(list);
 }
