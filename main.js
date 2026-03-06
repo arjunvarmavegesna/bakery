@@ -1,6 +1,6 @@
 /* ════════════════════════════════════════════
-   Sree Ramu Sweets — Main JavaScript
-   Est. 1975 · Vijayawada
+   Sri Ramu Sweets — Main JavaScript
+   Est. 1965 · Bhimavaram
    ════════════════════════════════════════════ */
 
 'use strict';
@@ -33,8 +33,8 @@ function getDeliveryCharge(state, subtotal) {
 // ── REVIEWS DATA ──
 const reviewsData = {
   1: { avg: 4.9, total: 128, dist: [2,3,8,24,91], reviews: [
-    { name:'Padma Lakshmi', loc:'Vijayawada', rating:5, text:'Best Mysore Pak in Vijayawada! Just like my grandmother used to make.', date:'12 Feb 2025', color:'#E8650A', verified:true },
-    { name:'Suresh Babu', loc:'Guntur', rating:5, text:'Pure ghee taste is unmatched. Perfectly sweet.', date:'08 Jan 2025', color:'#B84D00', verified:true },
+    { name:'Tejeswini', loc:'Vijayawada', rating:5, text:'Best Mysore Pak in Vijayawada! Just like my grandmother used to make.', date:'12 Feb 2025', color:'#E8650A', verified:true },
+    { name:'Arjun Varma', loc:'Bhimavaram', rating:5, text:'Pure ghee taste is unmatched. Perfectly sweet.', date:'08 Jan 2025', color:'#B84D00', verified:true },
   ]},
   2: { avg: 4.8, total: 95, dist: [1,2,6,20,66], reviews: [
     { name:'Ravi Shankar', loc:'Hyderabad', rating:5, text:'Ordered for Diwali gifting. Everyone at office was impressed!', date:'15 Nov 2024', color:'#E8650A', verified:true },
