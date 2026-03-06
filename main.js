@@ -166,7 +166,7 @@ function renderWishlist() {
   }
   content.innerHTML = `<div class="wishlist-grid">${items.map(p => `
     <div class="wishlist-card" onclick="closeWishlistPage();setTimeout(()=>openProductPage('${p.id}'),300)">
-      <div class="wishlist-card-img" style="background:${p.bg||'#FFF0E0'}">${p.photoUrl ? `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;" alt="${p.name}">` : '🍬'}</div>
+      <div class="wishlist-card-img" style="background:${p.bg||'#FFF0E0'}">${(Array.isArray(p.photoUrls) ? p.photoUrls[0] : null) || p.photoUrl ? `<img src="${(Array.isArray(p.photoUrls) ? p.photoUrls[0] : null) || p.photoUrl}" alt="${p.name}">` : '🍬'}</div>
       <button class="wishlist-remove" onclick="event.stopPropagation();removeFromWishlist('${p.id}')">✕</button>
       <div class="wishlist-card-info">
         <div class="wishlist-card-name">${p.name}</div>
