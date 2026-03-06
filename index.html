@@ -279,7 +279,7 @@
     transform: translateX(100%);
     transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
     overflow-y: auto;
-    padding-bottom: 1rem;
+    padding-bottom: 90px;
   }
   .product-page.open { transform: translateX(0); }
   .product-page-header {
@@ -298,128 +298,15 @@
   }
   .pp-header-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--brown); }
   .pp-hero {
-    width: 100%;
-    height: 300px;
+    width: 100%; height: 280px;
     display: flex; align-items: center; justify-content: center;
     font-size: 7rem; position: relative;
     overflow: hidden;
   }
   .pp-hero img {
-    position: absolute;
-    inset: 0;
     width: 100%; height: 100%;
-    object-fit: contain;
-    object-position: center;
+    object-fit: cover;
     display: block;
-    background: inherit;
-  }
-  /* Inline actions — shown always, replaces fixed bottom bar */
-  .pp-actions-inline {
-    display: flex;
-    gap: 0.7rem;
-  }
-  .pp-actions-inline .pp-add-cart {
-    flex: 1; background: white; color: var(--deep-red);
-    border: 2px solid var(--deep-red); border-radius: 14px;
-    padding: 0.85rem; font-size: 0.9rem; font-weight: 700;
-    cursor: pointer; font-family: 'Poppins', sans-serif;
-    transition: background 0.2s;
-  }
-  .pp-actions-inline .pp-add-cart:hover { background: var(--cream); }
-  .pp-actions-inline .pp-buy-now {
-    flex: 2; background: var(--deep-red); color: white;
-    border: none; border-radius: 14px;
-    padding: 0.85rem; font-size: 0.9rem; font-weight: 700;
-    cursor: pointer; font-family: 'Poppins', sans-serif;
-    transition: background 0.2s;
-    box-shadow: 0 4px 14px rgba(232,101,10,0.35);
-  }
-  .pp-actions-inline .pp-buy-now:hover { background: var(--brown); }
-  @media (min-width: 768px) {
-    /* Two-column layout: photo left, details right */
-    .product-page {
-      display: grid;
-      grid-template-rows: auto 1fr;
-      padding-bottom: 0;
-    }
-    .product-page-header {
-      grid-column: 1 / -1;
-    }
-    .pp-desktop-wrap {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0;
-      align-items: start;
-      min-height: calc(100vh - 60px);
-    }
-    .pp-hero {
-      height: 100%;
-      min-height: 500px;
-      max-width: none;
-      margin: 0;
-      border-radius: 0;
-      position: sticky;
-      top: 60px;
-    }
-    .pp-hero img {
-      object-fit: cover;
-    }
-    .pp-body {
-      padding: 2rem 2.5rem 2rem;
-      overflow-y: auto;
-      max-height: calc(100vh - 60px);
-    }
-    .pp-name { font-size: 2rem; }
-    /* Hide mobile fixed bar on desktop */
-    .pp-actions {
-      display: none !important;
-    }
-    /* Show inline buttons on desktop */
-    .pp-actions-inline {
-      display: flex;
-      gap: 0.7rem;
-      margin-top: 1.5rem;
-      padding-top: 1.2rem;
-      border-top: 1px solid #f0f0f0;
-    }
-    .pp-actions-inline .pp-add-cart {
-      flex: 1; background: white; color: var(--deep-red);
-      border: 2px solid var(--deep-red); border-radius: 14px;
-      padding: 0.9rem; font-size: 0.95rem; font-weight: 700;
-      cursor: pointer; font-family: 'Poppins', sans-serif;
-      transition: background 0.2s;
-    }
-    .pp-actions-inline .pp-add-cart:hover { background: var(--cream); }
-    .pp-actions-inline .pp-buy-now {
-      flex: 2; background: var(--deep-red); color: white;
-      border: none; border-radius: 14px;
-      padding: 0.9rem; font-size: 0.95rem; font-weight: 700;
-      cursor: pointer; font-family: 'Poppins', sans-serif;
-      transition: background 0.2s;
-      box-shadow: 0 4px 14px rgba(232,101,10,0.35);
-    }
-    .pp-actions-inline .pp-buy-now:hover { background: var(--brown); }
-  }
-
-  /* Weight selector */
-  .pp-weight-section { margin-bottom: 1.2rem; }
-  .pp-weight-options { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.5rem; }
-  .pp-weight-btn {
-    padding: 0.5rem 1.2rem;
-    border: 2px solid #E8E0D8;
-    border-radius: 10px;
-    background: #FAFAF8;
-    font-family: 'Poppins', sans-serif;
-    font-size: 0.82rem; font-weight: 600;
-    color: var(--text-dark); cursor: pointer;
-    transition: all 0.15s;
-  }
-  .pp-weight-btn:hover { border-color: var(--deep-red); color: var(--deep-red); }
-  .pp-weight-btn.selected {
-    border-color: var(--deep-red);
-    background: var(--deep-red);
-    color: white;
-    box-shadow: 0 3px 10px rgba(232,101,10,0.25);
   }
   .pp-badge {
     position: absolute; top: 16px; left: 16px;
@@ -478,10 +365,17 @@
     font-weight: 700; color: var(--deep-red);
   }
   .pp-qty-val { font-size: 1rem; font-weight: 700; min-width: 24px; text-align: center; }
-  /* Mobile fixed bottom bar — hidden since buttons are now inline above reviews */
   .pp-actions {
-    display: none !important;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; padding: 0.9rem 1rem;
+    display: flex; gap: 0.7rem;
+    border-top: 1px solid #eee;
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.07);
+    z-index: 230;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
   }
+  .pp-actions.open { transform: translateX(0); }
   .pp-add-cart {
     flex: 1; background: white; color: var(--deep-red);
     border: 2px solid var(--deep-red); border-radius: 14px;
@@ -510,10 +404,7 @@
     box-shadow: 0 2px 10px rgba(0,0,0,0.07);
     flex-shrink: 0;
   }
-  .special-img { height: 130px; display: flex; align-items: center; justify-content: center; font-size: 3rem; overflow: hidden; position: relative; }
-  .special-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .special-card { cursor: pointer; transition: transform 0.18s, box-shadow 0.18s; }
-  .special-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(232,101,10,0.13); }
+  .special-img { height: 110px; display: flex; align-items: center; justify-content: center; font-size: 3rem; }
   .special-info { padding: 0.6rem 0.8rem 0.8rem; }
   .special-name { font-family: 'Playfair Display', serif; font-size: 0.88rem; color: var(--text-dark); margin-bottom: 0.2rem; }
   .special-price { font-size: 0.85rem; font-weight: 700; color: var(--deep-red); }
@@ -601,10 +492,6 @@
   .empty-cart div { font-size: 3rem; margin-bottom: 0.5rem; }
 
   /* ── BOTTOM NAV ── */
-  .product-page.open ~ .bottom-nav,
-  .product-page.open ~ * .bottom-nav {
-    display: none !important;
-  }
   .bottom-nav {
     position: fixed; bottom: 0; left: 0; right: 0;
     background: white; z-index: 150;
@@ -1355,17 +1242,44 @@
     <h3>Festival Gift Boxes</h3>
     <p>Premium assorted boxes from ₹299. Perfect for Diwali, Ugadi & weddings!</p>
   </div>
-  <button class="promo-btn" onclick="filterCategory('gifts');">Shop Now</button>
+  <button class="promo-btn" onclick="showToast('🎁 Added to cart!')">Shop Now</button>
 </div>
 
 <!-- TODAY'S SPECIALS -->
-<section class="section" id="todaySpecialsSection">
+<section class="section">
   <div class="section-header">
     <div class="section-title">Today's <span>Specials</span></div>
-    <a class="view-all" onclick="scrollToProducts()">See All</a>
+    <a class="view-all">See All</a>
   </div>
-  <div class="h-scroll" id="todaySpecialsGrid">
-    <div style="color:#aaa;font-size:0.85rem;padding:1rem;">Loading...</div>
+  <div class="h-scroll">
+    <div class="special-card">
+      <div class="special-img" style="background:#FFF0E0;">🍮</div>
+      <div class="special-info">
+        <div class="special-name">Badam Halwa</div>
+        <div class="special-price">₹320 <small style="color:#aaa;text-decoration:line-through;font-weight:400">₹380</small></div>
+      </div>
+    </div>
+    <div class="special-card">
+      <div class="special-img" style="background:#FDE8E8;">🧆</div>
+      <div class="special-info">
+        <div class="special-name">Paniyaram</div>
+        <div class="special-price">₹120 <small style="color:#aaa;text-decoration:line-through;font-weight:400">₹150</small></div>
+      </div>
+    </div>
+    <div class="special-card">
+      <div class="special-img" style="background:#E8F5E9;">🥧</div>
+      <div class="special-info">
+        <div class="special-name">Coconut Burfi</div>
+        <div class="special-price">₹180 <small style="color:#aaa;text-decoration:line-through;font-weight:400">₹220</small></div>
+      </div>
+    </div>
+    <div class="special-card">
+      <div class="special-img" style="background:#FFF3CD;">🫓</div>
+      <div class="special-info">
+        <div class="special-name">Kesari Bath</div>
+        <div class="special-price">₹150 <small style="color:#aaa;text-decoration:line-through;font-weight:400">₹180</small></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1700,7 +1614,6 @@
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
     </button>
   </div>
-  <div class="pp-desktop-wrap">
   <div class="pp-hero" id="ppHero"></div>
   <div class="pp-body">
     <div class="pp-name" id="ppName"></div>
@@ -1722,10 +1635,6 @@
       <div class="pp-highlight-item"><span class="pp-hi-icon">📦</span><span class="pp-hi-text">Hygienically packed & sealed</span></div>
       <div class="pp-highlight-item"><span class="pp-hi-icon">⭐</span><span class="pp-hi-text">50 years of trusted taste</span></div>
     </div>
-    <div class="pp-weight-section" id="ppWeightSection" style="display:none;">
-      <div class="pp-section-title">Weight</div>
-      <div class="pp-weight-options" id="ppWeightOptions"></div>
-    </div>
     <div class="pp-section-title">Quantity</div>
     <div class="pp-qty-row">
       <div class="pp-qty-label">How many packs?</div>
@@ -1734,12 +1643,6 @@
         <div class="pp-qty-val" id="ppQty">1</div>
         <button class="pp-qty-btn" onclick="changePPQty(1)">+</button>
       </div>
-    </div>
-
-    <!-- Buttons right below quantity — shown on both mobile (inline) and desktop -->
-    <div class="pp-actions-inline" id="ppActionsInline" style="margin-top:1.2rem;">
-      <button class="pp-add-cart" onclick="ppAddToCart()">🛒 Add to Cart</button>
-      <button class="pp-buy-now" onclick="ppBuyNow()">⚡ Buy Now</button>
     </div>
 
     <div class="pp-section-title" style="margin-top:1.4rem">Ratings & Reviews</div>
@@ -1755,9 +1658,8 @@
     </div>
     <div id="ppTopReviews"></div>
     <button onclick="openReviewsPage()" style="width:100%;background:var(--cream);border:1.5px solid rgba(232,101,10,0.3);border-radius:12px;padding:0.7rem;font-size:0.82rem;font-weight:600;color:var(--deep-red);cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:0.5rem;">See All Reviews ›</button>
-  </div><!-- end pp-body -->
-</div><!-- end pp-desktop-wrap -->
-<!-- Mobile only: fixed bottom bar -->
+  </div>
+</div>
 <div class="pp-actions" id="ppActions">
   <button class="pp-add-cart" onclick="ppAddToCart()">🛒 Add to Cart</button>
   <button class="pp-buy-now" onclick="ppBuyNow()">⚡ Buy Now</button>
@@ -1971,42 +1873,6 @@ function renderProducts(list = products, containerId = 'productsGrid') {
   `).join('');
 }
 
-function renderTodaySpecials() {
-  const grid = document.getElementById('todaySpecialsGrid');
-  if (!grid || !products.length) return;
-
-  // Show badged products first (BESTSELLER, POPULAR, NEW, OFFER), then fill up to 6
-  const badged = products.filter(p => p.badge);
-  const others = products.filter(p => !p.badge);
-  const specials = [...badged, ...others].slice(0, 6);
-
-  if (!specials.length) {
-    document.getElementById('todaySpecialsSection').style.display = 'none';
-    return;
-  }
-
-  grid.innerHTML = specials.map(p => {
-    const price = p.variants && p.variants.length ? p.variants[0].price : p.price;
-    const mrp   = p.variants && p.variants.length ? (p.variants[0].mrp || p.oldPrice) : p.oldPrice;
-    return `
-      <div class="special-card" onclick="openProductPage('${p.id}')">
-        <div class="special-img" style="background:${p.bg||'#FFF0E0'}">
-          ${p.photoUrl
-            ? `<img src="${p.photoUrl}" alt="${p.name}">`
-            : `<span>🍬</span>`}
-          ${p.badge ? `<div style="position:absolute;top:7px;left:7px;background:var(--deep-red);color:white;font-size:0.55rem;font-weight:700;padding:2px 6px;border-radius:8px;letter-spacing:0.4px;">${p.badge}</div>` : ''}
-        </div>
-        <div class="special-info">
-          <div class="special-name">${p.name}</div>
-          <div class="special-price">
-            ₹${price}
-            ${mrp ? `<small style="color:#aaa;text-decoration:line-through;font-weight:400;margin-left:3px;">₹${mrp}</small>` : ''}
-          </div>
-        </div>
-      </div>`;
-  }).join('');
-}
-
 function addToCart(id) {
   const p = products.find(x => x.id === id);
   if (!cart[id]) cart[id] = { ...p, qty: 0 };
@@ -2033,13 +1899,13 @@ function openCart() {
       <div class="cart-item">
         <div class="cart-item-img" style="background:${item.bg||'#FFF0E0'};overflow:hidden;">${item.photoUrl ? `<img src="${item.photoUrl}" style="width:100%;height:100%;object-fit:cover;" alt="${item.name}">` : '🍬'}</div>
         <div class="cart-item-info">
-          <div class="cart-item-name">${item.name}${item.weight ? ` <span style="font-size:0.65rem;color:#aaa;font-weight:400;">(${item.weight})</span>` : ''}</div>
+          <div class="cart-item-name">${item.name}</div>
           <div class="cart-item-price">₹${item.price * item.qty}</div>
         </div>
         <div class="qty-ctrl">
-          <button class="qty-btn" onclick="changeQty('${item.cartKey||item.id}',-1)">−</button>
+          <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
           <span class="qty-val">${item.qty}</span>
-          <button class="qty-btn" onclick="changeQty('${item.cartKey||item.id}',1)">+</button>
+          <button class="qty-btn" onclick="changeQty('${item.id}',1)">+</button>
         </div>
       </div>
     `).join('');
@@ -2111,11 +1977,8 @@ document.getElementById('searchInput').addEventListener('input', function() {
 });
 
 function filterCategory(cat) {
-  // Update active cat pill
-  document.querySelectorAll('.cat-pill').forEach(el => {
-    const onclick = el.getAttribute('onclick') || '';
-    el.classList.toggle('active', onclick.includes("'" + cat + "'"));
-  });
+  document.querySelectorAll('.cat-pill').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
   const filtered = cat === 'all' ? products : products.filter(p => p.cat === cat);
   renderProducts(filtered);
   document.getElementById('products').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2180,57 +2043,16 @@ function openProductPage(id) {
     savingEl.style.display = 'none';
   }
 
-  // Weight selector
-  const weightSection = document.getElementById('ppWeightSection');
-  const weightOptions = document.getElementById('ppWeightOptions');
-  if (p.variants && p.variants.length > 0) {
-    weightSection.style.display = 'block';
-    weightOptions.innerHTML = p.variants.map((v, i) => `
-      <button class="pp-weight-btn ${i===0?'selected':''}"
-        onclick="selectWeight(this, ${v.price}, ${v.mrp||'null'}, '${v.label}')"
-        data-price="${v.price}" data-mrp="${v.mrp||''}">
-        ${v.label}
-      </button>
-    `).join('');
-  } else {
-    weightSection.style.display = 'none';
-  }
-
   document.getElementById('productPage').classList.add('open');
   document.getElementById('ppActions').classList.add('open');
   document.body.style.overflow = 'hidden';
-  const bnav = document.querySelector('.bottom-nav');
-  if (bnav) bnav.style.display = 'none';
   renderProductReviews(id);
-}
-
-function selectWeight(btn, price, mrp, label) {
-  document.querySelectorAll('.pp-weight-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  // Update price display
-  document.getElementById('ppPrice').textContent = '₹' + price;
-  const oldPriceEl = document.getElementById('ppOldPrice');
-  const savingEl   = document.getElementById('ppSaving');
-  if (mrp && mrp > price) {
-    oldPriceEl.textContent  = '₹' + mrp;
-    oldPriceEl.style.display = 'block';
-    savingEl.textContent   = Math.round((mrp - price) / mrp * 100) + '% OFF';
-    savingEl.style.display  = 'block';
-  } else {
-    oldPriceEl.style.display = 'none';
-    savingEl.style.display   = 'none';
-  }
-  // Update current product price for cart
-  const p = products.find(x => x.id === currentProductId);
-  if (p) { p._selectedPrice = price; p._selectedWeight = label; }
 }
 
 function closeProductPage() {
   document.getElementById('productPage').classList.remove('open');
   document.getElementById('ppActions').classList.remove('open');
   document.body.style.overflow = '';
-  const bnav = document.querySelector('.bottom-nav');
-  if (bnav) bnav.style.display = '';
 }
 
 function changePPQty(delta) {
@@ -2241,26 +2063,18 @@ function changePPQty(delta) {
 function ppAddToCart() {
   const p = products.find(x => x.id === currentProductId);
   if (!p) return;
-  const selectedBtn = document.querySelector('.pp-weight-btn.selected');
-  const price  = selectedBtn ? parseFloat(selectedBtn.dataset.price) : p.price;
-  const weight = selectedBtn ? selectedBtn.textContent.trim() : (p.weight || '');
-  const cartKey = p.id + '_' + (weight || 'default');
-  if (!cart[cartKey]) cart[cartKey] = { ...p, price, weight, qty: 0, cartKey };
-  cart[cartKey].qty += ppQty;
+  if (!cart[p.id]) cart[p.id] = { ...p, qty: 0 };
+  cart[p.id].qty += ppQty;
   updateCartBadge();
-  showToast(`${p.name} (${weight}) x${ppQty} added to cart!`);
+  showToast(`${p.name} x${ppQty} added to cart!`);
   closeProductPage();
 }
 
 function ppBuyNow() {
   const p = products.find(x => x.id === currentProductId);
   if (!p) return;
-  const selectedBtn = document.querySelector('.pp-weight-btn.selected');
-  const price  = selectedBtn ? parseFloat(selectedBtn.dataset.price) : p.price;
-  const weight = selectedBtn ? selectedBtn.textContent.trim() : (p.weight || '');
-  const cartKey = p.id + '_' + (weight || 'default');
-  if (!cart[cartKey]) cart[cartKey] = { ...p, price, weight, qty: 0, cartKey };
-  cart[cartKey].qty += ppQty;
+  if (!cart[p.id]) cart[p.id] = { ...p, qty: 0 };
+  cart[p.id].qty += ppQty;
   updateCartBadge();
   closeProductPage();
   setTimeout(() => openShipping(), 300);
@@ -2866,7 +2680,6 @@ function startPayment() {
       products.length = 0;
       products.push(...loaded);
       renderProducts();
-      renderTodaySpecials();
     } catch(e) {
       console.error('Failed to load products:', e);
       document.getElementById('productsGrid').innerHTML = `
@@ -2897,7 +2710,6 @@ function startPayment() {
       purchasedProducts.clear();
       updateWishlistBadge();
       renderProducts();
-      renderTodaySpecials();
     }
   });
 
