@@ -22,6 +22,7 @@
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  /* ── MOBILE TAP FIX ── */
   * {
     -webkit-tap-highlight-color: transparent;
   }
@@ -233,18 +234,16 @@
   .product-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(155,28,28,0.12); }
   .product-img {
     width: 100%;
-    height: 150px;
-    position: relative;
-    overflow: hidden;
-    background-color: #FFF0E0;
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
+    aspect-ratio: 1 / 1;
     display: flex; align-items: center; justify-content: center;
     font-size: 3.5rem;
-    /* Fixes blur: force crisp rendering */
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
+    position: relative;
+    overflow: hidden;
+  }
+  .product-img img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .product-badge {
     position: absolute; top: 8px; left: 8px;
@@ -252,7 +251,6 @@
     font-size: 0.6rem; font-weight: 700;
     padding: 2px 7px; border-radius: 10px;
     letter-spacing: 0.5px;
-    z-index: 2;
   }
   .product-fav {
     position: absolute; top: 8px; right: 8px;
@@ -261,7 +259,6 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 0.9rem; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     cursor: pointer; transition: transform 0.2s;
-    z-index: 2;
   }
   .product-fav:hover { transform: scale(1.15); }
   .product-info { padding: 0.7rem 0.8rem 0.8rem; }
@@ -275,7 +272,6 @@
   .product-footer { display: flex; align-items: center; justify-content: space-between; }
   .product-price { font-size: 1rem; font-weight: 700; color: var(--deep-red); }
   .product-price span { font-size: 0.65rem; color: #aaa; text-decoration: line-through; font-weight: 400; margin-right: 2px; }
-
   /* ── PRODUCT PAGE DRAWER ── */
   .product-page {
     position: fixed; inset: 0;
@@ -301,26 +297,22 @@
     cursor: pointer; font-size: 1.1rem; color: var(--text-dark);
   }
   .pp-header-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--brown); }
-
-  /* ── FIXED: Product hero image container ── */
   .pp-hero {
-    width: 100%;
-    height: 300px;
-    position: relative;
-    overflow: hidden;
-    background-color: #FFF0E0;
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
+    width: 100%; height: 280px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 7rem;
+    font-size: 7rem; position: relative;
+    overflow: hidden;
+  }
+  .pp-hero img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .pp-badge {
     position: absolute; top: 16px; left: 16px;
     background: var(--deep-red); color: white;
     font-size: 0.65rem; font-weight: 700;
     padding: 3px 10px; border-radius: 12px; letter-spacing: 0.5px;
-    z-index: 2;
   }
   .pp-body { padding: 1.2rem 1rem; }
   .pp-name {
@@ -476,16 +468,7 @@
   .drawer-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 1rem; }
   .drawer-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--brown); margin-bottom: 1rem; }
   .cart-item { display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 0; border-bottom: 1px solid #f0f0f0; }
-  .cart-item-img {
-    font-size: 1.8rem; width: 56px; height: 56px;
-    display: flex; align-items: center; justify-content: center;
-    background-color: var(--cream);
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-    border-radius: 10px;
-    flex-shrink: 0;
-  }
+  .cart-item-img { font-size: 1.8rem; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: var(--cream); border-radius: 10px; }
   .cart-item-info { flex: 1; }
   .cart-item-name { font-size: 0.85rem; font-weight: 600; color: var(--text-dark); }
   .cart-item-price { font-size: 0.8rem; color: var(--deep-red); font-weight: 700; }
@@ -643,13 +626,7 @@
     cursor: pointer; position: relative;
   }
   .wishlist-card-img {
-    height: 130px;
-    background-color: #FFF0E0;
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 3rem; position: relative;
+    height: 110px; display: flex; align-items: center; justify-content: center; font-size: 3rem;
   }
   .wishlist-remove {
     position: absolute; top: 6px; right: 6px;
@@ -657,7 +634,7 @@
     width: 26px; height: 26px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     font-size: 0.75rem; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    color: #e53935; z-index: 2;
+    color: #e53935;
   }
   .wishlist-card-info { padding: 0.6rem 0.8rem 0.8rem; }
   .wishlist-card-name { font-family: 'Playfair Display', serif; font-size: 0.88rem; color: var(--text-dark); margin-bottom: 0.3rem; }
@@ -703,6 +680,7 @@
   }
   .reviews-header small { color: rgba(255,255,255,0.75); font-size: 0.65rem; display: block; }
 
+  /* Rating Summary */
   .rating-summary {
     background: white; margin: 1rem; border-radius: 18px;
     padding: 1.2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
@@ -730,6 +708,7 @@
   .rbar-fill { height: 100%; background: #FFA000; border-radius: 3px; transition: width 0.6s ease; }
   .rbar-count { font-size: 0.6rem; color: #aaa; width: 20px; }
 
+  /* Summary chips */
   .rating-chips { display: flex; gap: 0.5rem; flex-wrap: wrap; }
   .rating-chip {
     background: var(--cream); border: 1px solid rgba(232,101,10,0.2);
@@ -737,6 +716,7 @@
     font-size: 0.7rem; color: var(--text-mid); font-weight: 500;
   }
 
+  /* Review cards */
   .reviews-list { padding: 0 1rem 1rem; }
   .review-item {
     background: white; border-radius: 16px; padding: 1rem;
@@ -778,6 +758,7 @@
   .helpful-btn:hover, .helpful-btn.liked { background: var(--cream); border-color: var(--deep-red); color: var(--deep-red); }
   .helpful-label { font-size: 0.62rem; color: #bbb; }
 
+  /* Write review form */
   .write-review-btn {
     position: fixed; bottom: 0; left: 0; right: 0;
     background: white; padding: 0.9rem 1rem;
@@ -795,6 +776,7 @@
     font-family: 'Poppins', sans-serif;
   }
 
+  /* Write Review Modal */
   .review-modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.5);
     z-index: 300; display: none; align-items: flex-end;
@@ -845,6 +827,7 @@
     font-family: 'Poppins', sans-serif; margin-top: 0.5rem;
   }
 
+  /* ── REVIEW PROMPT (post-purchase) ── */
   .review-prompt-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.5);
     z-index: 350; display: none; align-items: flex-end;
@@ -877,6 +860,7 @@
     font-family: 'Poppins', sans-serif; padding: 0.3rem;
   }
 
+  /* ── TOAST (pointer-events fix) ── */
   .toast {
     position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
     background: var(--brown); color: white;
@@ -953,6 +937,7 @@
   }
   .account-drawer.open { transform: translateY(0); }
 
+  /* Login screen */
   .login-hero { text-align: center; padding: 1.5rem 1rem 1rem; }
   .login-logo {
     width: 72px; height: 72px; border-radius: 20px;
@@ -988,6 +973,7 @@
   .benefit-icon { font-size: 1.4rem; margin-bottom: 0.3rem; }
   .benefit-text { font-size: 0.68rem; color: var(--text-mid); line-height: 1.4; font-weight: 500; }
 
+  /* Profile screen */
   .profile-banner {
     background: linear-gradient(135deg,#B84D00,#E8650A,#FF8C2A);
     border-radius: 16px; padding: 1.4rem 1.2rem; margin-bottom: 1.2rem;
@@ -1042,6 +1028,7 @@
   }
   .signout-btn:hover { background: #ffebee; }
 
+  /* Nav avatar badge */
   .nav-avatar {
     width: 22px; height: 22px; border-radius: 50%;
     object-fit: cover; border: 1.5px solid var(--deep-red);
@@ -1108,6 +1095,7 @@
   .shipping-summary-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-dark); margin-bottom: 0.25rem; }
   .shipping-summary-row.grand { font-weight: 700; color: var(--deep-red); font-size: 0.95rem; border-top: 1px dashed #ddd; padding-top: 0.5rem; margin-top: 0.4rem; }
 
+  /* ── THE FIXED BUTTONS ── */
   .ship-btn {
     width: 100%; background: var(--deep-red); color: white;
     border: none; padding: 0.95rem; border-radius: 14px;
@@ -1135,6 +1123,17 @@
   .address-confirm-card .addr-name { font-weight: 700; font-size: 0.9rem; color: var(--text-dark); margin-bottom: 0.3rem; }
   .address-confirm-card .addr-detail { font-size: 0.78rem; color: var(--text-mid); line-height: 1.7; }
   .section-divider { font-size: 0.68rem; font-weight: 700; color: var(--text-mid); letter-spacing: 1px; text-transform: uppercase; margin: 1.2rem 0 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid #eee; }
+
+  @media (min-width: 768px) {
+    .products-grid, .cat-products-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  @media (min-width: 1100px) {
+    .products-grid, .cat-products-grid {
+      grid-template-columns: repeat(5, 1fr);
+    }
+  }
 
 </style>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -1427,6 +1426,7 @@
       <input class="form-input" id="ship_note" type="text" placeholder="e.g. Call before delivery, leave at door…" />
     </div>
 
+    <!-- ✅ FIXED: proper <button> tags instead of divs -->
     <button class="ship-btn" onclick="goToReview()">Continue to Review →</button>
     <button class="ship-btn-back" onclick="backToCart()">← Back to Cart</button>
   </div>
@@ -1449,6 +1449,7 @@
       </div>
     </div>
 
+    <!-- ✅ FIXED: proper <button> tags instead of divs -->
     <button class="ship-btn" onclick="proceedToPayment()">💳 Pay Now</button>
     <button class="ship-btn-back" onclick="backToAddress()">← Edit Address</button>
   </div>
@@ -1613,7 +1614,6 @@
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
     </button>
   </div>
-  <!-- FIXED: hero container with overflow hidden -->
   <div class="pp-hero" id="ppHero"></div>
   <div class="pp-body">
     <div class="pp-name" id="ppName"></div>
@@ -1745,15 +1745,16 @@
 </nav>
 
 <script>
-let products = [];
+let products = []; // Loaded from Firebase Firestore
 
 let cart = {};
 let searchVisible = false;
 let wishlist = new Set();
-let purchasedProducts = new Set();
+let purchasedProducts = new Set(); // tracks product IDs the user has bought
 
 // ── WISHLIST ──
 function toggleWishlist(id, btn) {
+  const p = products.find(x => x.id === id);
   if (wishlist.has(id)) {
     wishlist.delete(id);
     if (btn) btn.textContent = '🤍';
@@ -1794,10 +1795,7 @@ function renderWishlist() {
   }
   content.innerHTML = `<div class="wishlist-grid">${items.map(p => `
     <div class="wishlist-card" onclick="closeWishlistPage();setTimeout(()=>openProductPage('${p.id}'),300)">
-      <div class="wishlist-card-img"
-        style="background-color:${p.bg||'#FFF0E0'};${p.photoUrl ? `background-image:url('${p.photoUrl}');background-size:cover;background-position:center center;` : ''}">
-        ${!p.photoUrl ? '🍬' : ''}
-      </div>
+      <div class="wishlist-card-img" style="background:${p.bg||'#FFF0E0'}">${p.photoUrl ? `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;" alt="${p.name}">` : '🍬'}</div>
       <button class="wishlist-remove" onclick="event.stopPropagation();removeFromWishlist('${p.id}')">✕</button>
       <div class="wishlist-card-info">
         <div class="wishlist-card-name">${p.name}</div>
@@ -1811,6 +1809,10 @@ function renderWishlist() {
 function removeFromWishlist(id) {
   wishlist.delete(id);
   updateWishlistBadge();
+  // update heart on main grid
+  document.querySelectorAll(`[id*="fav-"]`).forEach(el => {
+    if (el.id.endsWith('-' + id)) el.textContent = '🤍';
+  });
   renderWishlist();
 }
 
@@ -1848,9 +1850,10 @@ function renderProducts(list = products, containerId = 'productsGrid') {
   }
   grid.innerHTML = list.map(p => `
     <div class="product-card" onclick="openProductPage('${p.id}')">
-      <div class="product-img"
-        style="background-color:${p.bg||'#FFF0E0'};${p.photoUrl ? `background-image:url('${p.photoUrl}');background-size:cover;background-position:center center;` : ''}">
-        ${!p.photoUrl ? `<span style="position:relative;z-index:1;">🍬</span>` : ''}
+      <div class="product-img" style="background:${p.bg||'#FFF0E0'}">
+        ${p.photoUrl
+          ? `<img src="${p.photoUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">`
+          : `<span style="font-size:3.2rem">🍬</span>`}
         ${p.badge ? `<div class="product-badge">${p.badge}</div>` : ''}
         <button class="product-fav" onclick="event.stopPropagation();toggleWishlist('${p.id}',this)" id="fav-${containerId}-${p.id}">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
       </div>
@@ -1894,10 +1897,7 @@ function openCart() {
   } else {
     cartItemsEl.innerHTML = items.map(item => `
       <div class="cart-item">
-        <div class="cart-item-img"
-          style="background-color:${item.bg||'#FFF0E0'};${item.photoUrl ? `background-image:url('${item.photoUrl}');background-size:cover;background-position:center center;` : ''}">
-          ${!item.photoUrl ? '🍬' : ''}
-        </div>
+        <div class="cart-item-img" style="background:${item.bg||'#FFF0E0'};overflow:hidden;">${item.photoUrl ? `<img src="${item.photoUrl}" style="width:100%;height:100%;object-fit:cover;" alt="${item.name}">` : '🍬'}</div>
         <div class="cart-item-info">
           <div class="cart-item-name">${item.name}</div>
           <div class="cart-item-price">₹${item.price * item.qty}</div>
@@ -1997,6 +1997,7 @@ function showToast(msg) {
   toastTimeout = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
+// Show loading skeleton while Firebase loads products
 document.getElementById('productsGrid').innerHTML = `
   <div style="grid-column:1/-1;text-align:center;padding:3rem;color:#B84D00;">
     <p style="font-size:0.9rem;opacity:0.7;">Loading fresh sweets...</p>
@@ -2011,32 +2012,19 @@ function openProductPage(id) {
   currentProductId = id;
   ppQty = 1;
 
+  // close other pages first
   document.getElementById('categoriesPage').classList.remove('open');
   document.getElementById('wishlistPage').classList.remove('open');
 
   document.getElementById('ppHeaderTitle').textContent = p.name;
-
-  // ── FIXED: hero uses background-image - no img tag, no stretch, no blur ──
-  const hero = document.getElementById('ppHero');
-  hero.style.backgroundColor = p.bg || '#FFF0E0';
-  if (p.photoUrl) {
-    hero.style.backgroundImage = `url('${p.photoUrl}')`;
-    hero.style.backgroundSize = 'cover';
-    hero.style.backgroundPosition = 'center center';
-    hero.style.backgroundRepeat = 'no-repeat';
-    hero.innerHTML = `
-      ${p.badge ? `<div class="pp-badge">${p.badge}</div>` : ''}
-      <button class="product-fav" style="position:absolute;top:12px;right:12px;width:36px;height:36px;font-size:1.1rem;z-index:2;" onclick="toggleWishlist('${p.id}',this)">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
-    `;
-  } else {
-    hero.style.backgroundImage = 'none';
-    hero.innerHTML = `
-      <span style="font-size:7rem;position:relative;z-index:1;">🍬</span>
-      ${p.badge ? `<div class="pp-badge">${p.badge}</div>` : ''}
-      <button class="product-fav" style="position:absolute;top:12px;right:12px;width:36px;height:36px;font-size:1.1rem;z-index:2;" onclick="toggleWishlist('${p.id}',this)">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
-    `;
-  }
-
+  document.getElementById('ppHero').style.background = p.bg||'#FFF0E0';
+  document.getElementById('ppHero').innerHTML = `
+    ${p.photoUrl
+      ? `<img src="${p.photoUrl}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">`
+      : `<span style="font-size:7rem">🍬</span>`}
+    ${p.badge ? `<div class="pp-badge">${p.badge}</div>` : ''}
+    <button class="product-fav" style="position:absolute;top:12px;right:12px;width:36px;height:36px;font-size:1.1rem;" onclick="toggleWishlist('${p.id}',this)">${wishlist.has(p.id) ? '❤️' : '🤍'}</button>
+  `;
   document.getElementById('ppName').textContent = p.name;
   document.getElementById('ppDesc').textContent = p.desc;
   document.getElementById('ppPrice').textContent = '₹' + p.price;
@@ -2138,6 +2126,7 @@ function starsHtml(rating, size = '0.85rem') {
 function renderProductReviews(productId) {
   const data = reviewsData[productId] || { avg: 4.8, total: 0, dist: [0,0,0,0,0], reviews: [] };
 
+  // Mini bars in product page
   const barsHtml = [5,4,3,2,1].map(star => {
     const count = data.dist[star - 1];
     const pct = data.total > 0 ? Math.round(count / data.total * 100) : 0;
@@ -2158,6 +2147,7 @@ function renderProductReviews(productId) {
   const countEl = document.getElementById('ppReviewCount');
   if (countEl) countEl.textContent = data.total + ' reviews';
 
+  // Top 2 reviews preview
   const topReviews = document.getElementById('ppTopReviews');
   if (topReviews) {
     topReviews.innerHTML = data.reviews.slice(0, 2).map(r => `
@@ -2187,6 +2177,7 @@ function openReviewsPage() {
 
   document.getElementById('reviewsPageTitle').innerHTML = `${p ? p.name : 'Reviews'} <small id="reviewsPageSub">${data.avg.toFixed(1)}★ · ${data.total} reviews</small>`;
 
+  // Full rating summary
   const barsHtml = [5,4,3,2,1].map(star => {
     const count = data.dist[star - 1];
     const pct = data.total > 0 ? Math.round(count / data.total * 100) : 0;
@@ -2214,6 +2205,7 @@ function openReviewsPage() {
     </div>
   `;
 
+  // All reviews including user submitted
   const allReviews = [...(userReviews[id] || []), ...(data.reviews || [])];
   document.getElementById('reviewsListFull').innerHTML = allReviews.length === 0
     ? `<div style="text-align:center;padding:3rem 1rem;color:#aaa;"><div style="font-size:3rem;margin-bottom:0.5rem;">💬</div><p>No reviews yet.<br><small>Be the first to review!</small></p></div>`
@@ -2238,13 +2230,13 @@ function openReviewsPage() {
     `).join('');
 
   document.getElementById('reviewsPage').classList.add('open');
+  // Show write review only if user has purchased this product
   const writeBtn = document.getElementById('writeReviewBtn');
   if (purchasedProducts.has(id)) {
     writeBtn.classList.add('open');
     writeBtn.querySelector('button').textContent = '✍️ Write a Review';
     writeBtn.querySelector('button').disabled = false;
     writeBtn.querySelector('button').style.opacity = '1';
-    writeBtn.querySelector('button').style.background = 'var(--deep-red)';
   } else {
     writeBtn.classList.add('open');
     writeBtn.querySelector('button').innerHTML = '🔒 Purchase this product to review';
@@ -2266,12 +2258,14 @@ function markHelpful(i, btnId) {
   btn.classList.toggle('liked');
 }
 
+// Write Review
 function openWriteReview() {
   if (!purchasedProducts.has(currentReviewProductId)) {
     showToast('🔒 Only verified buyers can review!');
     return;
   }
   selectedRating = 0;
+  // Auto-fill name from logged-in user
   const userName = window.currentUser ? window.currentUser.displayName || '' : '';
   document.getElementById('reviewName').value = userName;
   document.getElementById('reviewName').readOnly = !!userName;
@@ -2312,9 +2306,10 @@ function submitReview() {
     name, text, rating: selectedRating,
     loc: userCity, date: now,
     color: colors[Math.floor(Math.random() * colors.length)],
-    verified: true
+    verified: true  // always verified since we checked purchasedProducts
   });
 
+  // update avg in reviewsData
   if (reviewsData[id]) {
     reviewsData[id].total += 1;
     reviewsData[id].dist[selectedRating - 1] += 1;
@@ -2325,6 +2320,7 @@ function submitReview() {
   closeWriteReview();
   showToast('🎉 Thank you for your verified review!');
 
+  // Save to Firebase
   if (window.saveReviewToFirebase) {
     window.saveReviewToFirebase(id, {
       name, text, rating: selectedRating,
@@ -2338,6 +2334,7 @@ function submitReview() {
   }, 400);
 }
 
+// ── POST-PURCHASE REVIEW PROMPT ──
 function showReviewPrompt(productIds) {
   const items = productIds.map(id => products.find(p => p.id === id)).filter(Boolean);
   if (!items.length) return;
@@ -2345,13 +2342,13 @@ function showReviewPrompt(productIds) {
   document.getElementById('reviewPromptItems').innerHTML = items.map(p => `
     <div class="review-prompt-item">
       <div class="review-prompt-item-left">
-        <span class="review-prompt-item-emoji">${p.emoji || '🍬'}</span>
+        <span class="review-prompt-item-emoji">${p.emoji}</span>
         <span class="review-prompt-item-name">${p.name}</span>
       </div>
       <button class="review-prompt-item-btn" onclick="
         document.getElementById('reviewPromptOverlay').classList.remove('open');
-        currentProductId = '${p.id}';
-        currentReviewProductId = '${p.id}';
+        currentProductId = ${p.id};
+        currentReviewProductId = ${p.id};
         setTimeout(() => { openReviewsPage(); setTimeout(openWriteReview, 400); }, 300);
       ">Rate ★</button>
     </div>
@@ -2398,6 +2395,7 @@ function backToAddress() {
   document.getElementById('stepPayment').className = 'shipping-step';
 }
 
+// ── PINCODE AUTO-FILL ──
 let pincodeTimer = null;
 document.addEventListener('DOMContentLoaded', function() {
   const pincodeInput = document.getElementById('ship_pincode');
@@ -2421,9 +2419,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
-
-// Delivery charge: ₹100 per 1kg
-const DELIVERY_CHARGE_PER_KG = 100;
 
 async function lookupPincode(pin) {
   const spinner = document.getElementById('pincodeSpinner');
@@ -2472,6 +2467,7 @@ async function lookupPincode(pin) {
   }
 }
 
+// ── VALIDATION HELPERS ──
 function showErr(id, msg) {
   const el = document.getElementById(id);
   if (el) { el.textContent = msg || el.textContent; el.classList.add('show'); }
@@ -2552,14 +2548,11 @@ function goToReview() {
 
   const items = Object.values(cart);
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  // ₹100 per 1kg delivery charge
-  const totalWeight = items.reduce((s, i) => s + (i.weight || 1) * i.qty, 0);
-  const baseDelivery = Math.round(totalWeight * DELIVERY_CHARGE_PER_KG);
-  const delivery = subtotal >= 499 ? 0 : baseDelivery;
+  const delivery = subtotal >= 499 ? 0 : 40;
   const total = subtotal + delivery;
 
   document.getElementById('confirm_items').innerHTML =
-    items.map(i => `<div class="shipping-summary-row"><span>${i.emoji || '🍬'} ${i.name} x${i.qty}</span><span>₹${i.price * i.qty}</span></div>`).join('') +
+    items.map(i => `<div class="shipping-summary-row"><span>${i.emoji} ${i.name} x${i.qty}</span><span>₹${i.price * i.qty}</span></div>`).join('') +
     `<div class="shipping-summary-row"><span>Delivery</span><span>${delivery === 0 ? '<span style="color:green">FREE</span>' : '₹' + delivery}</span></div>`;
   document.getElementById('confirm_total').textContent = '₹' + total;
 
@@ -2584,9 +2577,7 @@ emailjs.init('CmgzshDIJLAWVwlW8');
 
 function sendOrderEmail(items, total, shipping, paymentId) {
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  const totalWeight = items.reduce((s, i) => s + (i.weight || 1) * i.qty, 0);
-  const baseDelivery = Math.round(totalWeight * DELIVERY_CHARGE_PER_KG);
-  const delivery = subtotal >= 499 ? 0 : baseDelivery;
+  const delivery = subtotal >= 499 ? 0 : 40;
   const itemLines = items.map(i => i.name + ' x' + i.qty + ' = Rs.' + (i.price * i.qty)).join('\n');
   const address = shipping ? [shipping.house + ', ' + shipping.street, shipping.city + ', ' + shipping.state + ' - ' + shipping.pincode].join(', ') : 'Not provided';
   const now = new Date().toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
@@ -2598,12 +2589,11 @@ function sendOrderEmail(items, total, shipping, paymentId) {
   }).then(() => console.log('Order email sent!')).catch(err => console.error('Email failed:', err));
 }
 
+// ── WHATSAPP ──
 function sendOrderWhatsApp(items, total, shipping, paymentId) {
-  const OWNER_NUMBER = '919876543210';
+  const OWNER_NUMBER = '919876543210'; // ← CHANGE THIS
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  const totalWeight = items.reduce((s, i) => s + (i.weight || 1) * i.qty, 0);
-  const baseDelivery = Math.round(totalWeight * DELIVERY_CHARGE_PER_KG);
-  const delivery = subtotal >= 499 ? 0 : baseDelivery;
+  const delivery = subtotal >= 499 ? 0 : 40;
   const itemLines = items.map(i => `• ${i.name} x${i.qty} = Rs.${i.price * i.qty}`).join('\n');
   const address = shipping
     ? [shipping.name, 'Phone: ' + shipping.phone, shipping.house + ', ' + shipping.street, shipping.city + ', ' + shipping.state + ' - ' + shipping.pincode, shipping.note ? 'Note: ' + shipping.note : ''].filter(Boolean).join('\n')
@@ -2618,13 +2608,12 @@ function sendOrderWhatsApp(items, total, shipping, paymentId) {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
+// ── PAYMENT ──
 function startPayment() {
   const items = Object.values(cart);
   if (items.length === 0) return;
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  const totalWeight = items.reduce((s, i) => s + (i.weight || 1) * i.qty, 0);
-  const baseDelivery = Math.round(totalWeight * DELIVERY_CHARGE_PER_KG);
-  const delivery = subtotal >= 499 ? 0 : baseDelivery;
+  const delivery = subtotal >= 499 ? 0 : 40;
   const total = subtotal + delivery;
 
   const options = {
@@ -2635,6 +2624,7 @@ function startPayment() {
     description: "Sweet Order",
     theme: { color: '#E8650A' },
     handler: async function(response) {
+      // Track purchased product IDs for verified reviews
       const purchasedIds = items.map(i => i.id);
       purchasedIds.forEach(pid => purchasedProducts.add(pid));
 
@@ -2647,6 +2637,7 @@ function startPayment() {
       updateCartBadge();
       closeCart();
       showToast('🎉 Payment done! Order sent to shop!');
+      // Prompt to review after a short delay
       setTimeout(() => showReviewPrompt(purchasedIds), 2000);
     }
   };
@@ -2678,13 +2669,14 @@ function startPayment() {
   const auth = getAuth(app);
   const provider = new GoogleAuthProvider();
 
+  // ── LOAD PRODUCTS FROM FIRESTORE ──
   async function loadProductsFromFirebase() {
     try {
       const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'));
       const snap = await getDocs(q);
       const loaded = snap.docs
         .map(d => ({ id: d.id, ...d.data() }))
-        .filter(p => p.active !== false);
+        .filter(p => p.active !== false); // only show active products
       products.length = 0;
       products.push(...loaded);
       renderProducts();
@@ -2697,6 +2689,7 @@ function startPayment() {
         </div>`;
     }
   }
+  // Load products immediately on page init
   loadProductsFromFirebase();
 
   onAuthStateChanged(auth, async (user) => {
@@ -2705,12 +2698,14 @@ function startPayment() {
     const drawer = document.getElementById('accountDrawer');
     if (drawer && drawer.classList.contains('open')) renderAccountView(user);
     if (user) {
+      // Load all persisted data on login
       await Promise.all([
         loadWishlistFromFirebase(user.uid),
         loadPurchasesFromFirebase(user.uid),
         loadReviewsFromFirebase()
       ]);
     } else {
+      // Clear in-memory data on logout
       wishlist.clear();
       purchasedProducts.clear();
       updateWishlistBadge();
@@ -2718,6 +2713,7 @@ function startPayment() {
     }
   });
 
+  // ── NAV AVATAR ──
   function updateNavAvatar(user) {
     const wrap = document.getElementById('navAccountIcon');
     if (!wrap) return;
@@ -2745,6 +2741,7 @@ function startPayment() {
     }
   }
 
+  // ── SIGN IN / OUT ──
   window.signInWithGoogle = async function() {
     try {
       showToast('⏳ Opening Google login...');
@@ -2771,13 +2768,17 @@ function startPayment() {
     renderAccountView(auth.currentUser);
   };
 
+  // ══════════════════════════════════════
+  // ── WISHLIST PERSISTENCE ──
+  // ══════════════════════════════════════
+
   async function loadWishlistFromFirebase(uid) {
     try {
       const snap = await getDocs(query(collection(db, 'wishlist'), where('uid', '==', uid)));
       wishlist.clear();
       snap.forEach(d => wishlist.add(d.data().productId));
       updateWishlistBadge();
-      renderProducts();
+      renderProducts(); // re-render to show correct heart icons
     } catch(e) { console.error('Wishlist load failed:', e); }
   }
 
@@ -2794,6 +2795,10 @@ function startPayment() {
       }
     } catch(e) { console.error('Wishlist save failed:', e); }
   };
+
+  // ══════════════════════════════════════
+  // ── PURCHASES PERSISTENCE ──
+  // ══════════════════════════════════════
 
   async function loadPurchasesFromFirebase(uid) {
     try {
@@ -2816,21 +2821,28 @@ function startPayment() {
     } catch(e) { console.error('Purchases save failed:', e); }
   };
 
+  // ══════════════════════════════════════
+  // ── REVIEWS PERSISTENCE ──
+  // ══════════════════════════════════════
+
   async function loadReviewsFromFirebase() {
     try {
       const snap = await getDocs(query(collection(db, 'reviews'), orderBy('createdAt', 'desc')));
       snap.forEach(d => {
         const r = d.data();
         if (!userReviews[r.productId]) userReviews[r.productId] = [];
+        // avoid duplicates on re-load
         const exists = userReviews[r.productId].some(x => x.firestoreId === d.id);
         if (!exists) {
           userReviews[r.productId].unshift({ ...r, firestoreId: d.id, verified: true });
+          // update reviewsData avg
           if (reviewsData[r.productId]) {
             reviewsData[r.productId].total += 1;
             reviewsData[r.productId].dist[r.rating - 1] += 1;
           }
         }
       });
+      // recalculate averages
       Object.keys(userReviews).forEach(pid => {
         const id = parseInt(pid);
         if (reviewsData[id]) {
@@ -2846,11 +2858,18 @@ function startPayment() {
     if (!user) return null;
     try {
       const docRef = await addDoc(collection(db, 'reviews'), {
-        ...reviewObj, productId, uid: user.uid, createdAt: serverTimestamp()
+        ...reviewObj,
+        productId,
+        uid: user.uid,
+        createdAt: serverTimestamp()
       });
       return docRef.id;
     } catch(e) { console.error('Review save failed:', e); return null; }
   };
+
+  // ══════════════════════════════════════
+  // ── ORDERS ──
+  // ══════════════════════════════════════
 
   window.saveOrderToFirebase = async function(items, total, shipping) {
     const uid = auth.currentUser ? auth.currentUser.uid : 'guest';
@@ -2859,6 +2878,7 @@ function startPayment() {
       items, total, shipping: shipping || {}, uid, userName,
       date: serverTimestamp(), status: 'paid'
     });
+    // Also persist purchased product IDs
     if (auth.currentUser) {
       await window.savePurchasesToFirebase(items.map(i => i.id));
     }
