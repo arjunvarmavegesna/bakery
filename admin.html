@@ -1336,30 +1336,114 @@ async function loadOrdersSection() {
     const q = query(collection(db,'orders'), orderBy('date','desc'));
     const snap = await getDocs(q);
     if (snap.empty) { wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-text">No orders yet.</div></div>`; return; }
+
+    const statusConfig = {
+      under_packing:    { label: '📦 Under Packing',                     bg: '#FFF3E0', color: '#E65100' },
+      shipment_created: { label: '🚚 Shipment Created · Bhimavaram',      bg: '#E3F2FD', color: '#1565C0' },
+      out_for_delivery: { label: '🛵 Out for Delivery',                   bg: '#F3E5F5', color: '#6A1B9A' },
+      delivered:        { label: '✅ Delivered',                           bg: '#E8F5E9', color: '#2E7D32' },
+    };
+
     wrap.innerHTML = `
+      <style>
+        .tracking-select-wrap { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
+        .tracking-select { padding:0.35rem 0.6rem; border:1.5px solid #E8E0D8; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.75rem; color:var(--text); background:#FAFAF8; cursor:pointer; outline:none; }
+        .tracking-select:focus { border-color:var(--brand); }
+        .dtdc-link-input { padding:0.35rem 0.6rem; border:1.5px solid #E8E0D8; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.72rem; color:var(--text); background:#FAFAF8; width:160px; outline:none; }
+        .dtdc-link-input:focus { border-color:var(--brand); }
+        .save-tracking-btn { background:var(--brand); color:white; border:none; border-radius:8px; padding:0.35rem 0.75rem; font-size:0.72rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; white-space:nowrap; }
+        .save-tracking-btn:hover { background:var(--brand-dark); }
+        .save-tracking-btn:disabled { background:#ccc; cursor:not-allowed; }
+        .tracking-saved-tick { color:#2e7d32; font-size:0.8rem; display:none; }
+        .status-pill { display:inline-block; font-size:0.65rem; font-weight:700; padding:3px 9px; border-radius:8px; }
+      </style>
       <table class="product-table">
-        <thead><tr><th>#</th><th>Customer</th><th>Items</th><th>Total</th><th>Address</th><th>Date</th><th>Status</th></tr></thead>
+        <thead><tr><th>#</th><th>Customer</th><th>Items</th><th>Total</th><th>Address</th><th>Date</th><th style="min-width:280px;">Tracking</th></tr></thead>
         <tbody>${snap.docs.map((d,i) => {
           const o = d.data();
+          const oid = d.id;
+          const tStatus = o.trackingStatus || 'under_packing';
+          const dtdcLink = o.dtdcLink || '';
           const date = o.date?.toDate ? o.date.toDate().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : 'Recent';
           const items = (o.items||[]).map(it => `${it.name} (${it.weight||'250g'}) ×${it.qty}`).join('<br>');
           const addr = o.shipping?.city ? `${o.shipping.house}, ${o.shipping.city} - ${o.shipping.pincode}` : '–';
-          return `<tr>
+          const sc = statusConfig[tStatus] || statusConfig.under_packing;
+          const opts = Object.entries(statusConfig).map(([k,v]) =>
+            `<option value="${k}" ${k===tStatus?'selected':''}>${v.label}</option>`
+          ).join('');
+          return `<tr id="order-row-${oid}">
             <td style="font-size:0.72rem;color:var(--text-soft);">#${String(i+1).padStart(4,'0')}</td>
-            <td><div style="font-weight:600;font-size:0.85rem;">${o.shipping?.name||o.userName||'Guest'}</div>
-            <div style="font-size:0.7rem;color:var(--text-soft);">📞 ${o.shipping?.phone||'–'}</div></td>
+            <td>
+              <div style="font-weight:600;font-size:0.85rem;">${o.shipping?.name||o.userName||'Guest'}</div>
+              <div style="font-size:0.7rem;color:var(--text-soft);">📞 ${o.shipping?.phone||'–'}</div>
+            </td>
             <td style="font-size:0.78rem;max-width:160px;">${items}</td>
             <td style="font-weight:700;color:var(--brand-dark);">₹${o.total}</td>
-            <td style="font-size:0.72rem;color:var(--text-soft);max-width:160px;">${addr}</td>
+            <td style="font-size:0.72rem;color:var(--text-soft);max-width:140px;">${addr}</td>
             <td style="font-size:0.78rem;color:var(--text-soft);">${date}</td>
-            <td><span style="background:var(--success-bg);color:var(--success);font-size:0.65rem;font-weight:700;padding:3px 8px;border-radius:8px;">✅ Paid</span></td>
+            <td>
+              <div class="tracking-select-wrap">
+                <select class="tracking-select" id="tsel-${oid}" onchange="onTrackingChange('${oid}')">
+                  ${opts}
+                </select>
+                <span id="tsel-saved-${oid}" class="tracking-saved-tick">✔ Saved</span>
+              </div>
+              <div style="margin-top:0.4rem;display:flex;align-items:center;gap:0.4rem;" id="dtdc-row-${oid}" style="${tStatus==='under_packing'?'display:none':''}">
+                <input class="dtdc-link-input" id="dtdc-${oid}" type="url" placeholder="DTDC tracking link (optional)" value="${dtdcLink}" />
+                <button class="save-tracking-btn" onclick="saveTracking('${oid}')" id="savebtn-${oid}">Save</button>
+              </div>
+            </td>
           </tr>`;
         }).join('')}</tbody>
       </table>`;
+
+    // Show/hide DTDC row based on current status
+    snap.docs.forEach(d => {
+      const tStatus = d.data().trackingStatus || 'under_packing';
+      const dtdcRow = document.getElementById(`dtdc-row-${d.id}`);
+      if (dtdcRow) dtdcRow.style.display = tStatus === 'under_packing' ? 'none' : 'flex';
+    });
+
   } catch(e) {
     wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Failed to load orders.<br><small>${e.message}</small></div></div>`;
   }
 }
+
+window.onTrackingChange = function(oid) {
+  const sel = document.getElementById(`tsel-${oid}`);
+  const dtdcRow = document.getElementById(`dtdc-row-${oid}`);
+  if (!sel || !dtdcRow) return;
+  dtdcRow.style.display = sel.value === 'under_packing' ? 'none' : 'flex';
+};
+
+window.saveTracking = async function(oid) {
+  const sel = document.getElementById(`tsel-${oid}`);
+  const dtdcInput = document.getElementById(`dtdc-${oid}`);
+  const btn = document.getElementById(`savebtn-${oid}`);
+  const savedTick = document.getElementById(`tsel-saved-${oid}`);
+  if (!sel) return;
+
+  const newStatus = sel.value;
+  const dtdcLink = dtdcInput ? dtdcInput.value.trim() : '';
+
+  btn.disabled = true; btn.textContent = '⏳';
+  try {
+    await updateDoc(doc(db, 'orders', oid), {
+      trackingStatus: newStatus,
+      dtdcLink: dtdcLink || null,
+      trackingUpdatedAt: serverTimestamp()
+    });
+    btn.textContent = 'Save';
+    btn.disabled = false;
+    savedTick.style.display = 'inline';
+    setTimeout(() => { savedTick.style.display = 'none'; }, 2500);
+    toast(`✅ Tracking updated to: ${newStatus.replace(/_/g,' ')}`, 'success');
+  } catch(e) {
+    btn.textContent = 'Save';
+    btn.disabled = false;
+    toast('❌ Failed to update tracking: ' + e.message, 'error');
+  }
+};
 
 const sections = ['dashboard','products','add','categories','orders'];
 const titles = {dashboard:'Dashboard',products:'All Products',add:'Add Product',categories:'Categories',orders:'Recent Orders'};
