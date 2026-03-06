@@ -299,20 +299,27 @@
   .pp-header-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--brown); }
   .pp-hero {
     width: 100%;
-    aspect-ratio: 4 / 3;
-    max-height: 420px;
+    height: 300px;
     display: flex; align-items: center; justify-content: center;
     font-size: 7rem; position: relative;
     overflow: hidden;
-    background-size: cover;
   }
   .pp-hero img {
     position: absolute;
     inset: 0;
     width: 100%; height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     object-position: center;
     display: block;
+    background: inherit;
+  }
+  @media (min-width: 768px) {
+    .pp-hero {
+      height: 340px;
+      max-width: 600px;
+      margin: 0 auto;
+      border-radius: 16px;
+    }
   }
   .pp-badge {
     position: absolute; top: 16px; left: 16px;
