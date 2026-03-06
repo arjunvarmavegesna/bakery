@@ -373,6 +373,16 @@ function changeQty(cartKey, delta) {
   openCart();
 }
 
+// ── HOME NAVIGATION ──
+function goHome() {
+  closeAll();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Reset active state on bottom nav
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const homeNav = document.querySelector('.bottom-nav .nav-item:first-child');
+  if (homeNav) homeNav.classList.add('active');
+}
+
 // ── OVERLAYS & DRAWERS ──
 function closeAll() {
   document.getElementById('overlay').classList.remove('open');
