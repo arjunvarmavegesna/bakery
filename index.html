@@ -298,14 +298,20 @@
   }
   .pp-header-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--brown); }
   .pp-hero {
-    width: 100%; height: 280px;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    max-height: 420px;
     display: flex; align-items: center; justify-content: center;
     font-size: 7rem; position: relative;
     overflow: hidden;
+    background-size: cover;
   }
   .pp-hero img {
+    position: absolute;
+    inset: 0;
     width: 100%; height: 100%;
     object-fit: cover;
+    object-position: center;
     display: block;
   }
   .pp-badge {
