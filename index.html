@@ -314,11 +314,49 @@
     background: inherit;
   }
   @media (min-width: 768px) {
+    /* Two-column layout: photo left, details right */
+    .product-page {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      padding-bottom: 0;
+    }
+    .product-page-header {
+      grid-column: 1 / -1;
+    }
+    .pp-desktop-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      align-items: start;
+      min-height: calc(100vh - 60px);
+    }
     .pp-hero {
-      height: 340px;
-      max-width: 600px;
-      margin: 0 auto;
-      border-radius: 16px;
+      height: 100%;
+      min-height: 480px;
+      max-width: none;
+      margin: 0;
+      border-radius: 0;
+      position: sticky;
+      top: 60px;
+    }
+    .pp-hero img {
+      object-fit: cover;
+    }
+    .pp-body {
+      padding: 2rem 2.5rem;
+      overflow-y: auto;
+      max-height: calc(100vh - 60px);
+    }
+    .pp-name { font-size: 2rem; }
+    .pp-actions {
+      position: sticky;
+      bottom: 0;
+      transform: none !important;
+      grid-column: 2;
+      margin: 0 2.5rem 1.5rem;
+      border-radius: 14px;
+      border-top: none;
+      box-shadow: 0 4px 20px rgba(232,101,10,0.15);
     }
   }
   .pp-badge {
@@ -1627,6 +1665,7 @@
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
     </button>
   </div>
+  <div class="pp-desktop-wrap">
   <div class="pp-hero" id="ppHero"></div>
   <div class="pp-body">
     <div class="pp-name" id="ppName"></div>
@@ -1673,6 +1712,7 @@
     <button onclick="openReviewsPage()" style="width:100%;background:var(--cream);border:1.5px solid rgba(232,101,10,0.3);border-radius:12px;padding:0.7rem;font-size:0.82rem;font-weight:600;color:var(--deep-red);cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:0.5rem;">See All Reviews ›</button>
   </div>
 </div>
+</div><!-- end pp-desktop-wrap -->
 <div class="pp-actions" id="ppActions">
   <button class="pp-add-cart" onclick="ppAddToCart()">🛒 Add to Cart</button>
   <button class="pp-buy-now" onclick="ppBuyNow()">⚡ Buy Now</button>
