@@ -742,7 +742,11 @@ const firebaseConfig = {
   messagingSenderId: "217706015668",
   appId: "1:217706015668:web:c03e8659136877b9a860e1"
 };
-const ADMIN_EMAIL = "arjunvarmavegesna@gmail.com";
+const ADMIN_EMAILS = [
+  "arjunvarmavegesna@gmail.com",
+  "varmanotesforall@gmail.com",     
+  "thirdadmin@gmail.com"
+];
 
 const app  = initializeApp(firebaseConfig);
 const db   = getFirestore(app);
@@ -786,7 +790,7 @@ function hideAuthGate() {
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    if (user.email === ADMIN_EMAIL) {
+    if (ADMIN_EMAILS.includes(user.email)) {
       accessDeniedEmail = null;
       hideAuthLoading();
       hideAuthGate();
