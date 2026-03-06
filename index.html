@@ -531,6 +531,7 @@
     content: '🎁';
     position: absolute; right: -10px; bottom: -10px;
     font-size: 5rem; opacity: 0.15;
+    pointer-events: none;
   }
   .promo-text h3 { font-family: 'Playfair Display', serif; color: var(--saffron); font-size: 1.1rem; margin-bottom: 0.3rem; }
   .promo-text p { color: rgba(255,255,255,0.75); font-size: 0.75rem; line-height: 1.4; }
@@ -541,6 +542,7 @@
     cursor: pointer; white-space: nowrap;
     font-family: 'Poppins', sans-serif;
     flex-shrink: 0; margin-left: 0.8rem;
+    position: relative; z-index: 1;
   }
 
   /* ── TESTIMONIALS ── */
@@ -1355,7 +1357,7 @@
     <h3>Festival Gift Boxes</h3>
     <p>Premium assorted boxes from ₹299. Perfect for Diwali, Ugadi & weddings!</p>
   </div>
-  <button class="promo-btn" onclick="filterCategory('gifts'); document.getElementById('products').scrollIntoView({behavior:'smooth', block:'start'});">Shop Now</button>
+  <button class="promo-btn" onclick="shopGifts()">Shop Now</button>
 </div>
 
 <!-- TODAY'S SPECIALS -->
@@ -2110,6 +2112,28 @@ document.getElementById('searchInput').addEventListener('input', function() {
   document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
 });
 
+function shopGifts() {
+  // If products not loaded yet, wait and retry
+  if (!products || !products.length) {
+    showToast('Loading products, please wait...');
+    setTimeout(shopGifts, 800);
+    return;
+  }
+  // Check if any gift products exist
+  const giftProducts = products.filter(p => p.cat === 'gifts');
+  if (giftProducts.length === 0) {
+    // No gift category products — open categories page as fallback
+    showToast('No Gift Box products added yet!');
+    return;
+  }
+  // Close any open overlay pages
+  const catPage = document.getElementById('categoriesPage');
+  if (catPage && catPage.classList.contains('open')) {
+    catPage.classList.remove('open');
+  }
+  filterCategory('gifts');
+}
+
 function filterCategory(cat) {
   // Update active cat pill
   document.querySelectorAll('.cat-pill').forEach(el => {
@@ -2118,7 +2142,10 @@ function filterCategory(cat) {
   });
   const filtered = cat === 'all' ? products : products.filter(p => p.cat === cat);
   renderProducts(filtered);
-  document.getElementById('products').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(() => {
+    const el = document.getElementById('products');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 50);
 }
 
 function scrollToProducts() {
