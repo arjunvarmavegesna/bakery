@@ -857,6 +857,69 @@
   .address-confirm-card .addr-detail { font-size: 0.78rem; color: var(--text-mid); line-height: 1.7; }
   .section-divider { font-size: 0.68rem; font-weight: 700; color: var(--text-mid); letter-spacing: 1px; text-transform: uppercase; margin: 1.2rem 0 0.8rem; padding-bottom: 0.4rem; border-bottom: 1px solid #eee; }
 
+  /* ── ORDER PLACED PAGE ── */
+  .order-placed-page {
+    position: fixed; inset: 0;
+    background: white; z-index: 400;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    overflow-y: auto;
+  }
+  .order-placed-page.open { display: flex; }
+  .order-placed-circle {
+    width: 110px; height: 110px; border-radius: 50%;
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3.5rem; margin-bottom: 1.5rem;
+    box-shadow: 0 8px 30px rgba(46,125,50,0.2);
+    animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .order-placed-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem; color: #2e7d32;
+    margin-bottom: 0.6rem;
+    animation: fadeUp 0.4s 0.2s ease both;
+  }
+  .order-placed-sub {
+    font-size: 0.88rem; color: var(--text-mid);
+    line-height: 1.6; margin-bottom: 1.8rem;
+    max-width: 320px;
+    animation: fadeUp 0.4s 0.3s ease both;
+  }
+  @keyframes fadeUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .order-placed-details {
+    background: var(--cream); border-radius: 16px;
+    padding: 1.2rem 1.4rem; width: 100%; max-width: 380px;
+    margin-bottom: 1.8rem; text-align: left;
+    border: 1px solid rgba(232,101,10,0.15);
+    animation: fadeUp 0.4s 0.4s ease both;
+  }
+  .order-placed-row { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.5rem; color: var(--text-mid); }
+  .order-placed-row:last-child { margin-bottom: 0; }
+  .order-placed-row strong { color: var(--text-dark); }
+  .order-placed-row.total { font-size: 0.95rem; font-weight: 700; color: var(--deep-red); border-top: 1px dashed #ddd; padding-top: 0.6rem; margin-top: 0.4rem; }
+  .order-placed-btn {
+    width: 100%; max-width: 380px;
+    background: var(--deep-red); color: white;
+    border: none; border-radius: 14px;
+    padding: 0.95rem; font-size: 0.95rem; font-weight: 700;
+    cursor: pointer; font-family: 'Poppins', sans-serif;
+    margin-bottom: 0.7rem;
+    animation: fadeUp 0.4s 0.5s ease both;
+  }
+  .order-placed-btn:hover { background: var(--brown); }
+  .order-placed-btn-outline {
+    width: 100%; max-width: 380px;
+    background: transparent; color: var(--deep-red);
+    border: 1.5px solid var(--deep-red); border-radius: 14px;
+    padding: 0.85rem; font-size: 0.88rem; font-weight: 600;
+    cursor: pointer; font-family: 'Poppins', sans-serif;
+    animation: fadeUp 0.4s 0.55s ease both;
+  }
+
   /* ── REVIEW PROMPT ── */
   .review-prompt-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 350; display: none; align-items: flex-end; }
   .review-prompt-overlay.open { display: flex; }
@@ -992,16 +1055,13 @@
     <h3>Festival Gift Boxes</h3>
     <p>Premium assorted boxes from ₹299. Perfect for Diwali, Ugadi & weddings!</p>
   </div>
-
 </div>
 
-<!-- ── TODAY'S SPECIALS — now fully dynamic from Firebase ── -->
 <section class="section">
   <div class="section-header">
     <div class="section-title">Today's <span>Specials</span> 🔥</div>
     <a class="view-all" onclick="openCategoriesPage()">See All</a>
   </div>
-  <!-- Skeleton loader shown while products load -->
   <div class="h-scroll" id="specialsScroll">
     <div class="specials-skeleton">
       <div class="skeleton-pulse" style="height:110px;"></div>
@@ -1025,7 +1085,6 @@
       </div>
     </div>
   </div>
-  <!-- Helper text for shop owners -->
   <p id="specialsHint" style="display:none;font-size:0.7rem;color:#aaa;margin-top:0.5rem;text-align:center;">
     💡 Mark products as <strong>special: true</strong>, <strong>popular: true</strong>, or <strong>bestseller: true</strong> in Firebase to feature them here.
   </p>
@@ -1288,11 +1347,24 @@
 <div class="review-prompt-overlay" id="reviewPromptOverlay">
   <div class="review-prompt">
     <div class="review-prompt-handle"></div>
-    <h3>🎉 Order placed! How was it?</h3>
-    <p>You can now leave a verified review for the products you ordered.</p>
+    <h3>🎉 How was your order?</h3>
+    <p>You can now leave a verified review for the products you received.</p>
     <div class="review-prompt-items" id="reviewPromptItems"></div>
     <button class="review-prompt-skip" onclick="document.getElementById('reviewPromptOverlay').classList.remove('open')">Skip for now</button>
   </div>
+</div>
+
+<!-- ── ORDER PLACED PAGE ── -->
+<div class="order-placed-page" id="orderPlacedPage">
+  <div class="order-placed-circle">🎉</div>
+  <div class="order-placed-title">Order Placed!</div>
+  <div class="order-placed-sub">
+    Your order has been placed successfully.<br>
+    Our team will pack and dispatch it soon. 🍬
+  </div>
+  <div class="order-placed-details" id="orderPlacedDetails"></div>
+  <button class="order-placed-btn" onclick="closeOrderPlacedPage(); openMyOrders();">📦 Track My Order</button>
+  <button class="order-placed-btn-outline" onclick="closeOrderPlacedPage();">🛍️ Continue Shopping</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1303,7 +1375,6 @@
   <div class="drawer-title">Help & Support 💬</div>
   <p style="font-size:0.82rem;color:var(--text-mid);margin-bottom:1.4rem;line-height:1.6;">We're here to help! Reach us on WhatsApp for quick replies, or call us directly during shop hours.</p>
 
-  <!-- WhatsApp -->
   <a href="https://wa.me/919876543210?text=Hi%20Sree%20Ramu%20Sweets%2C%20I%20need%20some%20help!" target="_blank" rel="noopener"
     style="display:flex;align-items:center;gap:1rem;background:#e7fbe9;border:1.5px solid #a5d6a7;border-radius:16px;padding:1rem 1.1rem;margin-bottom:0.8rem;text-decoration:none;cursor:pointer;transition:box-shadow 0.2s;"
     onmouseover="this.style.boxShadow='0 4px 16px rgba(37,211,102,0.18)'" onmouseout="this.style.boxShadow='none'">
@@ -1317,7 +1388,6 @@
     <div style="margin-left:auto;color:#25D366;font-size:1.1rem;">→</div>
   </a>
 
-  <!-- Call -->
   <a href="tel:+919876543210"
     style="display:flex;align-items:center;gap:1rem;background:#e8f0fe;border:1.5px solid #9fc3f8;border-radius:16px;padding:1rem 1.1rem;margin-bottom:1.4rem;text-decoration:none;cursor:pointer;transition:box-shadow 0.2s;"
     onmouseover="this.style.boxShadow='0 4px 16px rgba(66,133,244,0.18)'" onmouseout="this.style.boxShadow='none'">
@@ -1360,6 +1430,18 @@ let cart = {};
 let searchVisible = false;
 let wishlist = new Set();
 let purchasedProducts = new Set();
+// deliveredProducts stores productIds from delivered orders (enables reviews)
+let deliveredProducts = new Set();
+
+// ── CHANGE 1: DELIVERY CHARGE CALCULATOR ──
+// AP & Telangana: ₹100 up to 1kg. Other states: ₹140 up to 1kg. FREE above ₹499.
+const AP_TG_STATES = ['andhra pradesh', 'telangana'];
+function getDeliveryCharge(state, subtotal) {
+  if (subtotal >= 499) return 0;
+  const stateLower = (state || '').toLowerCase().trim();
+  if (AP_TG_STATES.some(s => stateLower.includes(s))) return 100;
+  return 140;
+}
 
 // ── WEIGHT VARIANT STATE ──
 let currentProductId = null;
@@ -1474,22 +1556,18 @@ function removeFromWishlist(id) {
   wishlist.delete(id); updateWishlistBadge(); renderWishlist();
 }
 
-// ── TODAY'S SPECIALS — Dynamic from Firebase ──
+// ── TODAY'S SPECIALS ──
 function renderSpecials() {
   const container = document.getElementById('specialsScroll');
   if (!container) return;
-
-  // Priority: special:true → popular:true → bestseller:true → fallback top 6
   let specials = products.filter(p => p.special === true);
   if (specials.length === 0) specials = products.filter(p => p.popular === true || p.bestseller === true);
   if (specials.length === 0) specials = products.slice(0, 6);
-
   if (specials.length === 0) {
     container.innerHTML = '<div style="padding:1.5rem 1rem;color:#aaa;font-size:0.82rem;text-align:center;">No specials today. Check back soon! 🍬</div>';
     document.getElementById('specialsHint').style.display = 'block';
     return;
   }
-
   container.innerHTML = specials.map(p => {
     const displayPrice = p.price250 || p.price;
     const oldPrice = p.oldPrice250 || p.oldPrice || null;
@@ -1498,9 +1576,7 @@ function renderSpecials() {
     <div class="special-card" onclick="openProductPage('${p.id}')" style="cursor:pointer;position:relative;">
       ${discount ? `<div style="position:absolute;top:8px;left:8px;background:#E8650A;color:white;font-size:0.58rem;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:0.5px;z-index:2;">${discount}% OFF</div>` : (p.badge ? `<div style="position:absolute;top:8px;left:8px;background:#E8650A;color:white;font-size:0.58rem;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:0.5px;z-index:2;">${p.badge}</div>` : '')}
       <div class="special-img" style="background:${p.bg||'#FFF0E0'}">
-        ${p.photoUrl
-          ? `<img src="${p.photoUrl}" alt="${p.name}">`
-          : `<span style="font-size:2.8rem">🍬</span>`}
+        ${p.photoUrl ? `<img src="${p.photoUrl}" alt="${p.name}">` : `<span style="font-size:2.8rem">🍬</span>`}
       </div>
       <div class="special-info">
         <div class="special-name">${p.name}</div>
@@ -1520,7 +1596,6 @@ function renderSpecials() {
   }).join('');
 }
 
-// Quick add from specials — uses first (smallest) weight variant
 function quickAddSpecial(id) {
   const p = products.find(x => x.id === id);
   if (!p) return;
@@ -1605,10 +1680,12 @@ function updateCartBadge() {
   document.getElementById('cartCount').textContent = total;
 }
 
+// ── CHANGE 1 APPLIED: openCart uses getDeliveryCharge with current state ──
 function openCart() {
   const items = Object.values(cart);
   const cartItemsEl = document.getElementById('cartItems');
   const cartTotalEl = document.getElementById('cartTotal');
+  const currentState = shippingData && shippingData.state ? shippingData.state : '';
 
   if (items.length === 0) {
     cartItemsEl.innerHTML = `<div class="empty-cart"><div>🛒</div><p>Your cart is empty!<br><small>Add some delicious sweets 😋</small></p></div>`;
@@ -1631,11 +1708,14 @@ function openCart() {
     `).join('');
 
     const subtotal = items.reduce((s,i) => s + i.selectedPrice * i.qty, 0);
-    const delivery = subtotal >= 499 ? 0 : 40;
+    const delivery = getDeliveryCharge(currentState, subtotal);
+    const isAP_TG = AP_TG_STATES.some(s => currentState.toLowerCase().includes(s));
+    const deliveryNote = subtotal >= 499 ? '' : (isAP_TG || !currentState ? ' (AP/TG rate)' : ' (Other state rate)');
     cartTotalEl.innerHTML = `
       <div class="cart-total">
         <div class="total-row"><span>Subtotal</span><span>₹${subtotal}</span></div>
-        <div class="total-row"><span>Delivery</span><span>${delivery === 0 ? '<span style="color:green">FREE</span>' : '₹' + delivery}</span></div>
+        <div class="total-row"><span>Delivery${deliveryNote ? `<br><small style="color:#aaa;font-size:0.6rem;">${deliveryNote}</small>` : ''}</span><span>${delivery === 0 ? '<span style="color:green">FREE</span>' : '₹' + delivery}</span></div>
+        ${!currentState ? `<div class="total-row"><span style="font-size:0.68rem;color:#aaa;">📍 Delivery: ₹100 AP/TG · ₹140 Other States · FREE above ₹499</span></div>` : ''}
         <div class="total-row grand"><span>Total</span><span>₹${subtotal + delivery}</span></div>
         <button class="checkout-btn" onclick="openShipping()">Proceed to Checkout 📍</button>
       </div>
@@ -1718,7 +1798,6 @@ function toggleSortMenu() {
   menu.style.display = isOpen ? 'none' : 'block';
   chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
   if (!isOpen) {
-    // Close on outside click
     setTimeout(() => document.addEventListener('click', closeSortOnOutside, { once: true }), 10);
   }
 }
@@ -1734,28 +1813,18 @@ function closeSortOnOutside(e) {
 
 function applySort(key) {
   currentSort = key;
-
-  // Update label
   const labels = { bestsellers: '🏆 Best Sellers', popular: '🔥 Popular', lowtohigh: 'Low → High', hightolow: 'High → Low' };
   document.getElementById('sortLabel').textContent = labels[key];
-
-  // Highlight active
   document.querySelectorAll('.sort-option').forEach(el => {
     el.classList.toggle('active', el.dataset.key === key);
   });
-
-  // Close menu
   document.getElementById('sortMenu').style.display = 'none';
   document.getElementById('sortChevron').style.transform = 'rotate(0deg)';
-
-  // Apply
   renderSorted();
 }
 
 function renderSorted() {
-  // Start from current category filter
   let list = currentFilterCat === 'all' ? [...products] : products.filter(p => p.cat === currentFilterCat);
-
   if (currentSort === 'bestsellers') {
     list = list.filter(p => p.bestseller === true || p.special === true)
                .concat(list.filter(p => !p.bestseller && !p.special));
@@ -1767,7 +1836,6 @@ function renderSorted() {
   } else if (currentSort === 'hightolow') {
     list.sort((a, b) => (b.price250 || b.price || 0) - (a.price250 || a.price || 0));
   }
-
   renderProducts(list);
 }
 
@@ -1893,6 +1961,7 @@ let currentReviewProductId = null;
 let selectedRating = 0;
 const userReviews = {};
 
+// ── CHANGE 4: openReviewsPage — check deliveredProducts for write access ──
 function openReviewsPage() {
   const id = currentProductId;
   currentReviewProductId = id;
@@ -1927,11 +1996,19 @@ function openReviewsPage() {
   document.getElementById('reviewsPage').classList.add('open');
   const writeBtn = document.getElementById('writeReviewBtn');
   writeBtn.classList.add('open');
-  if (purchasedProducts.has(id)) {
+
+  // CHANGE 4: Only allow reviews if the product has been DELIVERED (not just purchased)
+  const isDelivered = deliveredProducts.has(id);
+  if (isDelivered) {
     writeBtn.querySelector('button').textContent = '✍️ Write a Review';
     writeBtn.querySelector('button').disabled = false;
     writeBtn.querySelector('button').style.opacity = '1';
     writeBtn.querySelector('button').style.background = 'var(--deep-red)';
+  } else if (purchasedProducts.has(id)) {
+    writeBtn.querySelector('button').innerHTML = '⏳ Review available after delivery';
+    writeBtn.querySelector('button').disabled = true;
+    writeBtn.querySelector('button').style.opacity = '0.6';
+    writeBtn.querySelector('button').style.background = '#888';
   } else {
     writeBtn.querySelector('button').innerHTML = '🔒 Purchase this product to review';
     writeBtn.querySelector('button').disabled = true;
@@ -1948,7 +2025,15 @@ function closeReviewsPage() {
 }
 
 function openWriteReview() {
-  if (!purchasedProducts.has(currentReviewProductId)) { showToast('🔒 Only verified buyers can review!'); return; }
+  // CHANGE 4: Only allow if delivered
+  if (!deliveredProducts.has(currentReviewProductId)) {
+    if (purchasedProducts.has(currentReviewProductId)) {
+      showToast('⏳ Review will be available after your order is delivered!');
+    } else {
+      showToast('🔒 Only verified buyers can review!');
+    }
+    return;
+  }
   selectedRating = 0;
   const userName = window.currentUser ? window.currentUser.displayName || '' : '';
   document.getElementById('reviewName').value = userName;
@@ -1971,7 +2056,7 @@ function submitReview() {
   if (!selectedRating) { showToast('⭐ Please select a star rating!'); return; }
   if (name.length < 2) { showToast('📝 Please enter your name!'); return; }
   if (text.length < 10) { showToast('📝 Please write at least a short review!'); return; }
-  if (!purchasedProducts.has(currentReviewProductId)) { showToast('🔒 Only verified buyers can review!'); return; }
+  if (!deliveredProducts.has(currentReviewProductId)) { showToast('⏳ Review available after delivery!'); return; }
   const id = currentReviewProductId;
   if (!userReviews[id]) userReviews[id] = [];
   const colors = ['#E8650A','#B84D00','#FF8C2A','#5C3A00','#CC5500'];
@@ -1982,17 +2067,6 @@ function submitReview() {
   showToast('🎉 Thank you for your verified review!');
   if (window.saveReviewToFirebase) window.saveReviewToFirebase(id, { name, text, rating: selectedRating, loc: shippingData?.city || 'India', date: now });
   setTimeout(() => { openReviewsPage(); renderProductReviews(id); }, 400);
-}
-
-function showReviewPrompt(productIds) {
-  const items = productIds.map(id => products.find(p => p.id === id)).filter(Boolean);
-  if (!items.length) return;
-  document.getElementById('reviewPromptItems').innerHTML = items.map(p => `
-    <div class="review-prompt-item">
-      <div class="review-prompt-item-left"><span class="review-prompt-item-emoji">🍬</span><span class="review-prompt-item-name">${p.name}</span></div>
-      <button class="review-prompt-item-btn" onclick="document.getElementById('reviewPromptOverlay').classList.remove('open');currentProductId='${p.id}';currentReviewProductId='${p.id}';setTimeout(()=>{openReviewsPage();setTimeout(openWriteReview,400)},300);">Rate ★</button>
-    </div>`).join('');
-  document.getElementById('reviewPromptOverlay').classList.add('open');
 }
 
 // ── SHIPPING ──
@@ -2100,6 +2174,7 @@ function validateShippingForm() {
   return valid;
 }
 
+// ── CHANGE 1 APPLIED: goToReview uses getDeliveryCharge with state ──
 function goToReview() {
   if (goToReview._busy) return;
   goToReview._busy = true;
@@ -2120,9 +2195,12 @@ function goToReview() {
   document.getElementById('confirm_address').innerHTML = shippingData.house + ', ' + shippingData.street + '<br>' + shippingData.city + ', ' + shippingData.state + ' - ' + shippingData.pincode + (shippingData.note ? '<br>📝 ' + shippingData.note : '');
   const items = Object.values(cart);
   const subtotal = items.reduce((s,i) => s + i.selectedPrice*i.qty, 0);
-  const delivery = subtotal >= 499 ? 0 : 40;
+  const delivery = getDeliveryCharge(shippingData.state, subtotal);
+  const isAP_TG = AP_TG_STATES.some(s => shippingData.state.toLowerCase().includes(s));
+  const deliveryLabel = delivery === 0 ? '<span style="color:green">FREE</span>' :
+    `₹${delivery} <small style="color:#aaa;font-size:0.65rem;">(${isAP_TG ? 'AP/TG rate' : 'Other state rate'})</small>`;
   document.getElementById('confirm_items').innerHTML = items.map(i => `<div class="shipping-summary-row"><span>${i.name} (${i.selectedWeight||'250g'}) x${i.qty}</span><span>₹${i.selectedPrice*i.qty}</span></div>`).join('') +
-    `<div class="shipping-summary-row"><span>Delivery</span><span>${delivery===0?'<span style="color:green">FREE</span>':'₹'+delivery}</span></div>`;
+    `<div class="shipping-summary-row"><span>Delivery</span><span>${deliveryLabel}</span></div>`;
   document.getElementById('confirm_total').textContent = '₹' + (subtotal+delivery);
   document.getElementById('shippingPage1').style.display = 'none';
   document.getElementById('shippingPage2').style.display = 'block';
@@ -2142,37 +2220,62 @@ function proceedToPayment() {
 
 emailjs.init('CmgzshDIJLAWVwlW8');
 
+// ── CHANGE 2: Updated email with state-based delivery charge info ──
 function sendOrderEmail(items, total, shipping, paymentId) {
   const subtotal = items.reduce((s,i) => s + i.selectedPrice*i.qty, 0);
-  const delivery = subtotal >= 499 ? 0 : 40;
+  const delivery = getDeliveryCharge(shipping?.state || '', subtotal);
   const itemLines = items.map(i => i.name + ' (' + (i.selectedWeight||'250g') + ') x' + i.qty + ' = Rs.' + (i.selectedPrice*i.qty)).join('\n');
   const address = shipping ? [shipping.house+', '+shipping.street, shipping.city+', '+shipping.state+' - '+shipping.pincode].join(', ') : 'Not provided';
+  const isAP_TG = AP_TG_STATES.some(s => (shipping?.state||'').toLowerCase().includes(s));
+  const deliveryInfo = delivery === 0 ? 'FREE (above Rs.499)' : `Rs.${delivery} (${isAP_TG ? 'AP/Telangana rate' : 'Other state rate'})`;
   const now = new Date().toLocaleString('en-IN', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
   emailjs.send('service_1hzy94j','template_wclu0uv',{
-    date:now,payment_id:paymentId||'N/A',items:itemLines,subtotal,delivery:delivery===0?'FREE':delivery,total,
-    customer_name:shipping?.name||'Guest',phone:shipping?.phone||'N/A',address
+    date: now,
+    payment_id: paymentId||'N/A',
+    items: itemLines,
+    subtotal,
+    delivery: deliveryInfo,
+    total,
+    customer_name: shipping?.name||'Guest',
+    phone: shipping?.phone||'N/A',
+    address,
+    delivery_state: shipping?.state||'N/A',
+    shipping_note: `Delivery Charge: ${deliveryInfo} | State: ${shipping?.state||'N/A'}`
   }).catch(err=>console.error('Email failed:',err));
 }
 
-function sendOrderWhatsApp(items, total, shipping, paymentId) {
-  const OWNER_NUMBER = '919876543210';
+// ── CHANGE 3: Order Placed page instead of WhatsApp auto-message ──
+function showOrderPlacedPage(items, total, shipping, paymentId) {
   const subtotal = items.reduce((s,i) => s + i.selectedPrice*i.qty, 0);
-  const delivery = subtotal >= 499 ? 0 : 40;
-  const itemLines = items.map(i => `• ${i.name} (${i.selectedWeight||'250g'}) x${i.qty} = Rs.${i.selectedPrice*i.qty}`).join('\n');
-  const address = shipping ? [shipping.name,'Phone: '+shipping.phone,shipping.house+', '+shipping.street,shipping.city+', '+shipping.state+' - '+shipping.pincode,shipping.note?'Note: '+shipping.note:''].filter(Boolean).join('\n') : 'Not provided';
-  const now = new Date().toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-  const msg = ['*NEW ORDER - Sree Ramu Sweets*','--------------------','*Date:* '+now,'*Payment ID:* '+(paymentId||'N/A'),'','*ITEMS ORDERED:*',itemLines,'','*PRICE SUMMARY:*','Subtotal: Rs.'+subtotal,'Delivery: '+(delivery===0?'FREE':'Rs.'+delivery),'*Total Paid: Rs.'+total+'*','','*DELIVER TO:*',address].join('\n');
-  const a = document.createElement('a');
-  a.href = 'https://wa.me/'+OWNER_NUMBER+'?text='+encodeURIComponent(msg);
-  a.target = '_blank'; a.rel = 'noopener';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  const delivery = getDeliveryCharge(shipping?.state || '', subtotal);
+  const isAP_TG = AP_TG_STATES.some(s => (shipping?.state||'').toLowerCase().includes(s));
+  const now = new Date().toLocaleString('en-IN', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const itemsHtml = items.map(i =>
+    `<div class="order-placed-row"><span>${i.name} (${i.selectedWeight||'250g'}) x${i.qty}</span><strong>₹${i.selectedPrice*i.qty}</strong></div>`
+  ).join('');
+  const deliveryLabel = delivery === 0 ? 'FREE' : `₹${delivery} (${isAP_TG ? 'AP/TG' : 'Other State'})`;
+  document.getElementById('orderPlacedDetails').innerHTML = `
+    ${itemsHtml}
+    <div class="order-placed-row"><span>Delivery Charge</span><strong>${deliveryLabel}</strong></div>
+    <div class="order-placed-row total"><span>Total Paid</span><span>₹${total}</span></div>
+    <div class="order-placed-row" style="margin-top:0.5rem;"><span>📍 Deliver to</span><strong>${shipping?.city || ''}, ${shipping?.state || ''}</strong></div>
+    <div class="order-placed-row"><span>🕐 Ordered on</span><strong>${now}</strong></div>
+    ${paymentId ? `<div class="order-placed-row"><span>Payment ID</span><strong style="font-size:0.7rem;">${paymentId}</strong></div>` : ''}
+  `;
+  document.getElementById('orderPlacedPage').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeOrderPlacedPage() {
+  document.getElementById('orderPlacedPage').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 function startPayment() {
   const items = Object.values(cart);
   if (!items.length) return;
   const subtotal = items.reduce((s,i) => s + i.selectedPrice*i.qty, 0);
-  const delivery = subtotal >= 499 ? 0 : 40;
+  const delivery = getDeliveryCharge(shippingData?.state || '', subtotal);
   const total = subtotal + delivery;
   const options = {
     key: "rzp_test_SN8B17Y4nm9Htx",
@@ -2183,11 +2286,11 @@ function startPayment() {
       const purchasedIds = items.map(i => i.id);
       purchasedIds.forEach(pid => purchasedProducts.add(pid));
       try { if (window.saveOrderToFirebase) await window.saveOrderToFirebase(items, total, shippingData); } catch(e) {}
-      sendOrderWhatsApp(items, total, shippingData, response.razorpay_payment_id);
+      // CHANGE 3: Send email only (no WhatsApp auto-message)
       sendOrderEmail(items, total, shippingData, response.razorpay_payment_id);
-      cart = {}; updateCartBadge(); closeCart();
-      showToast('🎉 Payment done! Order sent to shop!');
-      setTimeout(() => showReviewPrompt(purchasedIds), 2000);
+      cart = {}; updateCartBadge();
+      // CHANGE 3: Show Order Placed page instead of WhatsApp message
+      showOrderPlacedPage(items, total, shippingData, response.razorpay_payment_id);
     }
   };
   const rzp = new Razorpay(options);
@@ -2226,7 +2329,7 @@ function startPayment() {
       products.length = 0;
       products.push(...loaded);
       renderProducts();
-      renderSpecials(); // ← Render Today's Specials after products load
+      renderSpecials();
     } catch(e) {
       console.error('Failed to load products:', e);
       document.getElementById('productsGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:#aaa;"><div style="font-size:2rem;margin-bottom:0.5rem;">⚠️</div><p>Could not load products. Please refresh.</p></div>`;
@@ -2242,8 +2345,10 @@ function startPayment() {
     if (drawer && drawer.classList.contains('open')) renderAccountView(user);
     if (user) {
       await Promise.all([loadWishlistFromFirebase(user.uid), loadPurchasesFromFirebase(user.uid), loadReviewsFromFirebase()]);
+      // CHANGE 4: Also load delivered products
+      await loadDeliveredProductsFromFirebase(user.uid);
     } else {
-      wishlist.clear(); purchasedProducts.clear();
+      wishlist.clear(); purchasedProducts.clear(); deliveredProducts.clear();
       updateWishlistBadge(); renderProducts();
     }
   });
@@ -2275,7 +2380,7 @@ function startPayment() {
     catch(e) { showToast('❌ Login failed. Try again.'); console.error(e); }
   };
   window.signOutUser = async function() {
-    try { await signOut(auth); window.currentUser = null; wishlist.clear(); purchasedProducts.clear(); updateWishlistBadge(); renderAccountView(null); showToast('👋 Signed out successfully'); }
+    try { await signOut(auth); window.currentUser = null; wishlist.clear(); purchasedProducts.clear(); deliveredProducts.clear(); updateWishlistBadge(); renderAccountView(null); showToast('👋 Signed out successfully'); }
     catch(e) { showToast('❌ Sign out failed'); }
   };
   window.openAccount = function() {
@@ -2312,6 +2417,19 @@ function startPayment() {
     } catch(e) { console.error('Purchases save failed:',e); }
   };
 
+  // ── CHANGE 4: Load products from DELIVERED orders only ──
+  async function loadDeliveredProductsFromFirebase(uid) {
+    try {
+      const q = query(collection(db,'orders'), where('uid','==',uid), where('trackingStatus','==','delivered'));
+      const snap = await getDocs(q);
+      deliveredProducts.clear();
+      snap.forEach(d => {
+        const o = d.data();
+        (o.items||[]).forEach(item => deliveredProducts.add(item.id));
+      });
+    } catch(e) { console.error('Delivered products load failed:',e); }
+  }
+
   async function loadReviewsFromFirebase() {
     try {
       const snap = await getDocs(query(collection(db,'reviews'), orderBy('createdAt','desc')));
@@ -2343,7 +2461,6 @@ function startPayment() {
 
   // ── ORDER TRACKING HELPERS ──
   function getTrackingSteps(status) {
-    // Steps: under_packing → shipment_created → out_for_delivery → delivered
     const allSteps = [
       { key: 'under_packing',      label: 'Under\nPacking',    icon: '📦' },
       { key: 'shipment_created',   label: 'Shipment\nCreated', icon: '🚚' },
@@ -2413,9 +2530,17 @@ function startPayment() {
       listEl.innerHTML = snapshot.docs.map((d,i) => {
         const o = d.data();
         const trackStatus = o.trackingStatus || 'under_packing';
+        const isDelivered = trackStatus === 'delivered';
         const date = o.date?.toDate ? o.date.toDate().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Recent';
         const itemNames = (o.items||[]).map(it => `🍬 ${it.name} (${it.weight||'250g'}) x${it.qty}`).join('<br>');
         const addr = o.shipping?.city ? `📍 ${o.shipping.house}, ${o.shipping.city} - ${o.shipping.pincode}` : '';
+        // CHANGE 4: Show Rate & Review button only for delivered orders
+        const reviewBtn = isDelivered
+          ? `<button onclick="openReviewFromOrder(${JSON.stringify((o.items||[]).map(it=>it.id))})"
+               style="margin-top:0.6rem;width:100%;background:linear-gradient(135deg,#E8650A,#FF8C2A);color:white;border:none;border-radius:10px;padding:0.55rem;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:0.4rem;">
+               ⭐ Rate & Review Your Order
+             </button>`
+          : '';
         return `
           <div class="order-card">
             <div class="order-header">
@@ -2429,6 +2554,7 @@ function startPayment() {
               <span class="order-date">🕐 ${date}</span>
             </div>
             ${renderTrackingTimeline(trackStatus, o.dtdcLink || null)}
+            ${reviewBtn}
           </div>`;
       }).join('');
     } catch(e) {
@@ -2443,6 +2569,22 @@ function startPayment() {
       document.getElementById('overlay').classList.add('open');
       document.getElementById('ordersDrawer').classList.add('open');
       window.loadOrders(document.getElementById('ordersList'));
+    }, 300);
+  };
+
+  // CHANGE 4: Open reviews for a specific product from orders section
+  window.openReviewFromOrder = function(productIds) {
+    if (!productIds || !productIds.length) return;
+    const firstId = productIds[0];
+    const p = products.find(x => x.id === firstId);
+    if (!p) { showToast('Product not found'); return; }
+    // Mark these as delivered so reviews are enabled
+    productIds.forEach(pid => deliveredProducts.add(pid));
+    document.getElementById('ordersDrawer').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+    setTimeout(() => {
+      currentProductId = firstId;
+      openReviewsPage();
     }, 300);
   };
 </script>
