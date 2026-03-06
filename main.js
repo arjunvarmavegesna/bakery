@@ -33,8 +33,8 @@ function getDeliveryCharge(state, subtotal) {
 // ── REVIEWS DATA ──
 const reviewsData = {
   1: { avg: 4.9, total: 128, dist: [2,3,8,24,91], reviews: [
-    { name:'Tejeswini', loc:'Vijayawada', rating:5, text:'Best Mysore Pak in Vijayawada! Just like my grandmother used to make.', date:'12 Feb 2025', color:'#E8650A', verified:true },
-    { name:'Arjun Varma', loc:'Bhimavaram', rating:5, text:'Pure ghee taste is unmatched. Perfectly sweet.', date:'08 Jan 2025', color:'#B84D00', verified:true },
+    { name:'Padma Lakshmi', loc:'Bhimavaram', rating:5, text:'Best Mysore Pak in Bhimavaram! Just like my grandmother used to make.', date:'12 Feb 2025', color:'#E8650A', verified:true },
+    { name:'Suresh Babu', loc:'Guntur', rating:5, text:'Pure ghee taste is unmatched. Perfectly sweet.', date:'08 Jan 2025', color:'#B84D00', verified:true },
   ]},
   2: { avg: 4.8, total: 95, dist: [1,2,6,20,66], reviews: [
     { name:'Ravi Shankar', loc:'Hyderabad', rating:5, text:'Ordered for Diwali gifting. Everyone at office was impressed!', date:'15 Nov 2024', color:'#E8650A', verified:true },
@@ -375,6 +375,21 @@ function closeAll() {
   closeReviewsPage();
   closeCatalogue();
 }
+window.closeAll = closeAll;
+
+function goHome() {
+  closeAll();
+  document.getElementById('orderPlacedPage')?.classList.remove('open');
+  document.body.style.overflow = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  currentFilterCat = 'all';
+  currentSort = null;
+  document.querySelectorAll('.cat-pill').forEach((el, i) => el.classList.toggle('active', i === 0));
+  const sortLabel = document.getElementById('sortLabel');
+  if (sortLabel) sortLabel.textContent = 'Sort By';
+  renderProducts(products);
+}
+window.goHome = goHome;
 
 function openOrders() {
   document.getElementById('overlay').classList.add('open');
@@ -518,6 +533,9 @@ function openProductPage(id) {
   document.getElementById('ppActions').classList.add('open');
   document.body.style.overflow = 'hidden';
   renderProductReviews(id);
+
+  // Push history so browser back/swipe closes this page instead of leaving site
+  history.pushState({ page: 'product', id }, '', '');
 }
 
 function closeProductPage() {
@@ -913,7 +931,7 @@ function startPayment() {
   const options = {
     key: "rzp_test_SN8B17Y4nm9Htx",
     amount: total * 100, currency: "INR",
-    name: "Sree Ramu Sweets", description: "Sweet Order",
+    name: "Sri Ramu Sweets", description: "Sweet Order",
     theme: { color: '#E8650A' },
     handler: async function(response) {
       const purchasedIds = items.map(i => i.id);
@@ -927,3 +945,57 @@ function startPayment() {
   const rzp = new Razorpay(options);
   rzp.open();
 }
+
+/* ═══════════════════════════════════════════════════════════
+   BACK BUTTON / SWIPE HANDLER
+   Intercepts browser back so it closes overlays instead of
+   navigating away from the page.
+   ═══════════════════════════════════════════════════════════ */
+
+// Push a baseline history entry on load so the very first back
+// press doesn't leave the site
+history.replaceState({ page: 'home' }, '', '');
+
+window.addEventListener('popstate', function (e) {
+  // Check what's currently open and close the topmost one
+  const productPage     = document.getElementById('productPage');
+  const reviewsPage     = document.getElementById('reviewsPage');
+  const categoriesPage  = document.getElementById('categoriesPage');
+  const wishlistPage    = document.getElementById('wishlistPage');
+  const catalogueOverlay= document.getElementById('catalogueOverlay');
+  const cartDrawer      = document.getElementById('cartDrawer');
+  const shippingDrawer  = document.getElementById('shippingDrawer');
+  const ordersDrawer    = document.getElementById('ordersDrawer');
+  const accountDrawer   = document.getElementById('accountDrawer');
+  const helpDrawer      = document.getElementById('helpDrawer');
+  const orderPlacedPage = document.getElementById('orderPlacedPage');
+  const reviewModal     = document.getElementById('reviewModalOverlay');
+
+  if (reviewModal?.classList.contains('open'))        { reviewModal.classList.remove('open'); }
+  else if (orderPlacedPage?.classList.contains('open')){ closeOrderPlacedPage(); }
+  else if (reviewsPage?.classList.contains('open'))   { closeReviewsPage(); }
+  else if (productPage?.classList.contains('open'))   { closeProductPage(); }
+  else if (shippingDrawer?.classList.contains('open')){ shippingDrawer.classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+  else if (cartDrawer?.classList.contains('open'))    { cartDrawer.classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+  else if (ordersDrawer?.classList.contains('open'))  { ordersDrawer.classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+  else if (accountDrawer?.classList.contains('open')) { accountDrawer.classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+  else if (helpDrawer?.classList.contains('open'))    { helpDrawer.classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+  else if (categoriesPage?.classList.contains('open')){ closeCategoriesPage(); }
+  else if (wishlistPage?.classList.contains('open'))  { closeWishlistPage(); }
+  else if (catalogueOverlay?.classList.contains('open')){ closeCatalogue(); }
+  else {
+    // Nothing open — we're on the home page, stay here
+    history.pushState({ page: 'home' }, '', '');
+    return;
+  }
+
+  // Always keep a state in the stack so next back press is also caught
+  history.pushState({ page: 'home' }, '', '');
+});
+
+// Push history when opening other major drawers/pages too
+const _origOpenCart = window.openCart;
+window.openCart = function() {
+  history.pushState({ page: 'cart' }, '', '');
+  if (_origOpenCart) _origOpenCart();
+};
