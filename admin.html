@@ -135,31 +135,46 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
   min-width:40px;
 }
 
-.photo-upload-area {
+/* ── MULTI-PHOTO GRID ── */
+.photos-grid {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:0.75rem;
+  margin-top:0.4rem;
+}
+.photo-slot {
   border:2.5px dashed #E8E0D8; border-radius:14px;
-  padding:2rem; text-align:center; cursor:pointer;
+  aspect-ratio:1/1; text-align:center; cursor:pointer;
   transition:all 0.2s; background:#FAFAF8;
   position:relative; overflow:hidden;
+  display:flex; align-items:center; justify-content:center; flex-direction:column;
 }
-.photo-upload-area:hover { border-color:var(--brand); background:var(--cream); }
-.photo-upload-area.dragover { border-color:var(--brand); background:var(--cream); transform:scale(1.01); }
-.photo-upload-area.has-image { padding:0; border-style:solid; border-color:var(--brand); }
-.photo-upload-icon { font-size:2.5rem; margin-bottom:0.5rem; }
-.photo-upload-text { font-size:0.85rem; font-weight:600; color:var(--text-mid); margin-bottom:0.3rem; }
-.photo-upload-hint { font-size:0.72rem; color:var(--text-soft); }
+.photo-slot:hover { border-color:var(--brand); background:var(--cream); }
+.photo-slot.dragover { border-color:var(--brand); background:var(--cream); transform:scale(1.02); }
+.photo-slot.has-image { padding:0; border-style:solid; border-color:var(--brand); }
+.photo-slot.primary-slot { border-color:rgba(232,101,10,0.5); background:#FFF8F4; }
+.photo-slot-label {
+  position:absolute; bottom:0; left:0; right:0;
+  background:rgba(232,101,10,0.85); color:white;
+  font-size:0.6rem; font-weight:700; text-align:center;
+  padding:3px; letter-spacing:0.4px; text-transform:uppercase;
+  border-radius:0 0 11px 11px;
+}
+.photo-upload-icon { font-size:1.6rem; margin-bottom:0.3rem; }
+.photo-upload-text { font-size:0.72rem; font-weight:600; color:var(--text-mid); line-height:1.3; }
+.photo-upload-hint { font-size:0.62rem; color:var(--text-soft); margin-top:2px; }
 .photo-upload-input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
-.photo-preview-img { width:100%; height:180px; object-fit:cover; border-radius:12px; display:block; }
+.photo-preview-img { width:100%; height:100%; object-fit:cover; display:block; }
 .photo-preview-overlay {
   position:absolute; inset:0; background:rgba(0,0,0,0.5); border-radius:12px;
-  display:none; align-items:center; justify-content:center; gap:0.8rem;
+  display:none; align-items:center; justify-content:center; gap:0.4rem; flex-direction:column;
 }
-.photo-upload-area.has-image:hover .photo-preview-overlay { display:flex; }
-.photo-overlay-btn { background:white; border:none; border-radius:8px; padding:0.4rem 0.8rem; font-size:0.78rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; }
+.photo-slot.has-image:hover .photo-preview-overlay { display:flex; }
+.photo-overlay-btn { background:white; border:none; border-radius:8px; padding:0.3rem 0.6rem; font-size:0.7rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; }
 .photo-overlay-btn.remove { background:#fff5f5; color:var(--danger); }
 .upload-progress { margin-top:0.8rem; }
 .upload-progress-bar { height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden; }
 .upload-progress-fill { height:100%; background:var(--brand); border-radius:3px; transition:width 0.3s; width:0%; }
 .upload-progress-text { font-size:0.72rem; color:var(--text-mid); margin-top:0.3rem; text-align:center; }
+@media(max-width:600px) { .photos-grid { grid-template-columns:repeat(2,1fr); } }
 
 .color-row { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.4rem; }
 .color-swatch { width:32px; height:32px; border-radius:8px; cursor:pointer; border:2.5px solid transparent; transition:all 0.15s; }
@@ -496,21 +511,11 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
               </div>
             </div>
 
-            <!-- PHOTO UPLOAD -->
+            <!-- MULTI-PHOTO UPLOAD -->
             <div class="form-group full" style="margin-top:1rem;">
-              <label class="form-label">Product Photo *</label>
-              <div class="photo-upload-area" id="uploadArea" ondragover="onDragOver(event,'add')" ondragleave="onDragLeave('add')" ondrop="onDrop(event,'add')">
-                <input type="file" class="photo-upload-input" id="f_photo" accept="image/*" onchange="onFileSelect(event,'add')">
-                <div id="uploadPlaceholder">
-                  <div class="photo-upload-icon">📷</div>
-                  <div class="photo-upload-text">Click or drag photo here</div>
-                  <div class="photo-upload-hint">JPG, PNG, WebP · Max 5MB · Will be auto-compressed</div>
-                </div>
-                <img id="uploadPreviewImg" class="photo-preview-img" style="display:none;" alt="preview">
-                <div class="photo-preview-overlay">
-                  <button class="photo-overlay-btn" onclick="triggerFileInput('f_photo',event)">📷 Change</button>
-                  <button class="photo-overlay-btn remove" onclick="clearPhoto('add',event)">✕ Remove</button>
-                </div>
+              <label class="form-label">Product Photos * <span style="font-weight:400;text-transform:none;color:var(--text-soft);">(up to 4 · first photo is the main image)</span></label>
+              <div class="photos-grid" id="addPhotosGrid">
+                <!-- slots rendered by JS -->
               </div>
               <div class="upload-progress" id="uploadProgress" style="display:none;">
                 <div class="upload-progress-bar"><div class="upload-progress-fill" id="uploadProgressFill"></div></div>
@@ -658,21 +663,11 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
         </div>
       </div>
 
-      <!-- EDIT PHOTO UPLOAD -->
+      <!-- EDIT MULTI-PHOTO UPLOAD -->
       <div class="form-group full" style="margin-top:1rem;">
-        <label class="form-label">Product Photo</label>
-        <div class="photo-upload-area" id="editUploadArea" ondragover="onDragOver(event,'edit')" ondragleave="onDragLeave('edit')" ondrop="onDrop(event,'edit')">
-          <input type="file" class="photo-upload-input" id="e_photo" accept="image/*" onchange="onFileSelect(event,'edit')">
-          <div id="editUploadPlaceholder">
-            <div class="photo-upload-icon">📷</div>
-            <div class="photo-upload-text">Click or drag to replace photo</div>
-            <div class="photo-upload-hint">Leave empty to keep current photo</div>
-          </div>
-          <img id="editUploadPreviewImg" class="photo-preview-img" style="display:none;" alt="preview">
-          <div class="photo-preview-overlay">
-            <button class="photo-overlay-btn" onclick="triggerFileInput('e_photo',event)">📷 Change</button>
-            <button class="photo-overlay-btn remove" onclick="clearPhoto('edit',event)">✕ Remove</button>
-          </div>
+        <label class="form-label">Product Photos <span style="font-weight:400;text-transform:none;color:var(--text-soft);">(up to 4 · first is main image)</span></label>
+        <div class="photos-grid" id="editPhotosGrid">
+          <!-- slots rendered by JS -->
         </div>
         <div class="upload-progress" id="editUploadProgress" style="display:none;">
           <div class="upload-progress-bar"><div class="upload-progress-fill" id="editUploadProgressFill"></div></div>
@@ -759,11 +754,12 @@ let selectedColor = '#FFF0E0';
 let selectedBadge = '';
 let editSelectedColor = '#FFF0E0';
 let editSelectedBadge = '';
-let addPhotoFile  = null;
-let editPhotoFile = null;
-let addPhotoBlob  = null;
-let editPhotoBlob = null;
-let editCurrentPhotoUrl = '';
+
+// ── MULTI-PHOTO STATE (up to 4 slots each context) ──
+// Each slot: { file: File|null, previewUrl: string|null, cloudUrl: string|null }
+const MAX_PHOTOS = 4;
+let addPhotoSlots  = Array.from({length: MAX_PHOTOS}, () => ({ file: null, previewUrl: null, cloudUrl: null }));
+let editPhotoSlots = Array.from({length: MAX_PHOTOS}, () => ({ file: null, previewUrl: null, cloudUrl: null }));
 
 const COLORS = ['#FFF3CD','#E8F5E9','#FDE8E8','#FFF0E0','#F3E5F5','#E3F2FD','#FCE4EC','#E0F7FA','#FFF8E1','#F1F8E9'];
 
@@ -845,6 +841,8 @@ function showAdmin(user) {
     ? `<img src="${user.photoURL}" class="sidebar-avatar" referrerpolicy="no-referrer"/>`
     : `<div class="sidebar-avatar-placeholder">${(user.displayName||'A')[0].toUpperCase()}</div>`;
   initColorPickers();
+  renderPhotoSlots('add');
+  renderPhotoSlots('edit');
   loadAllData();
 }
 
@@ -878,103 +876,135 @@ window.selectBadge = function(el, ctx='add') {
   ctx==='add' ? updatePreview() : updateEditPreview();
 };
 
-window.triggerFileInput = function(id, event) {
-  event.stopPropagation();
-  document.getElementById(id).click();
-};
+// ════════════════════════════════════════════
+// MULTI-PHOTO SLOT SYSTEM (up to 4, no compression)
+// ════════════════════════════════════════════
 
-window.onFileSelect = function(event, ctx) {
+function renderPhotoSlots(ctx) {
+  const gridId = ctx === 'add' ? 'addPhotosGrid' : 'editPhotosGrid';
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  const slots = ctx === 'add' ? addPhotoSlots : editPhotoSlots;
+  grid.innerHTML = slots.map((slot, i) => {
+    const isFirst = i === 0;
+    const label = isFirst ? 'Main Photo' : `Photo ${i + 1}`;
+    if (slot.previewUrl || slot.cloudUrl) {
+      const src = slot.previewUrl || slot.cloudUrl;
+      return `<div class="photo-slot has-image${isFirst?' primary-slot':''}" id="${ctx}-slot-${i}">
+        <img class="photo-preview-img" src="${src}" alt="photo ${i+1}">
+        <div class="photo-slot-label">${label}</div>
+        <div class="photo-preview-overlay">
+          <button class="photo-overlay-btn" onclick="slotTriggerInput('${ctx}',${i},event)">📷 Change</button>
+          <button class="photo-overlay-btn remove" onclick="slotClear('${ctx}',${i},event)">✕ Remove</button>
+        </div>
+        <input type="file" class="photo-upload-input" id="${ctx}-input-${i}" accept="image/*" onchange="slotFileSelect(event,'${ctx}',${i})">
+      </div>`;
+    }
+    // Empty slot — only show if it's slot 0 or previous slot is filled
+    const prevFilled = i === 0 || (slots[i-1].previewUrl || slots[i-1].cloudUrl);
+    if (!prevFilled) return `<div class="photo-slot" id="${ctx}-slot-${i}" style="opacity:0.35;cursor:not-allowed;">
+      <div class="photo-upload-icon" style="font-size:1.3rem;opacity:0.4;">📷</div>
+      <div class="photo-upload-text" style="font-size:0.65rem;">Fill Photo ${i} first</div>
+    </div>`;
+    return `<div class="photo-slot${isFirst?' primary-slot':''}" id="${ctx}-slot-${i}"
+      ondragover="slotDragOver(event,'${ctx}',${i})"
+      ondragleave="slotDragLeave('${ctx}',${i})"
+      ondrop="slotDrop(event,'${ctx}',${i})">
+      <input type="file" class="photo-upload-input" id="${ctx}-input-${i}" accept="image/*" onchange="slotFileSelect(event,'${ctx}',${i})">
+      <div class="photo-upload-icon">📷</div>
+      <div class="photo-upload-text">${isFirst ? 'Add Main Photo' : 'Add Photo'}</div>
+      <div class="photo-upload-hint">JPG/PNG/WebP</div>
+      <div class="photo-slot-label">${label}</div>
+    </div>`;
+  }).join('');
+  // Update preview with first photo
+  updateMainPhotoPreview(ctx);
+}
+
+function updateMainPhotoPreview(ctx) {
+  const slots = ctx === 'add' ? addPhotoSlots : editPhotoSlots;
+  const firstSrc = slots[0].previewUrl || slots[0].cloudUrl;
+  const prevImgBoxId = ctx === 'add' ? 'prevImgBox' : 'editPrevImgBox';
+  const el = document.getElementById(prevImgBoxId);
+  if (!el) return;
+  el.innerHTML = firstSrc
+    ? `<img src="${firstSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`
+    : '🍬';
+}
+
+window.slotFileSelect = function(event, ctx, idx) {
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { toast('❌ Photo must be under 5MB', 'error'); return; }
   if (!file.type.startsWith('image/')) { toast('❌ Please select an image file', 'error'); return; }
-  setPhotoFile(ctx, file);
+  assignFileToSlot(ctx, idx, file);
 };
-window.onDragOver = function(event, ctx) {
+
+window.slotTriggerInput = function(ctx, idx, event) {
+  if (event) event.stopPropagation();
+  document.getElementById(`${ctx}-input-${idx}`)?.click();
+};
+
+window.slotClear = function(ctx, idx, event) {
+  if (event) event.stopPropagation();
+  const slots = ctx === 'add' ? addPhotoSlots : editPhotoSlots;
+  if (slots[idx].previewUrl) URL.revokeObjectURL(slots[idx].previewUrl);
+  slots[idx] = { file: null, previewUrl: null, cloudUrl: null };
+  // Compact: shift remaining slots left
+  for (let i = idx; i < MAX_PHOTOS - 1; i++) slots[i] = slots[i+1];
+  slots[MAX_PHOTOS - 1] = { file: null, previewUrl: null, cloudUrl: null };
+  renderPhotoSlots(ctx);
+};
+
+window.slotDragOver = function(event, ctx, idx) {
   event.preventDefault();
-  document.getElementById(ctx==='add'?'uploadArea':'editUploadArea').classList.add('dragover');
+  document.getElementById(`${ctx}-slot-${idx}`)?.classList.add('dragover');
 };
-window.onDragLeave = function(ctx) {
-  document.getElementById(ctx==='add'?'uploadArea':'editUploadArea').classList.remove('dragover');
+
+window.slotDragLeave = function(ctx, idx) {
+  document.getElementById(`${ctx}-slot-${idx}`)?.classList.remove('dragover');
 };
-window.onDrop = function(event, ctx) {
-  event.preventDefault(); onDragLeave(ctx);
+
+window.slotDrop = function(event, ctx, idx) {
+  event.preventDefault();
+  slotDragLeave(ctx, idx);
   const file = event.dataTransfer.files[0];
   if (!file || !file.type.startsWith('image/')) { toast('❌ Please drop an image file','error'); return; }
-  setPhotoFile(ctx, file);
+  assignFileToSlot(ctx, idx, file);
 };
 
-function setPhotoFile(ctx, file) {
+function assignFileToSlot(ctx, idx, file) {
+  const slots = ctx === 'add' ? addPhotoSlots : editPhotoSlots;
+  if (slots[idx].previewUrl) URL.revokeObjectURL(slots[idx].previewUrl);
   const previewUrl = URL.createObjectURL(file);
-  if (ctx === 'add') {
-    if (addPhotoFile?._previewUrl) URL.revokeObjectURL(addPhotoFile._previewUrl);
-    addPhotoFile = file; addPhotoFile._previewUrl = previewUrl; addPhotoBlob = null;
-    const img = document.getElementById('uploadPreviewImg');
-    img.src = previewUrl; img.style.display = 'block';
-    document.getElementById('uploadPlaceholder').style.display = 'none';
-    document.getElementById('uploadArea').classList.add('has-image');
-    document.getElementById('prevImgBox').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
-  } else {
-    if (editPhotoFile?._previewUrl) URL.revokeObjectURL(editPhotoFile._previewUrl);
-    editPhotoFile = file; editPhotoFile._previewUrl = previewUrl; editPhotoBlob = null;
-    const img = document.getElementById('editUploadPreviewImg');
-    img.src = previewUrl; img.style.display = 'block';
-    document.getElementById('editUploadPlaceholder').style.display = 'none';
-    document.getElementById('editUploadArea').classList.add('has-image');
-    document.getElementById('editPrevImgBox').innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
-  }
-  compressToBlob(file).then(blob => {
-    if (ctx === 'add') addPhotoBlob = blob;
-    else editPhotoBlob = blob;
-  }).catch(() => {});
+  slots[idx] = { file, previewUrl, cloudUrl: null };
+  renderPhotoSlots(ctx);
 }
 
-window.clearPhoto = function(ctx, event) {
-  if (event) event.stopPropagation();
-  if (ctx === 'add') {
-    if (addPhotoFile?._previewUrl) URL.revokeObjectURL(addPhotoFile._previewUrl);
-    addPhotoFile = null; addPhotoBlob = null;
-    document.getElementById('f_photo').value = '';
-    document.getElementById('uploadPreviewImg').style.display = 'none';
-    document.getElementById('uploadPlaceholder').style.display = 'block';
-    document.getElementById('uploadArea').classList.remove('has-image');
-    document.getElementById('prevImgBox').innerHTML = '🍬';
-  } else {
-    if (editPhotoFile?._previewUrl) URL.revokeObjectURL(editPhotoFile._previewUrl);
-    editPhotoFile = null; editPhotoBlob = null; editCurrentPhotoUrl = '';
-    document.getElementById('e_photo').value = '';
-    document.getElementById('editUploadPreviewImg').style.display = 'none';
-    document.getElementById('editUploadPlaceholder').style.display = 'block';
-    document.getElementById('editUploadArea').classList.remove('has-image');
-    document.getElementById('editPrevImgBox').innerHTML = '🍬';
-  }
-};
-
-function compressToBlob(file, maxW=900, maxH=900, quality=0.82) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const objUrl = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(objUrl);
-      let w = img.width, h = img.height;
-      if (w > maxW || h > maxH) {
-        const ratio = Math.min(maxW/w, maxH/h);
-        w = Math.round(w*ratio); h = Math.round(h*ratio);
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('toBlob failed')), 'image/jpeg', quality);
-    };
-    img.onerror = () => reject(new Error('Could not load image'));
-    img.src = objUrl;
+// Upload one file to ImgBB — no compression
+async function uploadOnePhoto(file) {
+  const base64 = await new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result.split(',')[1]);
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
   });
+  const fd = new FormData();
+  fd.append('image', base64);
+  const res = await fetch('https://api.imgbb.com/1/upload?key=2e46571c8c3a6e0e5aeb13bb785a3c2e', { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.success) return data.data.url;
+  throw new Error(data.error?.message || 'ImgBB upload failed');
 }
 
-async function uploadPhoto(file, productName, ctx) {
-  const fillId = ctx==='add' ? 'uploadProgressFill'  : 'editUploadProgressFill';
-  const textId = ctx==='add' ? 'uploadProgressText'  : 'editUploadProgressText';
-  const wrapId = ctx==='add' ? 'uploadProgress'      : 'editUploadProgress';
+// Upload all pending slots, return array of URLs
+async function uploadAllPhotos(ctx) {
+  const slots = ctx === 'add' ? addPhotoSlots : editPhotoSlots;
+  const fillId = ctx === 'add' ? 'uploadProgressFill'  : 'editUploadProgressFill';
+  const textId = ctx === 'add' ? 'uploadProgressText'  : 'editUploadProgressText';
+  const wrapId = ctx === 'add' ? 'uploadProgress'      : 'editUploadProgress';
+
+  const pending = slots.filter((s, i) => s.file || s.cloudUrl);
+  if (!pending.length) return [];
 
   const setProgress = (pct, msg) => {
     const wrap = document.getElementById(wrapId);
@@ -986,44 +1016,38 @@ async function uploadPhoto(file, productName, ctx) {
     const w = document.getElementById(wrapId); if (w) w.style.display = 'none';
   }, 1500);
 
-  setProgress(10, 'Preparing image...');
-  let blob = ctx === 'add' ? addPhotoBlob : editPhotoBlob;
-  if (!blob) { setProgress(20, 'Compressing...'); blob = await compressToBlob(file); }
-
-  const base64 = await new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onload = () => res(reader.result.split(',')[1]);
-    reader.onerror = rej;
-    reader.readAsDataURL(blob);
-  });
-
-  setProgress(35, 'Uploading...');
-  try {
-    const fd = new FormData();
-    fd.append('image', base64);
-    const res = await fetch('https://api.imgbb.com/1/upload?key=2e46571c8c3a6e0e5aeb13bb785a3c2e', { method: 'POST', body: fd });
-    setProgress(80, 'Processing...');
-    const data = await res.json();
-    if (data.success) {
-      setProgress(100, '✅ Upload complete!');
-      hideProgress();
-      return data.data.url;
+  const urls = [];
+  for (let i = 0; i < slots.length; i++) {
+    const s = slots[i];
+    if (!s.file && !s.cloudUrl) continue;
+    if (!s.file && s.cloudUrl) { urls.push(s.cloudUrl); continue; }
+    const pct = Math.round(((i + 0.5) / MAX_PHOTOS) * 100);
+    setProgress(pct, `Uploading photo ${urls.length + 1}…`);
+    try {
+      const url = await uploadOnePhoto(s.file);
+      urls.push(url);
+    } catch(e) {
+      console.warn(`Photo ${i+1} upload failed:`, e.message);
+      toast(`⚠️ Photo ${i+1} upload failed, skipping`, 'error');
     }
-    throw new Error(data.error?.message || 'ImgBB upload failed');
-  } catch(uploadErr) {
-    console.warn('ImgBB failed, using compressed fallback:', uploadErr.message);
-    const smallBlob = await compressToBlob(file, 600, 600, 0.65);
-    const smallBase64 = await new Promise((res, rej) => {
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result);
-      reader.onerror = rej;
-      reader.readAsDataURL(smallBlob);
-    });
-    setProgress(100, '✅ Saved (compressed)!');
-    hideProgress();
-    return smallBase64;
   }
+  setProgress(100, `✅ ${urls.length} photo${urls.length!==1?'s':''} uploaded!`);
+  hideProgress();
+  return urls;
 }
+
+function resetPhotoSlots(ctx) {
+  const slots = ctx === 'add' ? addPhotoSlots : editPhotoSlots;
+  slots.forEach((s, i) => {
+    if (s.previewUrl) URL.revokeObjectURL(s.previewUrl);
+    slots[i] = { file: null, previewUrl: null, cloudUrl: null };
+  });
+  renderPhotoSlots(ctx);
+}
+
+// Legacy stubs (no-ops, kept for safety)
+window.triggerFileInput = function(id, event) { if(event) event.stopPropagation(); document.getElementById(id)?.click(); };
+window.clearPhoto = function(ctx, event) { if(event) event.stopPropagation(); resetPhotoSlots(ctx); };
 
 window.updatePreview = function() {
   const p250 = document.getElementById('f_price250').value;
@@ -1071,7 +1095,8 @@ function updateStats(products) {
 }
 
 function imgCell(p) {
-  if (p.photoUrl) return `<div class="product-img-cell"><img src="${p.photoUrl}" alt="${p.name}"></div>`;
+  const src = (Array.isArray(p.photoUrls) ? p.photoUrls[0] : null) || p.photoUrl;
+  if (src) return `<div class="product-img-cell"><img src="${src}" alt="${p.name}"></div>`;
   return `<div class="product-img-cell" style="background:${p.bg||'#FFF0E0'};">📷</div>`;
 }
 
@@ -1141,9 +1166,10 @@ function renderCategoryGrid(products) {
   const cats = [{key:'sweets',label:'Sweets'},{key:'mithai',label:'Mithai'},{key:'snacks',label:'Snacks'},{key:'gifts',label:'Gift Boxes'},{key:'seasonal',label:'Seasonal'}];
   document.getElementById('catManageGrid').innerHTML = cats.map(c => {
     const cp = products.filter(p => p.cat === c.key);
-    const photo = cp.find(p => p.photoUrl)?.photoUrl;
+    const photoProduct = cp.find(p => (Array.isArray(p.photoUrls) && p.photoUrls[0]) || p.photoUrl);
+    const photoSrc = photoProduct ? ((Array.isArray(photoProduct.photoUrls) && photoProduct.photoUrls[0]) || photoProduct.photoUrl) : null;
     return `<div class="cat-manage-card" onclick="showSection('products');document.getElementById('catFilter').value='${c.key}';filterTable()">
-      ${photo ? `<img src="${photo}" style="width:56px;height:56px;object-fit:cover;border-radius:12px;margin-bottom:0.5rem;">` : `<div style="font-size:2rem;margin-bottom:0.4rem;">📦</div>`}
+      ${photoSrc ? `<img src="${photoSrc}" style="width:56px;height:56px;object-fit:cover;border-radius:12px;margin-bottom:0.5rem;">` : `<div style="font-size:2rem;margin-bottom:0.4rem;">📦</div>`}
       <div class="cat-name">${c.label}</div>
       <div class="cat-count">${cp.length} product${cp.length!==1?'s':''}</div>
     </div>`;
@@ -1195,13 +1221,16 @@ window.saveProduct = async function() {
   if (!cat)              { highlight('f_cat');       toast('⚠️ Please select a category','error'); return; }
   if (!desc)             { highlight('f_desc');      toast('⚠️ Description is required','error'); return; }
   if (!pricing.price250) { highlight('f_price250');  toast('⚠️ 250g price is required','error'); return; }
-  if (!addPhotoFile)     { toast('⚠️ Please upload a product photo','error'); return; }
+  if (!addPhotoSlots[0].file) { toast('⚠️ Please upload at least one product photo','error'); return; }
 
   setBtnLoading('saveBtn','saveBtnIcon','saveBtnText', true, 'Saving…');
   try {
-    const photoUrl = await uploadPhoto(addPhotoFile, name, 'add');
+    const photoUrls = await uploadAllPhotos('add');
+    if (!photoUrls.length) throw new Error('Photo upload failed — no images uploaded');
     await addDoc(collection(db, 'products'), {
-      name, cat, desc, weight: weight||'Per 250g pack', stock, photoUrl,
+      name, cat, desc, weight: weight||'Per 250g pack', stock,
+      photoUrl: photoUrls[0],         // legacy compat: primary photo
+      photoUrls,                       // all up to 4 photos
       bg: selectedColor, badge: selectedBadge||null,
       ...pricing,
       active: true, createdAt: serverTimestamp()
@@ -1225,7 +1254,7 @@ window.resetForm = function() {
     if (el) { el.value = ''; el.classList.remove('error'); }
   });
   selectedColor = '#FFF0E0'; selectedBadge = '';
-  clearPhoto('add', null);
+  resetPhotoSlots('add');
   document.querySelectorAll('#colorRow .color-swatch').forEach(el =>
     el.classList.toggle('selected', el.style.background === selectedColor));
   document.querySelectorAll('#badgeRow .badge-opt').forEach((el,i) =>
@@ -1236,8 +1265,7 @@ window.resetForm = function() {
 window.openEditModal = function(id) {
   const p = allProducts.find(x => x.id === id);
   if (!p) return;
-  editingId = id; editPhotoFile = null; editPhotoBlob = null;
-  editCurrentPhotoUrl = p.photoUrl || '';
+  editingId = id;
 
   document.getElementById('e_name').value  = p.name || '';
   document.getElementById('e_cat').value   = p.cat  || '';
@@ -1248,18 +1276,16 @@ window.openEditModal = function(id) {
   editSelectedColor = p.bg || '#FFF0E0';
   editSelectedBadge = p.badge || '';
 
-  const editImg = document.getElementById('editUploadPreviewImg');
-  const editArea = document.getElementById('editUploadArea');
-  const editPlaceholder = document.getElementById('editUploadPlaceholder');
-  if (p.photoUrl) {
-    editImg.src = p.photoUrl; editImg.style.display = 'block';
-    editPlaceholder.style.display = 'none'; editArea.classList.add('has-image');
-    document.getElementById('editPrevImgBox').innerHTML = `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
-  } else {
-    editImg.style.display = 'none'; editPlaceholder.style.display = 'block';
-    editArea.classList.remove('has-image');
-    document.getElementById('editPrevImgBox').innerHTML = '🍬';
-  }
+  // Populate editPhotoSlots from existing photoUrls (or legacy photoUrl)
+  const existingUrls = Array.isArray(p.photoUrls) ? p.photoUrls : (p.photoUrl ? [p.photoUrl] : []);
+  editPhotoSlots.forEach((s, i) => {
+    if (s.previewUrl) URL.revokeObjectURL(s.previewUrl);
+    editPhotoSlots[i] = i < existingUrls.length
+      ? { file: null, previewUrl: null, cloudUrl: existingUrls[i] }
+      : { file: null, previewUrl: null, cloudUrl: null };
+  });
+  renderPhotoSlots('edit');
+
   document.querySelectorAll('#editColorRow .color-swatch').forEach(el =>
     el.classList.toggle('selected', el.style.background === editSelectedColor));
   document.querySelectorAll('#editBadgeRow .badge-opt').forEach(el =>
@@ -1270,8 +1296,7 @@ window.openEditModal = function(id) {
 
 window.closeEditModal = function() {
   document.getElementById('editModal').classList.remove('open');
-  editingId = null; editPhotoFile = null;
-  document.getElementById('e_photo').value = '';
+  editingId = null;
 };
 
 window.updateProduct = async function() {
@@ -1284,13 +1309,16 @@ window.updateProduct = async function() {
   const pricing = getWeightPricingFromForm('e');
 
   if (!name || !cat || !desc || !pricing.price250) { toast('⚠️ Please fill all required fields (including 250g price)','error'); return; }
+  if (!editPhotoSlots[0].file && !editPhotoSlots[0].cloudUrl) { toast('⚠️ At least one product photo is required','error'); return; }
 
   setBtnLoading('updateBtn','updateBtnIcon','updateBtnText', true, 'Saving…');
   try {
-    let photoUrl = editCurrentPhotoUrl;
-    if (editPhotoFile) photoUrl = await uploadPhoto(editPhotoFile, name, 'edit');
+    const photoUrls = await uploadAllPhotos('edit');
+    if (!photoUrls.length) throw new Error('No photos — please keep at least one');
     await updateDoc(doc(db, 'products', editingId), {
-      name, cat, desc, weight: weight||'Per 250g pack', stock, photoUrl,
+      name, cat, desc, weight: weight||'Per 250g pack', stock,
+      photoUrl: photoUrls[0],   // legacy compat
+      photoUrls,
       bg: editSelectedColor, badge: editSelectedBadge||null,
       ...pricing,
       updatedAt: serverTimestamp()
