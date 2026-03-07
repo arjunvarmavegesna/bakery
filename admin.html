@@ -1405,7 +1405,7 @@ window.confirmDelete = async function() {
 
 // ── SMS via Fast2SMS (GET avoids CORS preflight) ──
 async function sendShipmentSMS(phone, customerName, shipmentNo, trackingLink) {
-  const FAST2SMS_API_KEY = 'YOUR_FAST2SMS_API_KEY'; // ← Replace with your Fast2SMS API key
+  const FAST2SMS_API_KEY = 'rGoP76J9YDKxMSIcyzR0XTENVWv2QAjuOf8gnlCqwUipe5sFBLWV5jLrHltEYKPmb60nQB1SGi83ToRe'; // ← Replace with your Fast2SMS API key
   const message = `Dear ${customerName}, your Sree Ramu Sweets order has been shipped! Shipment No: ${shipmentNo}${trackingLink ? ' Track: ' + trackingLink : ''}. Expected delivery 3-5 days. Thank you!`;
   const cleanPhone = phone.replace(/\D/g,'').slice(-10);
   const url = 'https://www.fast2sms.com/dev/bulkV2?authorization=' + encodeURIComponent(FAST2SMS_API_KEY)
