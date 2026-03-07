@@ -19,86 +19,6 @@ let ppQty = 1;
 let ppSelectedWeight = null;
 const userReviews = {};
 
-// ── URL / SLUG ROUTING ──
-function slugify(name) {
-  return (name || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-');
-}
-
-// Push a product URL so each product has a shareable link: ?product=mysore-pak
-function pushProductUrl(product) {
-  if (!product) return;
-  const slug = slugify(product.name);
-  const url = new URL(window.location.href);
-  url.searchParams.set('product', slug);
-  // Store the product id in history state so we can restore it on popstate
-  history.pushState({ productId: product.id, productSlug: slug }, product.name, url.toString());
-  // Update page title & meta for SEO
-  document.title = `${product.name} – Sri Ramu Sweets`;
-  const metaDesc = document.querySelector('meta[name="description"]');
-  if (metaDesc && product.desc) metaDesc.setAttribute('content', product.desc);
-}
-
-// Restore URL to home after closing a product page
-function popProductUrl() {
-  const url = new URL(window.location.href);
-  if (url.searchParams.has('product')) {
-    url.searchParams.delete('product');
-    history.pushState({ home: true }, 'Sri Ramu Sweets', url.toString());
-    document.title = 'Sri Ramu Sweets – Authentic Indian Sweets & Mithai | Bhimavaram Since 1965';
-    const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute('content', 'Order authentic handmade Indian sweets online from Sri Ramu Sweets, Bhimavaram. Mysore Pak, Kaju Katli, Laddu, Kala Jamun & 50+ varieties. Free delivery above ₹1000. Serving India since 1965.');
-  }
-}
-
-// On browser back/forward, open or close the product page
-window.addEventListener('popstate', function(e) {
-  if (e.state && e.state.productId) {
-    const product = products.find(p => p.id === e.state.productId);
-    if (product) {
-      openProductPageSilent(product.id);
-      return;
-    }
-  }
-  // No product in state – close any open product page
-  const productPage = document.getElementById('productPage');
-  if (productPage && productPage.classList.contains('open')) {
-    document.getElementById('productPage').classList.remove('open');
-    document.body.style.overflow = '';
-    const thumbStrip = document.getElementById('ppThumbStrip');
-    if (thumbStrip) thumbStrip.remove();
-    const heroEl = document.getElementById('ppHero');
-    if (heroEl) { heroEl.classList.remove('pp-has-gallery'); heroEl.ontouchstart = null; heroEl.ontouchend = null; }
-  }
-});
-
-// Handle direct navigation to ?product=slug on page load
-// Called after products are loaded from Firebase
-window._checkProductUrlOnLoad = function() {
-  const url = new URL(window.location.href);
-  const slug = url.searchParams.get('product');
-  if (!slug) return;
-  // Try to find product by slug match
-  const product = products.find(p => slugify(p.name) === slug);
-  if (product) {
-    openProductPageSilent(product.id);
-  }
-};
-
-// Open product page without pushing a new history entry (used for popstate restoration)
-function openProductPageSilent(id) {
-  // Temporarily replace pushProductUrl so it won't push again
-  const orig = window._urlPushEnabled;
-  window._urlPushEnabled = false;
-  openProductPage(id);
-  window._urlPushEnabled = orig;
-}
-
-window._urlPushEnabled = true;
-
 // ── DELIVERY CHARGE CALCULATOR ──
 // AP & Telangana: ₹100 up to 1kg. Other states: ₹140. FREE above ₹1000.
 const AP_TG_STATES = ['andhra pradesh', 'telangana'];
@@ -230,11 +150,15 @@ function openWishlistPage() {
   renderWishlist();
   document.getElementById('wishlistPage').classList.add('open');
   document.body.style.overflow = 'hidden';
+  const bottomNav = document.querySelector('.bottom-nav');
+  if (bottomNav) bottomNav.style.display = 'none';
 }
 
 function closeWishlistPage() {
   document.getElementById('wishlistPage').classList.remove('open');
   document.body.style.overflow = '';
+  const bottomNav = document.querySelector('.bottom-nav');
+  if (bottomNav) bottomNav.style.display = '';
 }
 
 function renderWishlist() {
@@ -321,11 +245,15 @@ function openCategoriesPage() {
   backToCatGrid();
   document.getElementById('categoriesPage').classList.add('open');
   document.body.style.overflow = 'hidden';
+  const bottomNav = document.querySelector('.bottom-nav');
+  if (bottomNav) bottomNav.style.display = 'none';
 }
 
 function closeCategoriesPage() {
   document.getElementById('categoriesPage').classList.remove('open');
   document.body.style.overflow = '';
+  const bottomNav = document.querySelector('.bottom-nav');
+  if (bottomNav) bottomNav.style.display = '';
 }
 
 function showCatProducts(cat, title) {
@@ -589,27 +517,23 @@ function showToast(msg) {
 }
 
 // ── PRODUCT PAGE ──
-function shareProductPage() {
-  const p = products.find(x => x.id === currentProductId);
-  if (!p) return;
-  const url = new URL(window.location.href);
-  url.searchParams.set('product', slugify(p.name));
-  const shareUrl = url.toString();
-  if (navigator.share) {
-    navigator.share({ title: p.name, text: `Check out ${p.name} on Sri Ramu Sweets!`, url: shareUrl })
-      .catch(() => {});
-  } else {
-    navigator.clipboard.writeText(shareUrl)
-      .then(() => showToast('🔗 Link copied to clipboard!'))
-      .catch(() => showToast('📋 Copy this link: ' + shareUrl));
-  }
-}
-
-function openProductPage(id) {
+function openProductPage(id, pushState = true) {
   const p = products.find(x => x.id === id);
   if (!p) return;
   currentProductId = id;
   ppQty = 1;
+
+  // Hide bottom nav
+  const bottomNav = document.querySelector('.bottom-nav');
+  if (bottomNav) bottomNav.style.display = 'none';
+
+  // ── URL routing: push a new history entry so back button works ──
+  if (pushState) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('product', id);
+    window.history.pushState({ productId: id }, p.name + ' – Sri Ramu Sweets', url.toString());
+    document.title = p.name + ' – Sri Ramu Sweets';
+  }
 
   document.getElementById('categoriesPage').classList.remove('open');
   document.getElementById('wishlistPage').classList.remove('open');
@@ -671,11 +595,9 @@ function openProductPage(id) {
   selectWeightVariant(0);
 
   document.getElementById('productPage').classList.add('open');
+  document.getElementById('ppActions').classList.add('open');
   document.body.style.overflow = 'hidden';
   renderProductReviews(id);
-
-  // Push shareable product URL (only if not silently restoring)
-  if (window._urlPushEnabled !== false) pushProductUrl(p);
 }
 
 // ── Gallery helpers ──
@@ -728,9 +650,13 @@ function initGallerySwipe(total) {
 
 window.ppGalleryGoTo = ppGalleryGoTo;
 
-function closeProductPage() {
+function closeProductPage(popState = false) {
   document.getElementById('productPage').classList.remove('open');
+  document.getElementById('ppActions').classList.remove('open');
   document.body.style.overflow = '';
+  // Show bottom nav again
+  const bottomNav = document.querySelector('.bottom-nav');
+  if (bottomNav) bottomNav.style.display = '';
   // Remove thumb strip if it exists
   const thumbStrip = document.getElementById('ppThumbStrip');
   if (thumbStrip) thumbStrip.remove();
@@ -738,8 +664,16 @@ function closeProductPage() {
   heroEl.classList.remove('pp-has-gallery');
   heroEl.ontouchstart = null;
   heroEl.ontouchend = null;
-  // Restore home URL
-  popProductUrl();
+
+  // ── URL routing: remove ?product= param and restore page title ──
+  if (!popState) {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('product')) {
+      url.searchParams.delete('product');
+      window.history.pushState({}, 'Sri Ramu Sweets', url.toString());
+    }
+  }
+  document.title = 'Sri Ramu Sweets – Authentic Indian Sweets & Mithai | Bhimavaram Since 1965';
 }
 
 function changePPQty(delta) {
@@ -1143,3 +1077,31 @@ function startPayment() {
   const rzp = new Razorpay(options);
   rzp.open();
 }
+// ── URL ROUTING: browser back/forward button support ──
+window.addEventListener('popstate', function(e) {
+  if (e.state && e.state.productId) {
+    // Navigating forward to a product
+    openProductPage(e.state.productId, false);
+  } else {
+    // Navigating back — close product page without pushing new state
+    const productPageEl = document.getElementById('productPage');
+    if (productPageEl && productPageEl.classList.contains('open')) {
+      closeProductPage(true);
+    }
+  }
+});
+
+// ── URL ROUTING: deep-link support — open product if ?product=ID in URL on page load ──
+// Called by Firebase loader after products are loaded (see window.onProductsLoaded)
+window.checkDeepLink = function() {
+  const params = new URLSearchParams(window.location.search);
+  const productId = params.get('product');
+  if (productId) {
+    const p = products.find(x => x.id === productId);
+    if (p) {
+      // Replace current history entry so back goes to homepage, not a broken state
+      window.history.replaceState({ productId: productId }, p.name + ' – Sri Ramu Sweets', window.location.href);
+      openProductPage(productId, false);
+    }
+  }
+};
