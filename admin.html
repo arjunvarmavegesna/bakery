@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Admin · Sri Ramu Sweets</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -56,7 +56,7 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
 .auth-sub { font-size:0.85rem; color:var(--text-mid); margin-bottom:2rem; line-height:1.5; }
 .google-signin-btn { width:100%; background:white; color:#333; border:2px solid #e0e0e0; border-radius:14px; padding:0.9rem 1.2rem; font-size:0.95rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:0.8rem; transition:all 0.2s; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
 .google-signin-btn:hover { border-color:#4285F4; box-shadow:0 4px 20px rgba(66,133,244,0.2); transform:translateY(-1px); }
-.google-signin-btn svg { width:22px; height:22px; }
+.google-signin-btn svg { width:22px; height:22px; flex-shrink:0; }
 .auth-note { font-size:0.72rem; color:#aaa; margin-top:1.2rem; line-height:1.5; }
 .auth-error { background:#fff5f5; border:1.5px solid #ffcdd2; color:var(--danger); border-radius:10px; padding:0.7rem 1rem; font-size:0.82rem; margin-top:1rem; display:none; }
 .auth-error.show { display:block; }
@@ -84,11 +84,11 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
 .signout-link { background:rgba(255,255,255,0.1); border:none; color:rgba(255,255,255,0.75); font-size:0.78rem; padding:0.5rem 0.9rem; border-radius:8px; cursor:pointer; font-family:'DM Sans',sans-serif; width:100%; transition:all 0.15s; }
 .signout-link:hover { background:rgba(255,255,255,0.2); color:white; }
 
-.main { margin-left:var(--sidebar-w); flex:1; min-height:100vh; }
+.main { margin-left:var(--sidebar-w); flex:1; min-height:100vh; min-width:0; }
 .topbar { background:white; padding:0 1.5rem; height:60px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50; box-shadow:0 1px 8px rgba(0,0,0,0.06); }
 .topbar-title { font-family:'Playfair Display',serif; font-size:1.1rem; color:var(--brand-dark); }
 .topbar-right { display:flex; align-items:center; gap:0.8rem; }
-.store-link { font-size:0.8rem; color:var(--brand); font-weight:600; text-decoration:none; background:var(--cream); padding:0.4rem 0.9rem; border-radius:8px; border:1px solid rgba(232,101,10,0.2); transition:all 0.15s; }
+.store-link { font-size:0.8rem; color:var(--brand); font-weight:600; text-decoration:none; background:var(--cream); padding:0.4rem 0.9rem; border-radius:8px; border:1px solid rgba(232,101,10,0.2); transition:all 0.15s; white-space:nowrap; }
 .store-link:hover { background:var(--brand); color:white; }
 .content { padding:1.5rem; max-width:1100px; }
 
@@ -99,7 +99,7 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
 .stat-label { font-size:0.72rem; color:var(--text-soft); margin-top:2px; font-weight:500; }
 
 .section-card { background:white; border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid var(--border); margin-bottom:1.5rem; overflow:hidden; }
-.section-card-header { padding:1.1rem 1.4rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.section-card-header { padding:1.1rem 1.4rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; }
 .section-card-title { font-family:'Playfair Display',serif; font-size:1rem; color:var(--brand-dark); }
 .section-card-body { padding:1.4rem; }
 
@@ -174,7 +174,6 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
 .upload-progress-bar { height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden; }
 .upload-progress-fill { height:100%; background:var(--brand); border-radius:3px; transition:width 0.3s; width:0%; }
 .upload-progress-text { font-size:0.72rem; color:var(--text-mid); margin-top:0.3rem; text-align:center; }
-@media(max-width:600px) { .photos-grid { grid-template-columns:repeat(2,1fr); } }
 
 .color-row { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.4rem; }
 .color-swatch { width:32px; height:32px; border-radius:8px; cursor:pointer; border:2.5px solid transparent; transition:all 0.15s; }
@@ -185,12 +184,12 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
 .badge-opt:hover,.badge-opt.selected { background:var(--brand); color:white; border-color:var(--brand); }
 .badge-opt.none-opt { color:#aaa; }
 
-.btn-submit { background:var(--brand); color:white; border:none; border-radius:12px; padding:0.85rem 2rem; font-size:0.9rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; box-shadow:0 4px 12px rgba(232,101,10,0.3); display:flex; align-items:center; gap:0.5rem; }
+.btn-submit { background:var(--brand); color:white; border:none; border-radius:12px; padding:0.85rem 2rem; font-size:0.9rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; box-shadow:0 4px 12px rgba(232,101,10,0.3); display:flex; align-items:center; gap:0.5rem; white-space:nowrap; }
 .btn-submit:hover { background:var(--brand-dark); transform:translateY(-1px); }
 .btn-submit:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
 .btn-cancel { background:transparent; color:var(--text-mid); border:1.5px solid #E8E0D8; border-radius:12px; padding:0.85rem 1.4rem; font-size:0.9rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; }
 .btn-cancel:hover { background:#f5f5f5; }
-.form-actions { display:flex; gap:0.8rem; margin-top:1.2rem; align-items:center; }
+.form-actions { display:flex; gap:0.8rem; margin-top:1.2rem; align-items:center; flex-wrap:wrap; }
 
 .product-preview { background:var(--cream); border-radius:14px; padding:1rem; border:1.5px solid rgba(232,101,10,0.15); display:flex; align-items:center; gap:1rem; }
 .preview-img-box { width:64px; height:64px; border-radius:14px; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:2rem; flex-shrink:0; background:#FFF0E0; }
@@ -199,46 +198,48 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
 .preview-price { font-weight:700; color:var(--brand); font-size:0.95rem; }
 .preview-badge-wrap { margin-top:4px; }
 
+/* TABLE - make scrollable on mobile */
+.table-responsive { overflow-x:auto; -webkit-overflow-scrolling:touch; }
 .table-toolbar { display:flex; gap:0.7rem; align-items:center; padding:1rem 1.4rem; border-bottom:1px solid var(--border); flex-wrap:wrap; }
-.search-box { flex:1; min-width:180px; display:flex; align-items:center; gap:0.5rem; background:#FAFAF8; border:1.5px solid #E8E0D8; border-radius:10px; padding:0.5rem 0.9rem; }
-.search-box input { border:none; background:transparent; outline:none; font-family:'DM Sans',sans-serif; font-size:0.85rem; flex:1; color:var(--text); }
+.search-box { flex:1; min-width:160px; display:flex; align-items:center; gap:0.5rem; background:#FAFAF8; border:1.5px solid #E8E0D8; border-radius:10px; padding:0.5rem 0.9rem; }
+.search-box input { border:none; background:transparent; outline:none; font-family:'DM Sans',sans-serif; font-size:0.85rem; flex:1; color:var(--text); min-width:0; }
 .filter-select { padding:0.5rem 0.8rem; border-radius:10px; border:1.5px solid #E8E0D8; background:#FAFAF8; font-family:'DM Sans',sans-serif; font-size:0.82rem; cursor:pointer; outline:none; color:var(--text); }
 .filter-select:focus { border-color:var(--brand); }
-.product-table { width:100%; border-collapse:collapse; }
-.product-table th { text-align:left; padding:0.8rem 1rem; font-size:0.65rem; font-weight:700; color:var(--text-soft); letter-spacing:0.8px; text-transform:uppercase; background:#FAFAF8; border-bottom:1px solid var(--border); }
+.product-table { width:100%; border-collapse:collapse; min-width:600px; }
+.product-table th { text-align:left; padding:0.8rem 1rem; font-size:0.65rem; font-weight:700; color:var(--text-soft); letter-spacing:0.8px; text-transform:uppercase; background:#FAFAF8; border-bottom:1px solid var(--border); white-space:nowrap; }
 .product-table td { padding:0.9rem 1rem; border-bottom:1px solid var(--border); font-size:0.85rem; vertical-align:middle; }
 .product-table tr:last-child td { border-bottom:none; }
 .product-table tr:hover td { background:#FDFAF8; }
-.product-img-cell { width:48px; height:48px; border-radius:12px; object-fit:cover; background:#FFF0E0; display:flex; align-items:center; justify-content:center; font-size:1.5rem; overflow:hidden; }
+.product-img-cell { width:48px; height:48px; border-radius:12px; object-fit:cover; background:#FFF0E0; display:flex; align-items:center; justify-content:center; font-size:1.5rem; overflow:hidden; flex-shrink:0; }
 .product-img-cell img { width:100%; height:100%; object-fit:cover; border-radius:10px; }
 .product-name-cell { font-weight:600; color:var(--text); margin-bottom:2px; }
-.product-cat-tag { display:inline-block; background:var(--cream); border:1px solid rgba(232,101,10,0.2); color:var(--brand); font-size:0.62rem; font-weight:700; padding:2px 7px; border-radius:6px; text-transform:uppercase; }
+.product-cat-tag { display:inline-block; background:var(--cream); border:1px solid rgba(232,101,10,0.2); color:var(--brand); font-size:0.62rem; font-weight:700; padding:2px 7px; border-radius:6px; text-transform:uppercase; white-space:nowrap; }
 .product-price-cell { font-weight:700; color:var(--brand-dark); font-size:0.9rem; }
 .product-old-price { font-size:0.72rem; color:var(--text-soft); text-decoration:line-through; }
 .product-badge-cell { display:inline-block; background:var(--brand); color:white; font-size:0.6rem; font-weight:700; padding:2px 7px; border-radius:8px; letter-spacing:0.3px; }
 .product-badge-cell.none { background:transparent; color:var(--text-soft); font-size:0.75rem; }
-.status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:5px; }
+.status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:5px; flex-shrink:0; }
 .status-dot.active { background:var(--success); }
 .status-dot.inactive { background:#ccc; }
-.action-btns { display:flex; gap:0.4rem; }
-.btn-edit { background:#FFF3CD; color:#B8860B; border:1px solid rgba(184,134,11,0.3); border-radius:8px; padding:0.4rem 0.75rem; font-size:0.75rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; }
+.action-btns { display:flex; gap:0.4rem; flex-wrap:nowrap; }
+.btn-edit { background:#FFF3CD; color:#B8860B; border:1px solid rgba(184,134,11,0.3); border-radius:8px; padding:0.4rem 0.75rem; font-size:0.75rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; white-space:nowrap; }
 .btn-edit:hover { background:#B8860B; color:white; }
-.btn-toggle { background:var(--success-bg); color:var(--success); border:1px solid rgba(46,125,50,0.25); border-radius:8px; padding:0.4rem 0.75rem; font-size:0.75rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; }
+.btn-toggle { background:var(--success-bg); color:var(--success); border:1px solid rgba(46,125,50,0.25); border-radius:8px; padding:0.4rem 0.75rem; font-size:0.75rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; white-space:nowrap; }
 .btn-toggle:hover { background:var(--success); color:white; }
 .btn-toggle.inactive { background:#f5f5f5; color:#888; border-color:#ddd; }
 .btn-toggle.inactive:hover { background:#888; color:white; }
-.btn-delete { background:#fff5f5; color:var(--danger); border:1px solid rgba(229,57,53,0.25); border-radius:8px; padding:0.4rem 0.75rem; font-size:0.75rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; }
+.btn-delete { background:#fff5f5; color:var(--danger); border:1px solid rgba(229,57,53,0.25); border-radius:8px; padding:0.4rem 0.75rem; font-size:0.75rem; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; white-space:nowrap; }
 .btn-delete:hover { background:var(--danger); color:white; }
 
-.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:500; display:none; align-items:center; justify-content:center; padding:1rem; }
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:500; display:none; align-items:center; justify-content:center; padding:1rem; overflow-y:auto; }
 .modal-overlay.open { display:flex; }
-.modal { background:white; border-radius:20px; width:100%; max-width:680px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2); animation:slideUp 0.3s ease; }
+.modal { background:white; border-radius:20px; width:100%; max-width:680px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2); animation:slideUp 0.3s ease; margin:auto; }
 .modal-header { padding:1.3rem 1.5rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:white; z-index:2; border-radius:20px 20px 0 0; }
 .modal-title { font-family:'Playfair Display',serif; font-size:1.1rem; color:var(--brand-dark); }
-.modal-close { background:#f5f5f5; border:none; width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
+.modal-close { background:#f5f5f5; border:none; width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:background 0.15s; flex-shrink:0; }
 .modal-close:hover { background:#e0e0e0; }
 .modal-body { padding:1.5rem; }
-.modal-footer { padding:1rem 1.5rem; border-top:1px solid var(--border); display:flex; gap:0.8rem; justify-content:flex-end; }
+.modal-footer { padding:1rem 1.5rem; border-top:1px solid var(--border); display:flex; gap:0.8rem; justify-content:flex-end; flex-wrap:wrap; }
 .delete-modal { max-width:380px; text-align:center; }
 .delete-modal-icon { font-size:3.5rem; margin:1rem 0 0.8rem; }
 .delete-modal-title { font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--text); margin-bottom:0.5rem; }
@@ -265,9 +266,12 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
 .cat-manage-card .cat-name { font-weight:700; font-size:0.85rem; color:var(--text); }
 .cat-manage-card .cat-count { font-size:0.7rem; color:var(--text-soft); margin-top:2px; }
 
-.hamburger { display:none; background:none; border:none; cursor:pointer; padding:0.3rem; color:var(--text); font-size:1.3rem; }
+.hamburger { display:none; background:none; border:none; cursor:pointer; padding:0.3rem; color:var(--text); font-size:1.3rem; line-height:1; }
 .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:99; }
 
+/* ════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+════════════════════════════════════ */
 @media(max-width:900px) {
   .sidebar { transform:translateX(-100%); }
   .sidebar.open { transform:translateX(0); }
@@ -280,12 +284,82 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
   .cat-manage-grid { grid-template-columns:repeat(2,1fr); }
   .weight-row { grid-template-columns:auto 1fr; }
   .weight-row .form-input:last-child { grid-column:2; }
-}
-@media(max-width:600px) {
-  .stats-row { grid-template-columns:1fr 1fr; }
-  .product-table th:nth-child(5),.product-table td:nth-child(5) { display:none; }
+  .photos-grid { grid-template-columns:repeat(2,1fr); }
   .content { padding:1rem; }
+  /* Make tables horizontally scrollable */
+  #productsTableWrap,
+  #dashboardProductPreview { overflow-x:auto; -webkit-overflow-scrolling:touch; }
 }
+
+@media(max-width:600px) {
+  /* Auth card */
+  .auth-card { padding:2rem 1.5rem; }
+  .auth-title { font-size:1.3rem; }
+
+  /* Layout */
+  .main { margin-left:0 !important; width:100%; }
+  .content { padding:0.75rem; }
+
+  /* Stats */
+  .stats-row { grid-template-columns:1fr 1fr; gap:0.6rem; }
+  .stat-card { padding:0.9rem; gap:0.6rem; }
+  .stat-icon { width:38px; height:38px; font-size:1.1rem; border-radius:10px; }
+  .stat-num { font-size:1.3rem; }
+  .stat-label { font-size:0.65rem; }
+
+  /* Topbar */
+  .topbar { padding:0 0.75rem; }
+  .topbar-title { font-size:0.95rem; }
+  .store-link { font-size:0.72rem; padding:0.35rem 0.6rem; }
+
+  /* Section card */
+  .section-card-header { padding:0.9rem 1rem; }
+  .section-card-body { padding:1rem; }
+
+  /* Form */
+  .form-grid { grid-template-columns:1fr !important; }
+  .form-group.full { grid-column:1 !important; }
+  .form-input, .form-select, .form-textarea { font-size:16px; /* prevents iOS zoom on focus */ }
+  .btn-submit { width:100%; justify-content:center; padding:0.85rem 1rem; }
+  .btn-cancel { width:100%; text-align:center; padding:0.85rem 1rem; }
+  .form-actions { flex-direction:column; }
+
+  /* Weight pricing */
+  .weight-pricing-box { padding:0.8rem; }
+
+  /* Photos grid */
+  .photos-grid { grid-template-columns:repeat(2,1fr); gap:0.5rem; }
+
+  /* Tables */
+  #productsTableWrap,
+  #dashboardProductPreview,
+  .table-responsive { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .product-table { min-width:500px; }
+
+  /* Categories */
+  .cat-manage-grid { grid-template-columns:repeat(2,1fr); gap:0.6rem; }
+
+  /* Modal */
+  .modal { border-radius:16px; max-height:95vh; }
+  .modal-body { padding:1rem; }
+  .modal-footer { padding:0.75rem 1rem; }
+
+  /* Toast */
+  .admin-toast { bottom:1rem; right:1rem; left:1rem; max-width:none; font-size:0.8rem; }
+
+  /* Product preview */
+  .product-preview { flex-wrap:wrap; }
+
+  /* Action buttons on smaller screens */
+  .action-btns { flex-wrap:wrap; gap:0.3rem; }
+  .btn-edit, .btn-toggle, .btn-delete { padding:0.35rem 0.5rem; font-size:0.7rem; }
+
+  /* Table toolbar */
+  .table-toolbar { padding:0.75rem 1rem; gap:0.5rem; }
+  .search-box { min-width:120px; }
+  .filter-select { font-size:0.75rem; padding:0.4rem 0.5rem; }
+}
+
 @keyframes fadeIn { from{opacity:0}to{opacity:1} }
 @keyframes slideUp { from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1} }
 @keyframes spin { to{transform:rotate(360deg)} }
@@ -389,7 +463,7 @@ body { font-family:'DM Sans',sans-serif; background:#F7F0EA; color:var(--text); 
             <div class="section-card-title">Recent Products</div>
             <button class="btn-submit" style="padding:0.5rem 1rem;font-size:0.8rem;" onclick="showSection('add')">+ Add New</button>
           </div>
-          <div class="section-card-body" style="padding:0;" id="dashboardProductPreview">
+          <div id="dashboardProductPreview">
             <div class="spinner"></div><div class="loading-text">Loading...</div>
           </div>
         </div>
@@ -755,8 +829,6 @@ let selectedBadge = '';
 let editSelectedColor = '#FFF0E0';
 let editSelectedBadge = '';
 
-// ── MULTI-PHOTO STATE (up to 4 slots each context) ──
-// Each slot: { file: File|null, previewUrl: string|null, cloudUrl: string|null }
 const MAX_PHOTOS = 4;
 let addPhotoSlots  = Array.from({length: MAX_PHOTOS}, () => ({ file: null, previewUrl: null, cloudUrl: null }));
 let editPhotoSlots = Array.from({length: MAX_PHOTOS}, () => ({ file: null, previewUrl: null, cloudUrl: null }));
@@ -876,10 +948,6 @@ window.selectBadge = function(el, ctx='add') {
   ctx==='add' ? updatePreview() : updateEditPreview();
 };
 
-// ════════════════════════════════════════════
-// MULTI-PHOTO SLOT SYSTEM (up to 4, no compression)
-// ════════════════════════════════════════════
-
 function renderPhotoSlots(ctx) {
   const gridId = ctx === 'add' ? 'addPhotosGrid' : 'editPhotosGrid';
   const grid = document.getElementById(gridId);
@@ -900,7 +968,6 @@ function renderPhotoSlots(ctx) {
         <input type="file" class="photo-upload-input" id="${ctx}-input-${i}" accept="image/*" onchange="slotFileSelect(event,'${ctx}',${i})">
       </div>`;
     }
-    // Empty slot — only show if it's slot 0 or previous slot is filled
     const prevFilled = i === 0 || (slots[i-1].previewUrl || slots[i-1].cloudUrl);
     if (!prevFilled) return `<div class="photo-slot" id="${ctx}-slot-${i}" style="opacity:0.35;cursor:not-allowed;">
       <div class="photo-upload-icon" style="font-size:1.3rem;opacity:0.4;">📷</div>
@@ -917,7 +984,6 @@ function renderPhotoSlots(ctx) {
       <div class="photo-slot-label">${label}</div>
     </div>`;
   }).join('');
-  // Update preview with first photo
   updateMainPhotoPreview(ctx);
 }
 
@@ -949,7 +1015,6 @@ window.slotClear = function(ctx, idx, event) {
   const slots = ctx === 'add' ? addPhotoSlots : editPhotoSlots;
   if (slots[idx].previewUrl) URL.revokeObjectURL(slots[idx].previewUrl);
   slots[idx] = { file: null, previewUrl: null, cloudUrl: null };
-  // Compact: shift remaining slots left
   for (let i = idx; i < MAX_PHOTOS - 1; i++) slots[i] = slots[i+1];
   slots[MAX_PHOTOS - 1] = { file: null, previewUrl: null, cloudUrl: null };
   renderPhotoSlots(ctx);
@@ -980,7 +1045,6 @@ function assignFileToSlot(ctx, idx, file) {
   renderPhotoSlots(ctx);
 }
 
-// Upload one file to ImgBB — no compression
 async function uploadOnePhoto(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -997,24 +1061,17 @@ async function uploadOnePhoto(file) {
         const data = await res.json();
         if (data.success) { resolve(data.data.url); return; }
         throw new Error(data.error?.message || `ImgBB error code ${data.status}`);
-      } catch(e) {
-        reject(e);
-      }
+      } catch(e) { reject(e); }
     };
     reader.readAsDataURL(file);
   });
 }
 
-// Upload all pending slots, return array of URLs
 async function uploadAllPhotos(ctx) {
   const slots = ctx === 'add' ? addPhotoSlots : editPhotoSlots;
   const fillId = ctx === 'add' ? 'uploadProgressFill'  : 'editUploadProgressFill';
   const textId = ctx === 'add' ? 'uploadProgressText'  : 'editUploadProgressText';
   const wrapId = ctx === 'add' ? 'uploadProgress'      : 'editUploadProgress';
-
-  console.log('[uploadAllPhotos] ctx:', ctx, 'slots:', JSON.stringify(slots.map(s => ({
-    hasFile: !!s.file, fileName: s.file?.name, previewUrl: !!s.previewUrl, cloudUrl: s.cloudUrl
-  }))));
 
   const setProgress = (pct, msg) => {
     const wrap = document.getElementById(wrapId);
@@ -1038,16 +1095,15 @@ async function uploadAllPhotos(ctx) {
       urls.push(url);
     } catch(e) {
       console.warn(`Photo ${i+1} ImgBB upload failed:`, e.message);
-      // Fallback: store as data URL so save still works
       try {
         const dataUrl = await new Promise((res, rej) => {
           const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej;
           r.readAsDataURL(s.file);
         });
         urls.push(dataUrl);
-        toast(`⚠️ Photo ${i+1}: ImgBB failed, saved locally (${e.message})`, 'error');
+        toast(`⚠️ Photo ${i+1}: ImgBB failed, saved locally`, 'error');
       } catch(e2) {
-        toast(`❌ Photo ${i+1} failed completely: ${e2.message}`, 'error');
+        toast(`❌ Photo ${i+1} failed: ${e2.message}`, 'error');
       }
     }
   }
@@ -1065,7 +1121,6 @@ function resetPhotoSlots(ctx) {
   renderPhotoSlots(ctx);
 }
 
-// Legacy stubs (no-ops, kept for safety)
 window.triggerFileInput = function(id, event) { if(event) event.stopPropagation(); document.getElementById(id)?.click(); };
 window.clearPhoto = function(ctx, event) { if(event) event.stopPropagation(); resetPhotoSlots(ctx); };
 
@@ -1130,7 +1185,6 @@ function priceDisplay(p) {
   const p250 = p.price250 || null;
   const has500 = !!p.price500;
   const has1kg = !!p.price1kg;
-  // Show lowest/first available price as primary
   const primary = p250 || p.price500 || p.price1kg || p.price;
   const primaryLabel = p250 ? '250g' : has500 ? '500g' : has1kg ? '1kg' : '';
   const primaryOld = p250 ? p.oldPrice250 : has500 ? p.oldPrice500 : has1kg ? p.oldPrice1kg : (p.oldPrice || null);
@@ -1151,6 +1205,7 @@ function renderProductsTable(products) {
     return;
   }
   wrap.innerHTML = `
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
     <table class="product-table">
       <thead><tr><th>Product</th><th>Category</th><th>Prices</th><th>Badge</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody>${products.map(p => `
@@ -1170,13 +1225,15 @@ function renderProductsTable(products) {
           </div></td>
         </tr>`).join('')}
       </tbody>
-    </table>`;
+    </table>
+    </div>`;
 }
 
 function renderDashboardPreview(products) {
   const wrap = document.getElementById('dashboardProductPreview');
   if (!products.length) { wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-text">No products yet.</div></div>`; return; }
   wrap.innerHTML = `
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
     <table class="product-table">
       <thead><tr><th>Product</th><th>Category</th><th>Starting Price</th><th>Status</th></tr></thead>
       <tbody>${products.slice(0,5).map(p => `
@@ -1187,7 +1244,8 @@ function renderDashboardPreview(products) {
           <td><span class="status-dot ${p.active!==false?'active':'inactive'}"></span>${p.active!==false?'Active':'Hidden'}</td>
         </tr>`).join('')}
       </tbody>
-    </table>`;
+    </table>
+    </div>`;
 }
 
 function renderCategoryGrid(products) {
@@ -1215,7 +1273,6 @@ window.filterTable = function() {
   ));
 };
 
-// ── HELPERS: get weight pricing from form ──
 function getWeightPricingFromForm(prefix) {
   const p250    = parseFloat(document.getElementById(`${prefix}_price250`).value)    || null;
   const op250   = parseFloat(document.getElementById(`${prefix}_oldprice250`).value) || null;
@@ -1223,7 +1280,6 @@ function getWeightPricingFromForm(prefix) {
   const op500   = parseFloat(document.getElementById(`${prefix}_oldprice500`).value) || null;
   const p1kg    = parseFloat(document.getElementById(`${prefix}_price1kg`).value)    || null;
   const op1kg   = parseFloat(document.getElementById(`${prefix}_oldprice1kg`).value) || null;
-  // Legacy price field = first available price for backward compat
   const firstPrice    = p250 || p500 || p1kg;
   const firstOldPrice = p250 ? op250 : (p500 ? op500 : op1kg);
   return { price250:p250, oldPrice250:op250, price500:p500, oldPrice500:op500, price1kg:p1kg, oldPrice1kg:op1kg,
@@ -1231,7 +1287,6 @@ function getWeightPricingFromForm(prefix) {
 }
 
 function setWeightPricingToForm(prefix, p) {
-  // Use only explicit per-weight fields — never bleed legacy p.price into 250g
   document.getElementById(`${prefix}_price250`).value    = p.price250 || '';
   document.getElementById(`${prefix}_oldprice250`).value = p.oldPrice250 || '';
   document.getElementById(`${prefix}_price500`).value    = p.price500 || '';
@@ -1252,9 +1307,7 @@ window.saveProduct = async function() {
   if (!cat)              { highlight('f_cat');      toast('⚠️ Please select a category','error'); return; }
   if (!desc)             { highlight('f_desc');     toast('⚠️ Description is required','error'); return; }
   if (!pricing.price250 && !pricing.price500 && !pricing.price1kg) {
-    highlight('f_price250');
-    highlight('f_price500');
-    highlight('f_price1kg');
+    highlight('f_price250'); highlight('f_price500'); highlight('f_price1kg');
     toast('⚠️ At least one weight price is required','error'); return;
   }
   if (!addPhotoSlots[0].file && !addPhotoSlots[0].previewUrl && !addPhotoSlots[0].cloudUrl) {
@@ -1268,8 +1321,7 @@ window.saveProduct = async function() {
     const defaultWeightLabel = pricing.price250 ? 'Per 250g pack' : pricing.price500 ? 'Per 500g pack' : 'Per 1kg pack';
     await addDoc(collection(db, 'products'), {
       name, cat, desc, weight: weight || defaultWeightLabel, stock,
-      photoUrl: photoUrls[0],         // legacy compat: primary photo
-      photoUrls,                       // all up to 4 photos
+      photoUrl: photoUrls[0], photoUrls,
       bg: selectedColor, badge: selectedBadge||null,
       ...pricing,
       active: true, createdAt: serverTimestamp()
@@ -1305,7 +1357,6 @@ window.openEditModal = function(id) {
   const p = allProducts.find(x => x.id === id);
   if (!p) return;
   editingId = id;
-
   document.getElementById('e_name').value  = p.name || '';
   document.getElementById('e_cat').value   = p.cat  || '';
   document.getElementById('e_desc').value  = p.desc || '';
@@ -1314,8 +1365,6 @@ window.openEditModal = function(id) {
   setWeightPricingToForm('e', p);
   editSelectedColor = p.bg || '#FFF0E0';
   editSelectedBadge = p.badge || '';
-
-  // Populate editPhotoSlots from existing photoUrls (or legacy photoUrl)
   const existingUrls = Array.isArray(p.photoUrls) ? p.photoUrls : (p.photoUrl ? [p.photoUrl] : []);
   editPhotoSlots.forEach((s, i) => {
     if (s.previewUrl) URL.revokeObjectURL(s.previewUrl);
@@ -1324,7 +1373,6 @@ window.openEditModal = function(id) {
       : { file: null, previewUrl: null, cloudUrl: null };
   });
   renderPhotoSlots('edit');
-
   document.querySelectorAll('#editColorRow .color-swatch').forEach(el =>
     el.classList.toggle('selected', el.style.background === editSelectedColor));
   document.querySelectorAll('#editBadgeRow .badge-opt').forEach(el =>
@@ -1346,13 +1394,11 @@ window.updateProduct = async function() {
   const weight = document.getElementById('e_weight').value.trim();
   const stock  = parseInt(document.getElementById('e_stock').value) || 0;
   const pricing = getWeightPricingFromForm('e');
-
   if (!name || !cat || !desc) { toast('⚠️ Please fill all required fields','error'); return; }
   if (!pricing.price250 && !pricing.price500 && !pricing.price1kg) {
     toast('⚠️ At least one weight price is required','error'); return;
   }
   if (!editPhotoSlots[0].file && !editPhotoSlots[0].cloudUrl) { toast('⚠️ At least one product photo is required','error'); return; }
-
   setBtnLoading('updateBtn','updateBtnIcon','updateBtnText', true, 'Saving…');
   try {
     const photoUrls = await uploadAllPhotos('edit');
@@ -1360,11 +1406,9 @@ window.updateProduct = async function() {
     const defaultWeightLabel = pricing.price250 ? 'Per 250g pack' : pricing.price500 ? 'Per 500g pack' : 'Per 1kg pack';
     await updateDoc(doc(db, 'products', editingId), {
       name, cat, desc, weight: weight || defaultWeightLabel, stock,
-      photoUrl: photoUrls[0],   // legacy compat
-      photoUrls,
+      photoUrl: photoUrls[0], photoUrls,
       bg: editSelectedColor, badge: editSelectedBadge||null,
-      ...pricing,
-      updatedAt: serverTimestamp()
+      ...pricing, updatedAt: serverTimestamp()
     });
     toast('✅ Product updated!', 'success');
     closeEditModal();
@@ -1412,16 +1456,16 @@ async function loadOrdersSection() {
     if (snap.empty) { wrap.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-text">No orders yet.</div></div>`; return; }
 
     const statusConfig = {
-      under_packing:    { label: '📦 Under Packing',                     bg: '#FFF3E0', color: '#E65100' },
-      shipment_created: { label: '🚚 Shipment Created · Bhimavaram',      bg: '#E3F2FD', color: '#1565C0' },
-      out_for_delivery: { label: '🛵 Out for Delivery',                   bg: '#F3E5F5', color: '#6A1B9A' },
-      delivered:        { label: '✅ Delivered',                           bg: '#E8F5E9', color: '#2E7D32' },
+      under_packing:    { label: '📦 Under Packing',               bg: '#FFF3E0', color: '#E65100' },
+      shipment_created: { label: '🚚 Shipment Created · Bhimavaram', bg: '#E3F2FD', color: '#1565C0' },
+      out_for_delivery: { label: '🛵 Out for Delivery',             bg: '#F3E5F5', color: '#6A1B9A' },
+      delivered:        { label: '✅ Delivered',                     bg: '#E8F5E9', color: '#2E7D32' },
     };
 
     wrap.innerHTML = `
       <style>
         .tracking-select-wrap { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
-        .tracking-select { padding:0.35rem 0.6rem; border:1.5px solid #E8E0D8; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.75rem; color:var(--text); background:#FAFAF8; cursor:pointer; outline:none; }
+        .tracking-select { padding:0.35rem 0.6rem; border:1.5px solid #E8E0D8; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.75rem; color:var(--text); background:#FAFAF8; cursor:pointer; outline:none; max-width:180px; }
         .tracking-select:focus { border-color:var(--brand); }
         .dtdc-link-input { padding:0.35rem 0.6rem; border:1.5px solid #E8E0D8; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.72rem; color:var(--text); background:#FAFAF8; width:160px; outline:none; }
         .dtdc-link-input:focus { border-color:var(--brand); }
@@ -1431,8 +1475,9 @@ async function loadOrdersSection() {
         .tracking-saved-tick { color:#2e7d32; font-size:0.8rem; display:none; }
         .status-pill { display:inline-block; font-size:0.65rem; font-weight:700; padding:3px 9px; border-radius:8px; }
       </style>
-      <table class="product-table">
-        <thead><tr><th>#</th><th>Customer</th><th>Items</th><th>Total</th><th>Address</th><th>Date</th><th style="min-width:280px;">Tracking</th></tr></thead>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+      <table class="product-table" style="min-width:700px;">
+        <thead><tr><th>#</th><th>Customer</th><th>Items</th><th>Total</th><th>Address</th><th>Date</th><th style="min-width:260px;">Tracking</th></tr></thead>
         <tbody>${snap.docs.map((d,i) => {
           const o = d.data();
           const oid = d.id;
@@ -1441,7 +1486,6 @@ async function loadOrdersSection() {
           const date = o.date?.toDate ? o.date.toDate().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : 'Recent';
           const items = (o.items||[]).map(it => `${it.name} (${it.weight||'250g'}) ×${it.qty}`).join('<br>');
           const addr = o.shipping?.city ? `${o.shipping.house}, ${o.shipping.city} - ${o.shipping.pincode}` : '–';
-          const sc = statusConfig[tStatus] || statusConfig.under_packing;
           const opts = Object.entries(statusConfig).map(([k,v]) =>
             `<option value="${k}" ${k===tStatus?'selected':''}>${v.label}</option>`
           ).join('');
@@ -1462,16 +1506,16 @@ async function loadOrdersSection() {
                 </select>
                 <span id="tsel-saved-${oid}" class="tracking-saved-tick">✔ Saved</span>
               </div>
-              <div style="margin-top:0.4rem;display:flex;align-items:center;gap:0.4rem;" id="dtdc-row-${oid}" style="${tStatus==='under_packing'?'display:none':''}">
+              <div style="margin-top:0.4rem;display:flex;align-items:center;gap:0.4rem;" id="dtdc-row-${oid}">
                 <input class="dtdc-link-input" id="dtdc-${oid}" type="url" placeholder="DTDC tracking link (optional)" value="${dtdcLink}" />
                 <button class="save-tracking-btn" onclick="saveTracking('${oid}')" id="savebtn-${oid}">Save</button>
               </div>
             </td>
           </tr>`;
         }).join('')}</tbody>
-      </table>`;
+      </table>
+      </div>`;
 
-    // Show/hide DTDC row based on current status
     snap.docs.forEach(d => {
       const tStatus = d.data().trackingStatus || 'under_packing';
       const dtdcRow = document.getElementById(`dtdc-row-${d.id}`);
@@ -1496,25 +1540,20 @@ window.saveTracking = async function(oid) {
   const btn = document.getElementById(`savebtn-${oid}`);
   const savedTick = document.getElementById(`tsel-saved-${oid}`);
   if (!sel) return;
-
   const newStatus = sel.value;
   const dtdcLink = dtdcInput ? dtdcInput.value.trim() : '';
-
   btn.disabled = true; btn.textContent = '⏳';
   try {
     await updateDoc(doc(db, 'orders', oid), {
-      trackingStatus: newStatus,
-      dtdcLink: dtdcLink || null,
+      trackingStatus: newStatus, dtdcLink: dtdcLink || null,
       trackingUpdatedAt: serverTimestamp()
     });
-    btn.textContent = 'Save';
-    btn.disabled = false;
+    btn.textContent = 'Save'; btn.disabled = false;
     savedTick.style.display = 'inline';
     setTimeout(() => { savedTick.style.display = 'none'; }, 2500);
     toast(`✅ Tracking updated to: ${newStatus.replace(/_/g,' ')}`, 'success');
   } catch(e) {
-    btn.textContent = 'Save';
-    btn.disabled = false;
+    btn.textContent = 'Save'; btn.disabled = false;
     toast('❌ Failed to update tracking: ' + e.message, 'error');
   }
 };
